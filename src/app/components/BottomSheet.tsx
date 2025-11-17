@@ -93,7 +93,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({ visible, children }) => {
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "#f5f5f561",
   },
   sheetContainer: {
     position: "absolute",

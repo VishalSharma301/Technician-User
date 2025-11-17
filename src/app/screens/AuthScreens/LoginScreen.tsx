@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,7 @@ import {
   Image,
   StyleSheet,
   ScrollView,
-
+  Alert,
 } from "react-native";
 import AuthInput from "../../components/AuthInput";
 import { moderateScale, scale, verticalScale } from "../../../utils/scaling";
@@ -14,14 +14,31 @@ import { useNavigation } from "@react-navigation/native";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RootStackParamList } from "../../../constants/navigation";
+import { login } from "../../../utils/authApi";
+import { useProfile } from "../../../hooks/useProfile";
 
-type loginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'LoginScreen'>
-
+type loginScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "LoginScreen"
+>;
 
 const LoginScreen = () => {
   const [isSignup, setIsSignup] = useState(false);
   const [isOtpLogin, setIsOtpLogin] = useState(false);
-    const navigation = useNavigation<loginScreenNavigationProp>()
+  const navigation = useNavigation<loginScreenNavigationProp>();
+  const { phoneNumber, setPhoneNumber } = useProfile();
+  const [countryCode, setCountryCode] = useState<string>("+91");
+  const [phoneNumberInput, setPhoneNumberInput] = useState<string>("");
+
+
+
+  useEffect(() => {
+    setPhoneNumber(`${countryCode}${phoneNumberInput}`);
+    // setPhoneNumber(`${phoneNumberInput}`);
+  }, [countryCode, phoneNumberInput]);
+
+
+
   // toggle between login and signup
   const toggleSignup = () => {
     setIsSignup((prev) => !prev);
@@ -34,9 +51,21 @@ const LoginScreen = () => {
     setIsSignup(false);
   };
 
+  const handleLogin = async () => {
+    const result = await login(phoneNumber);
+
+    if (result) {
+      Alert.alert("OTP Sent", "Check your phone for OTP");
+      // You can now navigate to OTP screen or store data
+      navigation.navigate("VerificationScreen");
+    } else {
+      Alert.alert("Login Failed", "Invalid phone number or server error");
+    }
+  };
+
   const handleAuthAction = () => {
     if (isOtpLogin) {
-        navigation.navigate("VerificationScreen");
+      handleLogin();
       console.log("Send OTP to phone...");
     } else if (isSignup) {
       console.log("Sign Up user...");
@@ -46,152 +75,146 @@ const LoginScreen = () => {
   };
 
   return (
-  
-     <ScreenWrapper>
-        <ScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            // justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <View style={styles.container}>
-            <Image
-              source={require("../../../../assets/placeholder.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+    <ScreenWrapper>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          // justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <View style={styles.container}>
+          <Image
+            source={require("../../../../assets/placeholder.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
 
-            <View style={styles.box}>
-              <Text style={styles.title}>
-                {isOtpLogin
-                  ? "Login with OTP"
-                  : isSignup
-                  ? "Sign Up"
-                  : "Login"}
-              </Text>
-              <Text style={styles.subText}>
-                {isOtpLogin
-                  ? "Enter your phone number to receive an OTP"
-                  : isSignup
-                  ? "Create a new account"
-                  : "Welcome Back"}
-              </Text>
+          <View style={styles.box}>
+            <Text style={styles.title}>
+              {isOtpLogin ? "Login with OTP" : isSignup ? "Sign Up" : "Login"}
+            </Text>
+            <Text style={styles.subText}>
+              {isOtpLogin
+                ? "Enter your phone number to receive an OTP"
+                : isSignup
+                ? "Create a new account"
+                : "Welcome Back"}
+            </Text>
 
-              {/* Inputs */}
-              {isOtpLogin ? (
-                <>
+            {/* Inputs */}
+            {isOtpLogin ? (
+              <>
+                <AuthInput
+                  iconName="phone-outline"
+                  placeholder="Enter Phone Number"
+                  keyboardType="phone-pad"
+                  title="Email or Phone"
+                  onChangeText={setPhoneNumberInput}
+                  maxLength={10}
+                  autoFocus={true}
+                />
+              </>
+            ) : (
+              <>
+                <AuthInput
+                  iconName="email-outline"
+                  placeholder="Email or Phone"
+                  title="Email or Phone"
+                />
+
+                {isSignup && (
                   <AuthInput
-                    iconName="phone-outline"
-                    placeholder="Enter Phone Number"
-                    keyboardType="phone-pad"
-                    title="Email or Phone"
+                    iconName="account-outline"
+                    placeholder="User Name"
+                    title="User Name"
                   />
-                </>
-              ) : (
-                <>
-                  <AuthInput
-                    iconName="email-outline"
-                    placeholder="Email or Phone"
-                    title="Email or Phone"
-                  />
+                )}
 
-                  {isSignup && (
-                    <AuthInput
-                      iconName="account-outline"
-                      placeholder="User Name"
-                        title="User Name"
-                    />
-                  )}
+                <AuthInput
+                  iconName="lock-outline"
+                  placeholder="Enter Your Password"
+                  secureTextEntry
+                  title="Password"
+                />
 
+                {isSignup && (
                   <AuthInput
-                    iconName="lock-outline"
-                    placeholder="Enter Your Password"
+                    iconName="lock-check-outline"
+                    placeholder="Confirm Password"
                     secureTextEntry
-                    title="Password"
+                    title="Confirm Password"
                   />
+                )}
+              </>
+            )}
 
-                  {isSignup && (
-                    <AuthInput
-                      iconName="lock-check-outline"
-                      placeholder="Confirm Password"
-                      secureTextEntry
-                        title="Confirm Password"
-                    />
-                  )}
-                </>
-              )}
-
-              {/* Forgot Password */}
-              {!isSignup && !isOtpLogin && (
-                <TouchableOpacity>
-                  <Text style={styles.forgotText}>Forgot Password?</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Main Button */}
-              <TouchableOpacity style={styles.button} onPress={handleAuthAction}>
-                <Text style={styles.buttonText}>
-                  {isOtpLogin
-                    ? "Send OTP"
-                    : isSignup
-                    ? "Sign Up"
-                    : "Login"}
-                </Text>
+            {/* Forgot Password */}
+            {!isSignup && !isOtpLogin && (
+              <TouchableOpacity>
+                <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
+            )}
 
-              {/* OR */}
-              {!isSignup && (
-                <>
-                  {!isOtpLogin && (
-                    <>
-                      <Text style={styles.orText}>Or</Text>
+            {/* Main Button */}
+            <TouchableOpacity style={styles.button} onPress={handleAuthAction}>
+              <Text style={styles.buttonText}>
+                {isOtpLogin ? "Send OTP" : isSignup ? "Sign Up" : "Login"}
+              </Text>
+            </TouchableOpacity>
 
-                      <TouchableOpacity
-                        style={styles.otpButton}
-                        onPress={toggleOtpLogin}
-                      >
-                        <Text style={styles.otpText}>Login With OTP</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
+            {/* OR */}
+            {!isSignup && (
+              <>
+                {!isOtpLogin && (
+                  <>
+                    <Text style={styles.orText}>Or</Text>
 
-                  {isOtpLogin && (
                     <TouchableOpacity
-                      style={[styles.otpButton, { backgroundColor: "#E6E6E6" }]}
+                      style={styles.otpButton}
                       onPress={toggleOtpLogin}
                     >
-                      <Text style={[styles.otpText, { color: "#000" }]}>
-                        Back to Login
-                      </Text>
+                      <Text style={styles.otpText}>Login With OTP</Text>
                     </TouchableOpacity>
-                  )}
-                </>
-              )}
+                  </>
+                )}
 
-              {/* Footer */}
-              {!isOtpLogin && (
-                <View style={{ flexDirection: "row", justifyContent: "center" }}>
-                  <Text style={styles.footerText}>
-                    {isSignup
-                      ? "Already have an Account? "
-                      : "Don’t have an Account? "}
-                  </Text>
+                {isOtpLogin && (
                   <TouchableOpacity
-                    onPress={toggleSignup}
-                    style={{ alignItems: "center", justifyContent: "center" }}
+                    style={[styles.otpButton, { backgroundColor: "#E6E6E6" }]}
+                    onPress={toggleOtpLogin}
                   >
-                    <Text style={styles.linkText}>
-                      {isSignup ? "Login" : "Sign Up"}
+                    <Text style={[styles.otpText, { color: "#000" }]}>
+                      Back to Login
                     </Text>
                   </TouchableOpacity>
-                </View>
-              )}
+                )}
+              </>
+            )}
 
-              {/* Social Login */}
-              {!isSignup && (
-                <>
-                  {/* <View style={styles.iconRow}>
+            {/* Footer */}
+            {!isOtpLogin && (
+              <View style={{ flexDirection: "row", justifyContent: "center" }}>
+                <Text style={styles.footerText}>
+                  {isSignup
+                    ? "Already have an Account? "
+                    : "Don’t have an Account? "}
+                </Text>
+                <TouchableOpacity
+                  onPress={toggleSignup}
+                  style={{ alignItems: "center", justifyContent: "center" }}
+                >
+                  <Text style={styles.linkText}>
+                    {isSignup ? "Login" : "Sign Up"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Social Login */}
+            {!isSignup && (
+              <>
+                {/* <View style={styles.iconRow}>
                     <Image
                       style={styles.socialIcon}
                       source={require("../../../assets/google.png")}
@@ -206,19 +229,18 @@ const LoginScreen = () => {
                     />
                   </View> */}
 
-                  <Text style={styles.policyText}>
-                    By Continuing, you agree to our{"\n"}
-                    <Text style={styles.linkText2}>Terms of Service</Text> |{" "}
-                    <Text style={styles.linkText2}>Privacy Policy</Text> |{" "}
-                    <Text style={styles.linkText2}>Content Policy</Text>
-                  </Text>
-                </>
-              )}
-            </View>
+                <Text style={styles.policyText}>
+                  By Continuing, you agree to our{"\n"}
+                  <Text style={styles.linkText2}>Terms of Service</Text> |{" "}
+                  <Text style={styles.linkText2}>Privacy Policy</Text> |{" "}
+                  <Text style={styles.linkText2}>Content Policy</Text>
+                </Text>
+              </>
+            )}
           </View>
-        </ScrollView>
-     </ScreenWrapper>
-  
+        </View>
+      </ScrollView>
+    </ScreenWrapper>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Image,
   Dimensions,
   ImageBackground,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
@@ -22,9 +23,16 @@ import Header from "../components/Header";
 import CustomNavBar from "../components/CustomNavBar";
 import BottomSheet from "../components/BottomSheet";
 import BookingBottomSheet from "../components/BookingLogic";
+import { useAuth } from "../../hooks/useAuth";
+import { useProfile } from "../../hooks/useProfile";
+import { useAddress } from "../../hooks/useAddress";
+import { useServices } from "../../hooks/useServices";
+import { fetchBrandsByZip, fetchServicesByZip } from "../../utils/servicesApi";
+import { ServiceData } from "../../constants/types";
+import { innerColors, outerColors } from "../../constants/colors";
+import Tooltip from "../components/Tooltip";
+import { FlatList } from "react-native-gesture-handler";
 
-const { height, width } = Dimensions.get("screen");
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const categories = ["Popular", "Emergency", "Seasonal", "Daily Use"];
 
 interface Service {
@@ -32,7 +40,7 @@ interface Service {
   icon: IconName;
 }
 
-const services: Service[] = [
+const servicess: Service[] = [
   { name: "Plumbing", icon: "plumbing" },
   { name: "Electricity", icon: "electricity" },
   { name: "Drywall Rep", icon: "drywall" },
@@ -49,29 +57,126 @@ const services: Service[] = [
 
 const HomeScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
-    const bottomSheetRef = useRef<React.ComponentRef<typeof BottomSheet> | null>(null);
-  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const { setIsLoading } = useAuth();
+  const {} = useProfile();
+  const { selectedAddress, setZipcode } = useAddress();
+  const {
+    setBrands,
+    setServices,
+    services,
+    brands,
+    popularServices,
+    dailyNeedServices,
+    quickPickServices,
+  } = useServices();
+  const [visible, setVisible] = useState(false);
+  const [pinVisible, setPinVisible] = useState(false);
+  const [selectedService, setSelectedService] = useState<ServiceData>();
+  const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
 
-    const [visible, setVisible] = useState(false);
+  const servicess =
+    selectedCategory === "Popular"
+      ? popularServices
+      : selectedCategory === "Daily Use"
+      ? dailyNeedServices
+      : selectedCategory === "Seasonal"
+      ? quickPickServices
+      : services;
 
-  
+  const zipcode = "140802";
+  console.log(services);
 
+  useEffect(() => {
+    async function getAllServices() {
+      if (services.length > 0) {
+        console.log("Service Not Fetched");
+
+        return;
+      }
+      try {
+        setIsLoading(true);
+        console.log("fetching services");
+
+        const services = await fetchServicesByZip(zipcode);
+        const brands = await fetchBrandsByZip(zipcode);
+        console.log("🔧 Services:", services);
+        setServices(services.data);
+        setBrands(brands.data);
+        setIsLoading(false);
+      } catch (error) {
+        setIsLoading(false);
+        console.error("❌ Failed to get services:", error);
+      }
+    }
+
+    getAllServices();
+  }, []);
+
+  const ChangePinCode = () => {
+    const [pin, setPin] = useState("");
+    return (
+      <View style={styles.card}>
+        <Text style={styles.title}>Change Pin Code</Text>
+
+        <View style={styles.inputContainer}>
+          <Icon
+            name="location-sharp"
+            size={moderateScale(16)}
+            color="#FF3B30"
+            style={{ marginRight: scale(6) }}
+          />
+
+          <TextInput
+            style={styles.input}
+            value={pin}
+            placeholder="Enter Pin Code"
+            keyboardType="numeric"
+            maxLength={6}
+            onChangeText={setPin}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={styles.submitBtn}
+          onPress={() => {
+            console.log("pin", pin);
+
+            setZipcode(pin);
+
+            setPinVisible(false);
+          }}
+        >
+          <Text style={styles.submitText}>SUBMIT</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  function selectBrand(service: ServiceData) {
+    setVisible(true);
+    setSelectedService(service);
+  }
 
   return (
     <ScreenWrapper>
       <ScrollView style={styles.container}>
         {/* Top Bar */}
-       <Header />
+        <Header />
 
         {/* Pin Section */}
-        <View style={styles.pinContainer}>
-          <Text style={styles.pinText}>Pin - 210210</Text>
+        <TouchableOpacity
+          onPress={() => setPinVisible((prev) => !prev)}
+          style={styles.pinContainer}
+        >
+          <Text style={styles.pinText}>
+            Pin - {selectedAddress.address.zipcode}
+          </Text>
           <Icon
             name="pencil-outline"
             size={moderateScale(16)}
             color="#1E1E1E80"
           />
-        </View>
+        </TouchableOpacity>
         <View
           style={{
             borderWidth: 0.7,
@@ -90,7 +195,10 @@ const HomeScreen = () => {
             {categories.map((cat) => (
               <GradientBorder
                 borderRadius={scale(23.6)}
-                borderWidth={scale(0.98)}
+                outerWidth={0.2}
+                innerWidth={0.8}
+                innerColors={outerColors}
+                outerColors={innerColors}
                 style={[
                   styles.categoryButton,
                   selectedCategory === cat && styles.activeCategory,
@@ -113,9 +221,9 @@ const HomeScreen = () => {
 
           {/* Services Grid */}
           <View style={styles.gridContainer}>
-            {services.map((service, index) => (
+            {servicess.map((service) => (
               <GradientBorder
-                key={index}
+                key={service._id} // FIXED — stable key
                 gradientStyle={{ marginBottom: verticalScale(10) }}
                 style={{
                   width: scale(74.75),
@@ -124,30 +232,42 @@ const HomeScreen = () => {
                   shadowColor: "#000",
                   shadowOpacity: 0.05,
                   shadowRadius: 3,
-                  elevation: 3,
+                  elevation: 7,
+                  position: "relative", // required for tooltip
                 }}
               >
+                {/* Tooltip — only for active item */}
+                {activeTooltipId === service._id && (
+                  <Tooltip text={service.name} />
+                )}
+
                 <TouchableOpacity
-                  key={index}
                   style={styles.serviceCard}
-                  onPress={() =>{
-                  setVisible(true)
-                    }}
+                  onPress={() => selectBrand(service)}
+                  onLongPress={() => setActiveTooltipId(service._id)}
+                  onPressOut={() => setActiveTooltipId(null)}
+                  delayLongPress={300} // OPTIONAL: smooth UX
                 >
                   <View style={styles.serviceIcon}>
                     <Image
-                      source={iconMap[service.icon]}
+                      source={iconMap["default"]}
                       style={{
                         height: "100%",
                         width: "100%",
                         minHeight: verticalScale(39),
                         minWidth: scale(39),
                         resizeMode: "contain",
-                        //   borderWidth: 1,
                       }}
                     />
                   </View>
-                  <Text style={styles.serviceText}>{service.name}</Text>
+
+                  <Text
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    style={styles.serviceText}
+                  >
+                    {service.name}
+                  </Text>
                 </TouchableOpacity>
               </GradientBorder>
             ))}
@@ -207,9 +327,17 @@ const HomeScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-        <CustomNavBar isLocal={true}/>
-        <BottomSheet visible={visible} >
-        <BookingBottomSheet close={()=>setVisible(false)} />
+      <CustomNavBar isLocal={true} />
+      <BottomSheet visible={visible}>
+        {selectedService && (
+          <BookingBottomSheet
+            close={() => setVisible(false)}
+            service={selectedService}
+          />
+        )}
+      </BottomSheet>
+      <BottomSheet visible={pinVisible}>
+        <ChangePinCode />
       </BottomSheet>
     </ScreenWrapper>
   );
@@ -221,8 +349,6 @@ const styles = StyleSheet.create({
   container: {
     padding: scale(9),
   },
-
- 
 
   pinContainer: {
     flexDirection: "row",
@@ -292,6 +418,7 @@ const styles = StyleSheet.create({
     color: "#000",
     textAlign: "center",
     fontWeight: "400",
+    marginHorizontal: scale(6),
     // borderWidth: 1,
   },
 
@@ -347,5 +474,52 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     borderRadius: moderateScale(10),
     padding: scale(6),
+  },
+  card: {
+    width: scale(360),
+    paddingVertical: verticalScale(20),
+    paddingHorizontal: scale(18),
+    backgroundColor: "#FFFFFF",
+    borderRadius: moderateScale(14),
+    alignSelf: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  title: {
+    fontSize: moderateScale(18),
+    fontWeight: "600",
+    color: "#027CC7",
+    marginBottom: verticalScale(12),
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#D0D0D0",
+    backgroundColor: "#FFFFFF",
+    height: verticalScale(45),
+    borderRadius: moderateScale(10),
+    paddingHorizontal: scale(12),
+    marginBottom: verticalScale(18),
+  },
+  input: {
+    flex: 1,
+    fontSize: moderateScale(14),
+    color: "#000",
+  },
+  submitBtn: {
+    backgroundColor: "#027CC7",
+    height: verticalScale(42),
+    borderRadius: moderateScale(10),
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  submitText: {
+    color: "#fff",
+    fontSize: moderateScale(14),
+    fontWeight: "600",
   },
 });

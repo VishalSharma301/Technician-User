@@ -15,7 +15,7 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
   // 🔥 Hide ONLY when used as GLOBAL nav bar AND HomeScreen is active
   if (!isLocal && state) {
     const currentRoute = state.routes[state.index].name;
-    if (currentRoute === "HomeScreen") {
+    if (currentRoute === "HomeStack") {
       return null;
     }
   }
@@ -24,7 +24,7 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
     <View style={styles.bottomNav}>
       {/* Home */}
       <TouchableOpacity
-        onPress={() => nav?.navigate("HomeScreen")}
+        onPress={() => nav?.navigate("HomeStack")}
         style={[styles.navItem, { marginRight: scale(21) }]}
       >
         <Icon

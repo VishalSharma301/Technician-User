@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useContext } from "react"; // ⭐ CHANGED: added useContext
 import {
   View,
   Text,
@@ -6,85 +6,268 @@ import {
   TouchableOpacity,
   FlatList,
   ImageBackground,
+  Alert, // ⭐ ADDED
 } from "react-native";
 import GradientBorder from "./GradientBorder";
 import { scale, moderateScale, verticalScale } from "../../utils/scaling";
+import {
+  ServiceBrand,
+  ServiceData,
+  ServiceOption,
+} from "../../constants/types";
+import { useCart } from "../../hooks/useCart";
 
-type Brand = { id: string; name: string };
+interface ServiceType {
+  id: string;
+  title: string;
+  price: number;
+  acCount: number;
+}
 
-const BRANDS: Brand[] = [
-  { id: "1", name: "Daiken" },
-  { id: "2", name: "LG" },
-  { id: "3", name: "Voltas" },
-  { id: "4", name: "Blue Star" },
-  { id: "5", name: "Samsung" },
-  { id: "6", name: "Hitachi" },
-  { id: "7", name: "Carrier" },
-  { id: "8", name: "Panasonic" },
-  { id: "9", name: "Godrej" },
-];
-
-const TYPES = ["Window", "Split"];
-
-const PRICING = [
-  { id: "p1", title: "Single Ac", price: "₹550" },
-  { id: "p2", title: "Double Ac", price: "₹850" },
-  { id: "p3", title: "Triple Ac", price: "₹1230" },
-];
-
-const BookingBottomSheet = ({close} :{close : ()=>void}) => {
+const BookingBottomSheet = ({
+  close,
+  service,
+}: {
+  close: () => void;
+  service: ServiceData;
+}) => {
   const [step, setStep] = useState(0);
-  const [selectedBrand, setSelectedBrand] = useState<string | null>(BRANDS[0].id);
-  const [selectedType, setSelectedType] = useState<string | null>(TYPES[0]);
-  const [selectedPricing, setSelectedPricing] = useState<string | null>(
-    PRICING[0].id
-  );
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<ServiceOption | null>(null);
+  const [selectedPricing, setSelectedPricing] = useState<string | null>(null);
+  const [addMoreQuantity, setAddMoreQuantity] = useState<number>(0);
 
-  const onClose=()=>{
-    close()
-    setStep(0)
+  // ⭐ ADDED: CartContext usage
+  const { addToCart, isItemInTheCart } = useCart();
+
+  let a = service.name; // example
+  let b = "";
+
+  if (/\bac\b/i.test(a)) {
+    b = "AC";
+  } else if (a.toLowerCase().includes("machine")) {
+    b = "Mach..";
   }
+
+  // TYPES (Service options from API)
+  const TYPES = service.options ?? [];
+
+  // PRICING derived from selectedType (base prices for single/double/triple)
+  const PRICING: ServiceType[] = [
+    {
+      id: "single",
+      title: `Single ${b}`,
+      price: selectedType?.singlePrice ?? 0,
+      acCount: 1,
+    },
+    {
+      id: "double",
+      title: `Double ${b}`,
+      price: selectedType?.doublePrice ?? 0,
+      acCount: 2,
+    },
+    {
+      id: "triple",
+      title: `Triple ${b}`,
+      price: selectedType?.triplePrice ?? 0,
+      acCount: 3,
+    },
+  ];
+
+  const BRANDS = service.brands ?? [];
+
+  const onClose = () => {
+    close();
+    setStep(0);
+    // ⭐ CHANGED: reset selections on close
+    setSelectedBrand(null);
+    setSelectedType(null);
+    setSelectedPricing(null);
+    setAddMoreQuantity(0);
+  };
 
   const goNext = useCallback(() => setStep((s) => Math.min(2, s + 1)), []);
   const goPrev = useCallback(() => setStep((s) => Math.max(0, s - 1)), []);
 
-  const renderBrand = ({ item }: { item: Brand }) => {
-    const active = selectedBrand === item.id;
+  const renderBrand = ({ item }: { item: ServiceBrand }) => {
+    const active = selectedBrand === item._id;
     return (
-      <TouchableOpacity onPress={() => setSelectedBrand(item.id)}>
-        <GradientBorder borderWidth={2}>
+      <GradientBorder
+        style={[
+          {
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: verticalScale(20) },
+            shadowOpacity: 0.12,
+            shadowRadius: 24,
+            elevation: 4,
+          },
+          active && styles.brandChipActive,
+        ]}
+      >
+        <TouchableOpacity onPress={() => setSelectedBrand(item._id)}>
           <View style={[styles.brandChip, active && styles.brandChipActive]}>
             <Text style={[styles.brandText, active && { color: "#fff" }]}>
               {item.name}
             </Text>
           </View>
-        </GradientBorder>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </GradientBorder>
     );
   };
 
-  const renderPricing = ({
-    item,
-  }: {
-    item: { id: string; title: string; price: string };
-  }) => {
+  const renderPricing = ({ item }: { item: ServiceType }) => {
     const active = selectedPricing === item.id;
     return (
       <GradientBorder style={{ marginRight: scale(10) }}>
         <TouchableOpacity
           style={[styles.pricingCard, active && styles.pricingCardActive]}
-          onPress={() => setSelectedPricing(item.id)}
+          onPress={() => {
+            setSelectedPricing(item.id);
+            // Keep selectedType same — pricing depends on selectedType's prices (already in PRICING)
+          }}
         >
           <View style={styles.pricingRow}>
             <View style={{ flex: 1, marginLeft: scale(12) }}>
               <Text style={styles.pricingTitle}>{item.title}</Text>
-              <Text style={styles.pricingPrice}>{item.price}</Text>
+              <Text style={styles.pricingPrice}>₹{item.price}</Text>
             </View>
           </View>
         </TouchableOpacity>
       </GradientBorder>
     );
   };
+
+  // ---------- COUNT & PRICE LOGIC (⭐ ADDED) ----------
+
+  // Get selected pricing ServiceType object
+  const getCurrentServiceType = (): ServiceType => {
+    const found = PRICING.find((p) => p.id === selectedPricing);
+    return found || PRICING[0];
+  };
+
+  const getTotalACCount = (): number => {
+    const currentService = getCurrentServiceType();
+    return currentService.acCount + addMoreQuantity;
+  };
+
+  const calculateTotalPrice = (): number => {
+    const currentService = getCurrentServiceType();
+    // Additional ACs at fixed rate (same as ACServiceCard)
+    const additionalACPrice = addMoreQuantity * 590;
+    return currentService.price + additionalACPrice;
+  };
+
+  const handleAddMoreQuantity = (increment: boolean): void => {
+    if (increment) {
+      setAddMoreQuantity((prev) => prev + 1);
+    } else {
+      setAddMoreQuantity((prev) => Math.max(0, prev - 1));
+    }
+  };
+  // ---------- END COUNT & PRICE LOGIC ----------
+
+  // ---------- CART LOGIC (⭐ ADDED) ----------
+  const showSuccessAlert = () => {
+    const totalACs = getTotalACCount();
+    const totalPrice = calculateTotalPrice();
+
+    Alert.alert(
+      "Added to Cart!",
+      `${selectedType?.name ?? "Selected"} service for ${totalACs} unit${
+        totalACs > 1 ? "s" : ""
+      } has been added to your cart.\n\nTotal: ₹${totalPrice}`,
+      [{ text: "OK", onPress: () => onClose() }]
+    );
+  };
+
+  const proceedWithAddToCart = () => {
+    // Build service object for cart (similar to ACServiceCard)
+    const currentServiceType = getCurrentServiceType();
+    const serviceForCart: ServiceData = {
+      _id: service._id,
+      name: `${selectedType?.name ?? ""} ${service.name} - ${
+        currentServiceType.title
+      }`,
+      basePrice: calculateTotalPrice(),
+      description: service.description,
+      icon: service.icon,
+      availableInZipcode: service.availableInZipcode,
+      brands: service.brands,
+      options: service.options,
+      category: service.category,
+      dailyNeed: service.dailyNeed,
+      estimatedTime: service.estimatedTime,
+      mostBooked: service.mostBooked,
+      popular: service.popular,
+      providerCount: service.providerCount,
+      quickPick: service.quickPick,
+      slug: service.slug,
+      specialty: service.specialty,
+      subcategoryName: service.subcategoryName,
+      subServices: service.subServices,
+    };
+
+    const brandObject =
+      BRANDS.find((b) => b._id === selectedBrand) ?? (null as any);
+    const totalACs = getTotalACCount();
+
+    // Duplicate check by service.name (same as ACServiceCard)
+    const itemName = service.name;
+    if (isItemInTheCart(itemName)) {
+      Alert.alert(
+        "Item Already in Cart",
+        "This service configuration is already in your cart. Do you want to add it again?",
+        [
+          {
+            text: "Add Again",
+            onPress: () => {
+              if (selectedType) {
+                serviceForCart.name = `${itemName} (${Date.now()})`;
+                addToCart(serviceForCart, selectedType, brandObject, totalACs);
+                close();
+                showSuccessAlert();
+              } else Alert.prompt("Select a suitable option");
+            },
+          },
+          { text: "Cancel", style: "cancel" },
+        ]
+      );
+    } else {
+      if (selectedType) {
+        addToCart(serviceForCart, selectedType, brandObject, totalACs);
+        close();
+        showSuccessAlert();
+      } else Alert.prompt("Select a suitable option");
+    }
+  };
+
+  const handleAddToCart = () => {
+    try {
+      // Basic validations
+      if (!selectedBrand) {
+        Alert.alert("Selection Required", "Please select a brand.");
+        return;
+      }
+      if (!selectedType) {
+        Alert.alert("Selection Required", "Please select a type/option.");
+        return;
+      }
+      if (!selectedPricing) {
+        Alert.alert(
+          "Selection Required",
+          "Please select a pricing (Single/Double/Triple)."
+        );
+        return;
+      }
+
+      // Ask if brand not selected (previous code asked to Add Anyway) — but we enforce brand selection above.
+      proceedWithAddToCart();
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      Alert.alert("Error", "Failed to add item to cart. Please try again.");
+    }
+  };
+  // ---------- END CART LOGIC ----------
 
   return (
     <ImageBackground
@@ -117,7 +300,12 @@ const BookingBottomSheet = ({close} :{close : ()=>void}) => {
         <View style={styles.stepContainer}>
           {step === 0 && (
             <View>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
                 <Text style={styles.sectionTitle}>Brand</Text>
                 <Text style={styles.sectionTitle}>{step + 1}/3</Text>
               </View>
@@ -125,11 +313,12 @@ const BookingBottomSheet = ({close} :{close : ()=>void}) => {
               <FlatList
                 data={BRANDS}
                 renderItem={renderBrand}
-                keyExtractor={(i) => i.id}
+                keyExtractor={(i) => i._id}
                 numColumns={3}
                 columnWrapperStyle={{
                   justifyContent: "space-between",
                   marginBottom: verticalScale(12),
+                  gap: 5,
                 }}
                 contentContainerStyle={{ paddingBottom: verticalScale(10) }}
               />
@@ -142,15 +331,24 @@ const BookingBottomSheet = ({close} :{close : ()=>void}) => {
 
               <View style={styles.typeRow}>
                 {TYPES.map((t) => {
-                  const active = t === selectedType;
+                  const active = t._id === selectedType?._id;
                   return (
-                    <GradientBorder key={t}>
+                    <GradientBorder key={t._id}>
                       <TouchableOpacity
-                        style={[styles.typeChip, active && styles.typeChipActive]}
-                        onPress={() => setSelectedType(t)}
+                        style={[
+                          styles.typeChip,
+                          active && styles.typeChipActive,
+                        ]}
+                        onPress={() => {
+                          setSelectedType(t);
+                          // Reset pricing selection when type changes so pricing reads from new selectedType's prices
+                          setSelectedPricing(null);
+                        }}
                       >
-                        <Text style={[styles.typeText, active && { color: "#fff" }]}>
-                          {t}
+                        <Text
+                          style={[styles.typeText, active && { color: "#fff" }]}
+                        >
+                          {t.name}
                         </Text>
                       </TouchableOpacity>
                     </GradientBorder>
@@ -173,7 +371,12 @@ const BookingBottomSheet = ({close} :{close : ()=>void}) => {
                 contentContainerStyle={{ paddingVertical: verticalScale(21) }}
               />
 
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
                 <View
                   style={{
                     height: verticalScale(36),
@@ -188,7 +391,8 @@ const BookingBottomSheet = ({close} :{close : ()=>void}) => {
                     gap: scale(10),
                   }}
                 >
-                  <View
+                  <TouchableOpacity
+                    onPress={() => handleAddMoreQuantity(false)} // ⭐ CHANGED (fixed): decrement
                     style={{
                       height: scale(12),
                       width: scale(12),
@@ -207,7 +411,7 @@ const BookingBottomSheet = ({close} :{close : ()=>void}) => {
                     >
                       -
                     </Text>
-                  </View>
+                  </TouchableOpacity>
 
                   <Text
                     style={{
@@ -217,10 +421,12 @@ const BookingBottomSheet = ({close} :{close : ()=>void}) => {
                       fontSize: moderateScale(16),
                     }}
                   >
-                    4
+                    {getTotalACCount()}{" "}
+                    {/* ⭐ CHANGED: display total AC count */}
                   </Text>
 
-                  <View
+                  <TouchableOpacity
+                    onPress={() => handleAddMoreQuantity(true)} // ⭐ CHANGED (fixed): increment
                     style={{
                       height: scale(12),
                       width: scale(12),
@@ -239,11 +445,13 @@ const BookingBottomSheet = ({close} :{close : ()=>void}) => {
                     >
                       +
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
 
-                <Text style={{ fontSize: moderateScale(25), fontWeight: "500" }}>
-                  ₹1500
+                <Text
+                  style={{ fontSize: moderateScale(25), fontWeight: "500" }}
+                >
+                  ₹{calculateTotalPrice()} {/* ⭐ CHANGED: dynamic price */}
                 </Text>
               </View>
             </View>
@@ -254,15 +462,16 @@ const BookingBottomSheet = ({close} :{close : ()=>void}) => {
         <View style={styles.navRow}>
           <TouchableOpacity
             style={[styles.navBtn, step === 0 && styles.navBtnDisabled]}
-            onPress={step===0 ? onClose  : goPrev}
-            // disabled={step === 0}
+            onPress={step === 0 ? onClose : goPrev}
           >
-            <Text style={styles.navBtnText}>{step===0 ? "Cancel" : "Previous"}</Text>
+            <Text style={styles.navBtnText}>
+              {step === 0 ? "Cancel" : "Previous"}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.navBtnPrimary, step === 2 && { width: scale(244) }]}
-            onPress={step===2 ? onClose :goNext}
+            onPress={step === 2 ? handleAddToCart : goNext} // ⭐ CHANGED: on final step call handleAddToCart
           >
             <Text style={[styles.navBtnText, { color: "#fff" }]}>
               {step === 2 ? "Add To Cart" : "Next"}
@@ -278,7 +487,7 @@ export default BookingBottomSheet;
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: scale(12),
+    paddingHorizontal: scale(8),
     paddingVertical: verticalScale(12),
   },
 
@@ -326,11 +535,6 @@ const styles = StyleSheet.create({
     borderRadius: scale(8),
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: verticalScale(20) },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 4,
   },
 
   brandChipActive: {
@@ -346,13 +550,14 @@ const styles = StyleSheet.create({
 
   typeRow: {
     flexDirection: "row",
-    gap: scale(12),
-    marginBottom : verticalScale(5)
+    justifyContent: "space-between",
+    // gap: scale(12),
+    marginBottom: verticalScale(5),
   },
 
   typeChip: {
     borderRadius: scale(10),
-    width: scale(160),
+    width: scale(170),
     height: verticalScale(34),
     alignItems: "center",
     justifyContent: "center",
@@ -398,7 +603,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: scale(12),
     marginTop: verticalScale(12),
-    marginBottom : verticalScale(23)
+    marginBottom: verticalScale(23),
   },
 
   navBtn: {

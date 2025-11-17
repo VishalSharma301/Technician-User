@@ -1,0 +1,426 @@
+[
+    {
+        "_id": "68dc0cead0d2597c709e28b2",
+        "availableInZipcode": true,
+        "basePrice": 700,
+        "brands": [
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68d4e04986915940b7699562",
+            "icon": "ac_icon",
+            "name": "AC Services"
+        },
+        "dailyNeed": true,
+        "description": "General servicing and repair of AC units",
+        "estimatedTime": "1-2 hours",
+        "icon": "ac_repair",
+        "mostBooked": true,
+        "name": "AC Repair",
+        "options": [
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "popular": true,
+        "providerCount": 1,
+        "quickPick": true,
+        "slug": "ac-repair",
+        "specialty": "repair",
+        "subServices": [],
+        "subcategoryName": "AC Repair"
+    },
+    {
+        "_id": "68dfbcdf3aaaf9246b920c62",
+        "availableInZipcode": true,
+        "basePrice": 400,
+        "brands": [
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68dce2428b8e8257e84163f1",
+            "icon": "electric_icon",
+            "name": "Electrical Services"
+        },
+        "dailyNeed": false,
+        "description": "Install or replace ceiling fans with proper wiring.",
+        "estimatedTime": "30-45 mins",
+        "icon": "ceiling_fan_icon",
+        "mostBooked": true,
+        "name": "Ceiling Fan Installation",
+        "options": [],
+        "popular": true,
+        "providerCount": 1,
+        "quickPick": true,
+        "slug": "ceiling-fan-installation",
+        "specialty": "Cooling Appliances",
+        "subServices": [],
+        "subcategoryName": "Appliance Fitting"
+    },
+    {
+        "_id": "68e63bd2fa2740518c84da4e",
+        "availableInZipcode": true,
+        "basePrice": 600,
+        "brands": [
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68dce2428b8e8257e84163f1",
+            "icon": "electric_icon",
+            "name": "Electrical Services"
+        },
+        "dailyNeed": false,
+        "description": "nstallation and maintenance of inverters for residential and commercial use.",
+        "estimatedTime": "2 hours",
+        "icon": "inverter_installation_icon",
+        "mostBooked": false,
+        "name": "Inverter Installation & Maintenance",
+        "options": [],
+        "popular": true,
+        "providerCount": 1,
+        "quickPick": false,
+        "slug": "inverter-installation-maintenance",
+        "specialty": "Backup Power",
+        "subServices": [],
+        "subcategoryName": "Appliance Fitting"
+    },
+    {
+        "_id": "68e64c9bfa2740518c84db89",
+        "availableInZipcode": true,
+        "basePrice": 400,
+        "brands": [
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68dce2428b8e8257e84163f1",
+            "icon": "electric_icon",
+            "name": "Electrical Services"
+        },
+        "dailyNeed": true,
+        "description": "Installation and repair of instant and storage geysers with proper electrical safety.",
+        "estimatedTime": "1 hour",
+        "icon": "geyser_installation_icon",
+        "mostBooked": true,
+        "name": "Geyser Installation & Repair",
+        "options": [],
+        "popular": true,
+        "providerCount": 1,
+        "quickPick": false,
+        "slug": "geyser-installation-repair",
+        "specialty": "Water Heating",
+        "subServices": [],
+        "subcategoryName": "Appliance Fitting"
+    },
+    {
+        "_id": "68e65535fa2740518c84df62",
+        "availableInZipcode": true,
+        "basePrice": 400,
+        "brands": [
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68dce2428b8e8257e84163f1",
+            "icon": "electric_icon",
+            "name": "Electrical Services"
+        },
+        "dailyNeed": true,
+        "description": "Replace damaged or faulty MCBs, fuses, and ensure safe circuit protection for your home or office.",
+        "estimatedTime": "30 mins",
+        "icon": "mcb_replacement_icon",
+        "mostBooked": true,
+        "name": "MCB & Fuse Replacement",
+        "options": [],
+        "popular": true,
+        "providerCount": 1,
+        "quickPick": false,
+        "slug": "mcb-fuse-replacement",
+        "specialty": "Safety & Protection",
+        "subServices": [],
+        "subcategoryName": "Wiring & Switches"
+    },
+    {
+        "_id": "68df7624d4f37b75a3aa7ff1",
+        "availableInZipcode": true,
+        "basePrice": 400,
+        "brands": [
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68dcd3998b8e8257e8415fbf",
+            "icon": "plumbing_icon",
+            "name": "Plumbing Services"
+        },
+        "dailyNeed": true,
+        "description": "Repairing leaks in taps, showerheads and pipes to prevent water wastage.",
+        "estimatedTime": "30-45 mins",
+        "icon": "leak_repair-icon",
+        "mostBooked": true,
+        "name": "Tap & Shower Leak Repair",
+        "options": [],
+        "popular": true,
+        "providerCount": 1,
+        "quickPick": true,
+        "slug": "tap-shower-leak-repair",
+        "specialty": "Plumbing Leakage",
+        "subServices": [],
+        "subcategoryName": "Leak Repair"
+    },
+    {
+        "_id": "68dc0e03d0d2597c709e2acd",
+        "availableInZipcode": true,
+        "basePrice": 1000,
+        "brands": [
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68d4e2d886915940b76995e4",
+            "icon": "appliance_icon",
+            "name": "Appliance Repair"
+        },
+        "dailyNeed": true,
+        "description": "Genaral Washing Machine Repair",
+        "estimatedTime": "2-3 Hours",
+        "icon": "wm_icon",
+        "mostBooked": true,
+        "name": "Washing Machine Repair",
+        "options": [
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "popular": true,
+        "providerCount": 1,
+        "quickPick": false,
+        "slug": "washing-machine-repair",
+        "specialty": "repair",
+        "subServices": [],
+        "subcategoryName": "Washing Machine Repair"
+    },
+    {
+        "_id": "68e63885fa2740518c84d977",
+        "availableInZipcode": true,
+        "basePrice": 300,
+        "brands": [
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68dce2428b8e8257e84163f1",
+            "icon": "electric_icon",
+            "name": "Electrical Services"
+        },
+        "dailyNeed": true,
+        "description": "Repair or replace faulty switches, sockets, and burnt switchboards safely.",
+        "estimatedTime": "1 hour",
+        "icon": "switchboard_repair_icon",
+        "mostBooked": false,
+        "name": "Switchboard Repair & Replacement",
+        "options": [],
+        "popular": false,
+        "providerCount": 1,
+        "quickPick": false,
+        "slug": "switchboard-repair-replacement",
+        "specialty": "Household Electrical",
+        "subServices": [],
+        "subcategoryName": "Wiring & Switches"
+    },
+    {
+        "_id": "68dc0d70d0d2597c709e2981",
+        "availableInZipcode": true,
+        "basePrice": 1500,
+        "brands": [
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68d4e04986915940b7699562",
+            "icon": "ac_icon",
+            "name": "AC Services"
+        },
+        "dailyNeed": false,
+        "description": "AC gas Refilling",
+        "estimatedTime": "2-3 Hours",
+        "icon": "",
+        "mostBooked": false,
+        "name": "AC Gas Refilling",
+        "options": [
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "popular": false,
+        "providerCount": 1,
+        "quickPick": false,
+        "slug": "ac-gas-refilling",
+        "specialty": "Gas Reffiling",
+        "subServices": [],
+        "subcategoryName": "AC Gas Refilling"
+    },
+    {
+        "_id": "68e655e6fa2740518c84e03d",
+        "availableInZipcode": true,
+        "basePrice": 250,
+        "brands": [
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68dce2428b8e8257e84163f1",
+            "icon": "electric_icon",
+            "name": "Electrical Services"
+        },
+        "dailyNeed": true,
+        "description": "Installation and repair of exhaust fans in kitchens, bathrooms, and industrial spaces.",
+        "estimatedTime": "30 mins",
+        "icon": "exhaust_fan_icon",
+        "mostBooked": true,
+        "name": "Exhaust Fan Installation & Repair",
+        "options": [],
+        "popular": true,
+        "providerCount": 1,
+        "quickPick": false,
+        "slug": "exhaust-fan-installation-repair",
+        "specialty": "Home Ventilation",
+        "subServices": [],
+        "subcategoryName": "Appliance Fitting"
+    },
+    {
+        "_id": "68df6db6d4f37b75a3aa776d",
+        "availableInZipcode": true,
+        "basePrice": 1200,
+        "brands": [
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68d4e04986915940b7699562",
+            "icon": "ac_icon",
+            "name": "AC Services"
+        },
+        "dailyNeed": false,
+        "description": "Installation and mounting of AC on wall including electrical & bracket work.",
+        "estimatedTime": "1 hour",
+        "icon": "ac_install_icon",
+        "mostBooked": false,
+        "name": "AC Installation",
+        "options": [
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "popular": false,
+        "providerCount": 1,
+        "quickPick": true,
+        "slug": "ac-installation",
+        "specialty": "Setup",
+        "subServices": [],
+        "subcategoryName": "AC Installation"
+    },
+    {
+        "_id": "68df776fd4f37b75a3aa80ca",
+        "availableInZipcode": true,
+        "basePrice": 2000,
+        "brands": [
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ],
+            [Object
+            ]
+        ],
+        "category": {
+            "_id": "68d4e2d886915940b76995e4",
+            "icon": "appliance_icon",
+            "name": "Appliance Repair"
+        },
+        "dailyNeed": true,
+        "description": "Full deep cleaning, defrosting, thermostat check & condenser servicing.",
+        "estimatedTime": "2-3 hours",
+        "icon": "fridge_deep_servicing_icon",
+        "mostBooked": false,
+        "name": "Refrigerator Deep Servicing",
+        "options": [],
+        "popular": false,
+        "providerCount": 1,
+        "quickPick": false,
+        "slug": "refrigerator-deep-servicing",
+        "specialty": "Efficiency & Cleanliness",
+        "subServices": [],
+        "subcategoryName": "Refrigerator Repair"
+    }
+]

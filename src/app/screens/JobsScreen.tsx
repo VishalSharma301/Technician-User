@@ -40,7 +40,7 @@ export default function JobsScreen() {
         <Text style={{ color: "#fff" }}>Close Sheet</Text>
       </TouchableOpacity>
 
-      <BottomSheet visible={visible} height={SCREEN_HEIGHT * 0.5}>
+      <BottomSheet visible={visible} >
         <View style={{ padding: 20 }}>
           <Text style={{ fontSize: 18, fontWeight: "600" }}>Job Details</Text>
           <Text style={{ marginTop: 10 }}>This is your bottom sheet content.</Text>

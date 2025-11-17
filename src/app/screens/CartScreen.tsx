@@ -1,4 +1,6 @@
-import React from "react";
+// src/app/screens/CartScreen.tsx
+
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,70 +8,136 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 import { iconMap } from "../../utils/iconMap2";
 import ScreenWrapper from "../components/ScreenWrapper";
 import Header from "../components/Header";
+import { CartContext } from "../../store/CartContext";
+import { useNavigation } from "@react-navigation/native";
 
 const CartScreen = () => {
-  const orderItems = [
-    {
-      id: 1,
-      title: "Iron Repair",
-      category: "Electrical",
-      price: 300,
-      image: iconMap["default"],
-    },
-    {
-      id: 2,
-      title: "Gas Repair",
-      category: "Electrical",
-      price: 500,
-      image: iconMap["appliances"],
-    },
-  ];
+  const {
+    cartItems,
+    totalItems,
+    totalPrice,
+    isLoading,
+    isCartEmpty,
+    fetchCart,
+    removeFromCart,
+  } = useContext(CartContext);
 
-  const platformFee = 25;
-  const discount = 25;
-  const subtotal = orderItems.reduce((sum, item) => sum + item.price, 0);
-  const total = subtotal + platformFee - discount;
+  const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation();
+
+  // Fetch cart on mount
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  // Pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchCart();
+    setRefreshing(false);
+  };
+
+  // Real subtotal (sum of item totals)
+  const subtotal = cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
+
+  // For now: platform fee and discount static or computed
+  const platformFee = 0;
+  const discount = 0;
+  const grandTotal = subtotal + platformFee - discount;
+
+  // Loading Screen
+  if (isLoading && !refreshing) {
+    return (
+      <ScreenWrapper>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#027CC7" />
+          <Text style={styles.loadingText}>Loading cart...</Text>
+        </View>
+      </ScreenWrapper>
+    );
+  }
+
+  // Empty cart screen
+  if (isCartEmpty) {
+    return (
+      <ScreenWrapper>
+        <View style={styles.emptyContainer}>
+          <Header />
+          <Text style={styles.emptyTitle}>Your Cart Is Empty</Text>
+          <Text style={styles.emptySubtitle}>Add some services to continue</Text>
+        </View>
+      </ScreenWrapper>
+    );
+  }
 
   return (
     <ScreenWrapper>
       <View style={styles.container}>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
           {/* Header */}
           <Header />
 
           <Text style={styles.headerText}>Order Summary</Text>
 
-          {/* Order Items */}
+          {/* Main card container */}
           <View
             style={{
               height: verticalScale(580),
               width: scale(375),
               borderWidth: 1,
-              justifyContent : "space-between",
-              backgroundColor : '#FFFFFF1A',
-              borderRadius : moderateScale(14),
-              borderColor : "#ffffff",
+              justifyContent: "space-between",
+              backgroundColor: "#FFFFFF1A",
+              borderRadius: moderateScale(14),
+              borderColor: "#ffffff",
             }}
           >
+            {/* Order Items */}
             <View style={styles.cardContainer}>
-              {orderItems.map((item) => (
-                <View key={item.id} style={styles.card}>
-                  <Image source={item.image} style={styles.itemImage} />
+              {cartItems.map((item) => (
+                <View key={item._id} style={styles.card}>
+                  {/* ICON */}
+                  <Image
+                    source={
+                      
+                      iconMap["default"]
+                    }
+                    style={styles.itemImage}
+                  />
+
+                  {/* NAME + CATEGORY */}
                   <View style={styles.itemInfo}>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
-                    <Text style={styles.itemCategory}>{item.category}</Text>
+                    <Text style={styles.itemTitle}>{item.serviceName}</Text>
+                    <Text style={styles.itemCategory}>
+                      {item.selectedBrand || "Service"}
+                    </Text>
                   </View>
 
+                  {/* READ-ONLY QUANTITY */}
                   <View style={styles.qtySection}>
-                    <Text style={styles.qtyText}>Qty 1 ✎</Text>
+                    <Text style={styles.qtyText}>Qty {item.quantity}</Text>
                   </View>
 
-                  <Text style={styles.itemPrice}>₹{item.price}</Text>
+                  {/* PRICE */}
+                  <Text style={styles.itemPrice}>₹{item.totalPrice}</Text>
+
+                  {/* REMOVE BUTTON (OPTIONAL - if you want later) */}
+                  {/* 
+                  <TouchableOpacity onPress={() => removeFromCart(item._id)}>
+                    <Text style={{ color: "red", marginLeft: 8 }}>Remove</Text>
+                  </TouchableOpacity>
+                  */}
                 </View>
               ))}
             </View>
@@ -77,19 +145,7 @@ const CartScreen = () => {
             {/* Order Details */}
             <View style={styles.detailsContainer}>
               <View style={styles.row}>
-                <Text style={styles.label}>Order Date</Text>
-                <Text style={styles.value}>09 Oct 2025 | 10:32PM</Text>
-              </View>
-
-              <View style={styles.row}>
-                <Text style={styles.label}>Promo Code</Text>
-                <Text style={styles.value}>FRTYH0KIOOHGI</Text>
-              </View>
-
-              <View style={styles.divider} />
-
-              <View style={styles.row}>
-                <Text style={styles.label}>Amount</Text>
+                <Text style={styles.label}>Subtotal</Text>
                 <Text style={styles.value}>₹{subtotal.toFixed(2)}</Text>
               </View>
 
@@ -108,14 +164,29 @@ const CartScreen = () => {
               <View style={styles.divider} />
 
               <View style={styles.row}>
-                <Text style={[styles.label, {color : '#000', fontWeight: "700", fontSize : moderateScale(15) }]}>Total</Text>
-                <Text style={[styles.value, { fontWeight: "700", fontSize : moderateScale(15) }]}>
-                  ₹{total.toFixed(2)}
+                <Text
+                  style={[
+                    styles.label,
+                    { color: "#000", fontWeight: "700", fontSize: moderateScale(15) },
+                  ]}
+                >
+                  Total
+                </Text>
+                <Text
+                  style={[
+                    styles.value,
+                    { fontWeight: "700", fontSize: moderateScale(15) },
+                  ]}
+                >
+                  ₹{grandTotal.toFixed(2)}
                 </Text>
               </View>
 
-              {/* Button */}
-              <TouchableOpacity style={styles.button}>
+              {/* Checkout Button */}
+              <TouchableOpacity
+                style={styles.button}
+                // onPress={() => navigation.navigate("BookingScheduleScreen")}
+              >
                 <Text style={styles.buttonText}>Book Now</Text>
               </TouchableOpacity>
             </View>
@@ -128,10 +199,12 @@ const CartScreen = () => {
 
 export default CartScreen;
 
+// ===========================================================
+// STYLES (unchanged from your design)
+// ===========================================================
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: "#f7f9fb23",
     paddingVertical: verticalScale(13),
     alignItems: "center",
   },
@@ -143,28 +216,20 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(11),
   },
   cardContainer: {
-    // backgroundColor: "#a368681a",
     borderRadius: moderateScale(14),
     paddingVertical: verticalScale(14),
-    // paddingHorizontal: scale(12),
     gap: verticalScale(15),
     alignItems: "center",
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 4 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 6,
-    // elevation: 2,
   },
   card: {
     flexDirection: "row",
     alignItems: "center",
-    // backgroundColor: "#FFFFFF1A",
     borderRadius: moderateScale(14),
     padding: scale(10),
     height: verticalScale(74),
     width: scale(351),
-    borderWidth : 0.8,
-    borderColor : "#ffffff"
+    borderWidth: 0.8,
+    borderColor: "#ffffff",
   },
   itemImage: {
     width: scale(40),
@@ -199,31 +264,24 @@ const styles = StyleSheet.create({
     color: "#2E2E2E",
   },
   detailsContainer: {
-    // backgroundColor: "#fff",
     borderRadius: moderateScale(14),
-    // padding: scale(14),
     marginTop: verticalScale(14),
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 4 },
-    // shadowOpacity: 0.05,
-    // shadowRadius: 6,
-    // elevation: 2,
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: verticalScale(5),
-    marginLeft : scale(23),
-    marginRight : scale(22)
+    marginLeft: scale(23),
+    marginRight: scale(22),
   },
   label: {
     fontSize: moderateScale(10),
-    fontWeight : "500",
+    fontWeight: "500",
     color: "#6B687D",
   },
   value: {
     fontSize: moderateScale(10),
-    fontWeight : "500",
+    fontWeight: "500",
     color: "#000",
   },
   divider: {
@@ -242,11 +300,38 @@ const styles = StyleSheet.create({
     width: scale(340),
     height: verticalScale(48),
     alignSelf: "center",
-
   },
   buttonText: {
     color: "#fff",
     fontSize: moderateScale(14),
     fontWeight: "600",
+  },
+
+  // Loading & Empty styles
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: verticalScale(40),
+  },
+  emptyTitle: {
+    fontSize: moderateScale(16),
+    fontWeight: "600",
+    marginTop: verticalScale(10),
+  },
+  emptySubtitle: {
+    fontSize: moderateScale(12),
+    color: "#555",
+    marginTop: verticalScale(5),
   },
 });

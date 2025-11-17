@@ -12,7 +12,8 @@ import { LinearGradient } from "expo-linear-gradient";
 
 interface GradientBorderProps {
   /** Thickness of the border */
-  borderWidth?: number;
+  innerWidth?: number;
+  outerWidth?: number;
   /** Corner radius of the bordered box */
   borderRadius?: number;
   /** Vertical gradient colors for outer border */
@@ -32,14 +33,15 @@ interface GradientBorderProps {
  * Creates a smooth two-layer gradient border effect using nested LinearGradients.
  */
 const GradientBorder: React.FC<GradientBorderProps> = ({
-  borderWidth = moderateScale(1.5),
+  innerWidth = moderateScale(2),
+  outerWidth = moderateScale(0),
   borderRadius = moderateScale(12),
-  outerColors = [
+  innerColors = [
     "rgba(255, 255, 255, 0.1)",
     "#FFFFFF",
     "rgba(255, 255, 255, 0.1)",
   ] as const,
-  innerColors = [
+  outerColors = [
     "rgba(0, 0, 0, 0.01)",
     "rgba(0, 0, 0, 0.2)",
     "rgba(0, 0, 0, 0.01)",
@@ -55,7 +57,7 @@ const GradientBorder: React.FC<GradientBorderProps> = ({
   end={{ x: 0.5, y: 1 }}
   style={[
     {
-      padding: borderWidth,
+      padding: outerWidth,
       borderRadius: borderRadius,
     },
     gradientStyle, // ✅ safe to merge here
@@ -67,7 +69,7 @@ const GradientBorder: React.FC<GradientBorderProps> = ({
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={{
-          padding: borderWidth,
+          padding: innerWidth,
           borderRadius: borderRadius - moderateScale(2),
         }}
       >

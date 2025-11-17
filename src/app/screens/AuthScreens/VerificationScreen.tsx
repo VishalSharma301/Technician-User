@@ -5,16 +5,51 @@ import {
   TouchableOpacity,
   TextInput,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { moderateScale, scale, verticalScale } from "../../../utils/scaling";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { useAuth } from "../../../hooks/useAuth";
+import { useProfile } from "../../../hooks/useProfile";
+import { verifyOtp } from "../../../utils/authApi";
 
 const VerificationScreen = () => {
-  const { setIsAuthenticated } = useAuth();
+  const { setIsAuthenticated, setToken } = useAuth();
+  const {
+    phoneNumber,
+    setUserId,
+    setEmail,
+    setFirstName,
+    setLastName,
+    setPhoneNumber,
+    setIsNewUser,
+  } = useProfile();
+  const [otp, setOtp] = React.useState(["", "", "", "", "", ""]);
+  const inputRefs = React.useRef<Array<TextInput | null>>([]);
 
-  const verify = () => {
-    setIsAuthenticated(true);
+  const verifyOtpCode = async (code: string) => {
+    // ✅ ADDED
+    console.log("otpdata : ", phoneNumber + code);
+    const result = await verifyOtp(phoneNumber, code); // ✅ ADDED
+
+    if (result && result.token?.token) {
+      const jwtToken = result.token.token;
+      const userData = result.user;
+      console.log("Verification successful");
+      try {
+        setToken(jwtToken); // from AuthContext
+        setEmail(userData.email); // from ProfileContext
+        setFirstName(userData.firstName);
+        setLastName(userData.lastName);
+        setUserId(userData._id);
+        setIsAuthenticated(true);
+      } catch (err) {
+        console.error("Error saving token or user:", err);
+      }
+    } else {
+      Alert.alert("Verification Failed", "Invalid OTP or server error"); // ✅ ADDED
+      console.log("otpdata : ", phoneNumber + code);
+    }
   };
   return (
     <ScreenWrapper>
@@ -26,12 +61,42 @@ const VerificationScreen = () => {
           </Text>
 
           <View style={styles.codeContainer}>
-            {[1, 2, 3, 4].map((_, index) => (
+            {[0, 1, 2, 3, 4, 5].map((i) => (
               <TextInput
-                key={index}
+                key={i}
+                ref={(ref) => {
+                  inputRefs.current[i] = ref;
+                }}
                 style={styles.codeBox}
                 maxLength={1}
                 keyboardType="number-pad"
+                value={otp[i]}
+                autoFocus={i === 0}
+                onChangeText={(val) => {
+                  const updated = [...otp];
+                  updated[i] = val;
+                  setOtp(updated);
+
+                  // Auto-jump forward
+                  if (val && i < 5) {
+                    inputRefs.current[i + 1]?.focus();
+                  }
+
+                  // On last box, blur
+                  if (i === 5 && val) {
+                    inputRefs.current[i]?.blur();
+                  }
+                }}
+                onKeyPress={({ nativeEvent }) => {
+                  // Auto-jump backward
+                  if (
+                    nativeEvent.key === "Backspace" &&
+                    otp[i] === "" &&
+                    i > 0
+                  ) {
+                    inputRefs.current[i - 1]?.focus();
+                  }
+                }}
               />
             ))}
           </View>
@@ -45,7 +110,10 @@ const VerificationScreen = () => {
             <TouchableOpacity style={styles.cancelButton}>
               <Text>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.verifyButton} onPress={verify}>
+            <TouchableOpacity
+              style={styles.verifyButton}
+              onPress={() => verifyOtpCode(otp.join(""))}
+            >
               <Text style={{ color: "#fff" }}>Verify</Text>
             </TouchableOpacity>
           </View>

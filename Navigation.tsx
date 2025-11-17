@@ -1,21 +1,28 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
+
 import LoginScreen from "./src/app/screens/AuthScreens/LoginScreen";
 import VerificationScreen from "./src/app/screens/AuthScreens/VerificationScreen";
 import HomeScreen from "./src/app/screens/HomeScreen";
-import {
-  HomeTabParamList,
-  RootStackParamList,
-} from "./src/constants/navigation";
 import JobsScreen from "./src/app/screens/JobsScreen";
 import CartScreen from "./src/app/screens/CartScreen";
 import CategoryScreen from "./src/app/screens/CategoryScreen";
 import OrderScreen from "./src/app/screens/OrderScreen";
-import { View } from "react-native";
+import ProfileScreen from "./src/app/screens/ProfileScreen";
+
+import { ActivityIndicator, View } from "react-native";
+
+import {
+  RootStackParamList,
+  HomeTabParamList,
+  HomeStackParamList,
+} from "./src/constants/navigation";
+
 import CustomNavBar from "./src/app/components/CustomNavBar";
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<HomeTabParamList>();
+const HomeStackNav = createStackNavigator<HomeStackParamList>();
 
 export default function AuthStack() {
   return (
@@ -26,23 +33,42 @@ export default function AuthStack() {
   );
 }
 
-// export function HomeStack() {
-//   return (
-//     <Stack.Navigator screenOptions={{ headerShown: false }}>
-//       <Stack.Screen name="HomeScreen" component={HomeScreen} />
-//     </Stack.Navigator>
-//   );
-// }
+export function LoadingScreen() {
+  return (
+    <View
+      style={{
+        flex: 1,
+        // backgroundColor: "#fff",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <ActivityIndicator size="large" color="#ff0000ff" />
+    </View>
+  );
+}
 
+export function HomeStack() {
+  return (
+    <HomeStackNav.Navigator >
+      <HomeStackNav.Screen name="HomeScreen" component={HomeScreen} options={{headerShown : false}}/>
+      <HomeStackNav.Screen name="ProfileScreen" component={ProfileScreen}  />
+    </HomeStackNav.Navigator>
+  );
+}
 export function AuthenticatedTabs() {
   return (
     <Tabs.Navigator
       screenOptions={{ headerShown: false }}
-      tabBar={(props) => (<CustomNavBar {...props}/> )}
+      tabBar={(props) => <CustomNavBar {...props} />}
     >
-      <Tabs.Screen options={{
-        tabBarItemStyle : {display : 'none'}
-      }} name="HomeScreen" component={HomeScreen} />
+      <Tabs.Screen
+        options={{
+          tabBarItemStyle: { display: "none" },
+        }}
+        name="HomeStack"
+        component={HomeStack}
+      />
       <Tabs.Screen name="JobsScreen" component={JobsScreen} />
       <Tabs.Screen name="CartScreen" component={CartScreen} />
       <Tabs.Screen name="CategoryScreen" component={CategoryScreen} />

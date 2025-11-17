@@ -1,8 +1,12 @@
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 import { Ionicons as Icon } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { HomeStackParamList } from "../../constants/navigation";
 
  export default function Header() {
+  const navigation = useNavigation<StackNavigationProp<HomeStackParamList , "HomeScreen">>()
   return (
     <>
      <View style={styles.topBar}>
@@ -20,7 +24,7 @@ import { Ionicons as Icon } from "@expo/vector-icons";
             />
             <Text style={styles.locationText}>Allow Location</Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={()=>navigation.navigate("ProfileScreen")}>
             <Image
               source={{ uri: "https://i.pravatar.cc/100" }}
               style={styles.profileImage}
