@@ -25,6 +25,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     overflow: "visible",
+    backgroundColor : '#ffffff76'
   },
   background: {
     flex: 1,

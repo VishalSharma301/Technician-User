@@ -4,7 +4,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import AuthStack, { AuthenticatedTabs, LoadingScreen } from "./Navigation";
+import AuthStack, { AuthenticatedScreens, AuthenticatedTabs, LoadingScreen } from "./Navigation";
 import { useAuth } from "./src/hooks/useAuth";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AuthContextProvider from "./src/store/AuthContext";
@@ -17,6 +17,9 @@ import { useProfile } from "./src/hooks/useProfile";
 import { getProfileData, getToken } from "./src/utils/setAsyncStorage";
 import ServicesContextProvider from "./src/store/ServicesContext";
 import CartContextProvider from "./src/store/CartContext";
+import { ServiceRequestsProvider } from "./src/store/ServiceRequestContext";
+import AddressContextProvider from "./src/store/AddressContext";
+import BookingContextProvider from "./src/store/BookingContext";
 
 function Navigator() {
   const { isAuthenticated, isLoading, token, setToken, setIsAuthenticated } =
@@ -54,7 +57,7 @@ function Navigator() {
       ) : !isAuthenticated ? (
         <AuthStack /> // user NOT logged in → show login screens
       ) : (
-        <AuthenticatedTabs /> // user logged in → show app
+        <AuthenticatedScreens /> // user logged in → show app
       )}
     </NavigationContainer>
   );
@@ -66,11 +69,18 @@ export default function App() {
       <AuthContextProvider>
         <ProfileContextProvider>
           <ServicesContextProvider>
+            <AddressContextProvider>
+              
             <CartContextProvider>
+              <BookingContextProvider>
+              <ServiceRequestsProvider>
               <SafeAreaView style={{ flex: 1 }}>
                 <Navigator />
               </SafeAreaView>
+              </ServiceRequestsProvider>
+              </BookingContextProvider>
             </CartContextProvider>
+            </AddressContextProvider>
           </ServicesContextProvider>
         </ProfileContextProvider>
       </AuthContextProvider>

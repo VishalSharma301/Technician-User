@@ -1,84 +1,221 @@
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
+  FlatList,
+  RefreshControl,
+  ActivityIndicator,
   TouchableOpacity,
-  ScrollView,
-  Image,
+  TextInput,
   ImageBackground,
 } from "react-native";
-import { moderateScale, scale, verticalScale } from "../../utils/scaling";
+import { useServiceRequests } from "../../store/ServiceRequestContext";
+import { ServiceRequestCard } from "../components/ServiceRequestCard";
+import {
+  ServiceRequest,
+  ServiceRequestStatus,
+} from "../../constants/serviceRequestTypes";
+import { useNavigation } from "@react-navigation/native";
+import { ItemData } from "../../constants/types";
+import { formatDate } from "../../utils/date";
 import ScreenWrapper from "../components/ScreenWrapper";
 import Header from "../components/Header";
+import { moderateScale, scale, verticalScale } from "../../utils/scaling";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { OrderStackParamList } from "../../constants/navigation";
 
-const OrderScreen: React.FC = () => {
-  const statusTabs = [
-    { title: "Active", count: 25, color: "#027CC7" },
-    { title: "Pending", count: 125, color: "#FFD768" },
-    { title: "Completed", count: 145, color: "#22C55E" },
-    { title: "Cancel", count: 100, color: "#FF0000" },
-  ];
+const STATUS_TABS: {
+  label: string;
+  value: ServiceRequestStatus | "all" | "upcoming" | "past";
+  color: string;
+}[] = [
+  // { label: "All", value: "all" },
+  { label: "Active", value: "in_progress", color: "#027CC7" },
+  { label: "Pending", value: "pending", color: "#FFD768" },
+  { label: "Completed", value: "completed", color: "#22C55E" },
+  { label: "Cancelled", value: "cancelled", color: "#FF0000" },
+];
 
-  const timeline = [
-    {
-      date: "01 Jan, 2025",
-      time: "10:20AM",
-      title: "Assign",
-      desc: "Provider",
-    },
-    {
-      date: "02 Jan, 2025",
-      time: "10:20AM",
-      title: "In-Progress",
-      desc: "Technician Working",
-    },
-    {
-      date: "04 Jan, 2025",
-      time: "10:20AM",
-      title: "Done",
-      desc: "Fixed Issue",
-    },
-    {
-      date: "03 Jan, 2025",
-      time: "10:20AM",
-      title: "Warranty",
-      desc: "5 Days Left",
-      highlight: true,
-    },
-    { date: "05 Jan, 2025", time: "10:20AM", title: "Job Closed", desc: "😊" },
-  ];
+type NavigationProp = StackNavigationProp<OrderStackParamList, "OrderScreen">;
 
-  return (
-    <ScreenWrapper>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Header />
+export default function OrderScreen() {
+  const {
+    serviceRequests,
+    stats,
+    pagination,
+    loading,
+    error,
+    currentFilters,
+    fetchServiceRequests,
+    refreshServiceRequests,
+    loadMoreServiceRequests,
+    updateFilters,
+  } = useServiceRequests();
 
-        {/* Tabs */}
+  const [selectedTab, setSelectedTab] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const navigation = useNavigation<NavigationProp>();
 
-        <View style={styles.tabContainer}>
-          {statusTabs.map((tab, index) => (
+  // Debounce timer ref
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    fetchServiceRequests();
+
+    // Cleanup debounce on unmount
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleTabChange = (tab: (typeof STATUS_TABS)[0]) => {
+    setSelectedTab(tab.value);
+
+    // Update filters to include upcoming if tab is upcoming
+    if (tab.value === "upcoming") {
+      updateFilters({ upcoming: true, status: undefined, past: undefined });
+    } else if (tab.value === "past") {
+      updateFilters({ past: true, upcoming: undefined, status: undefined });
+    } else if (tab.value === "all") {
+      updateFilters({
+        status: undefined,
+        upcoming: undefined,
+        past: undefined,
+      });
+    } else {
+      updateFilters({
+        status: tab.value as ServiceRequestStatus,
+        upcoming: undefined,
+        past: undefined,
+      });
+    }
+  };
+
+  useEffect(() => {
+    // Clear any previous timer
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Only run search when query has at least 3 characters
+    if (searchQuery.length > 2) {
+      searchTimeoutRef.current = setTimeout(() => {
+        console.log("Debounced search for:", searchQuery);
+
+        let filters: any = {
+          page: 1,
+          limit: 10,
+          search: searchQuery,
+        };
+
+        // Apply current tab filters
+        if (selectedTab === "upcoming") {
+          filters.upcoming = true;
+        } else if (selectedTab === "past") {
+          filters.past = true;
+        } else if (selectedTab !== "all") {
+          filters.status = selectedTab;
+        }
+
+        fetchServiceRequests(filters);
+      }, 800); // delay before calling API
+    }
+
+    // Cleanup on re-run
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, selectedTab]); // run
+
+  // Refresh with current tab filters
+  const refreshWithFilters = () => {
+    let filters: any = { page: 1, limit: 10 };
+
+    if (selectedTab === "upcoming") {
+      filters.upcoming = true;
+    } else if (selectedTab === "past") {
+      filters.past = true;
+    } else if (selectedTab !== "all") {
+      filters.status = selectedTab;
+    }
+
+    // Include search query if present
+    if (searchQuery && searchQuery.length > 2) {
+      filters.search = searchQuery;
+    }
+
+    fetchServiceRequests(filters);
+  };
+
+  // const handleCardPress = (item: ServiceRequest) => {
+  //   const data: ItemData = {
+  //     _id: item._id,
+  //     name: item.service?.name || "Service",
+  //     createdAt: formatDate(item.createdAt),
+  //     description: item.notes || "No description",
+  //     price: item.finalPrice || "unavailable",
+  //     subType: "General",
+  //     notes: item.notes || "No additional notes",
+  //     image: "https://via.placeholder.com/150",
+  //     isMakingNoise: "false",
+  //     mainType: "General",
+  //     phone: "N/A",
+  //     address: item.address,
+  //     quantity: item.quantity || 1,
+  //   };
+
+  //   // Navigate to detail screen
+  //   // console.log("Service Request pressed:", item);
+  //   navigation.navigate("OrderDetailsScreen", {
+  //     data: data,
+  //     pin: item.completionPin,
+  //     item: item,
+  //   });
+  // };
+
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <Header />
+
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        data={STATUS_TABS}
+        keyExtractor={(item) => item.value}
+        contentContainerStyle={{ gap : scale(3.5)}}
+        renderItem={({ item }) => {
+          const isActive = selectedTab === item.value;
+
+          return (
             <TouchableOpacity
-              key={index}
+              onPress={() => handleTabChange(item)}
               style={[
                 styles.tabButton,
                 {
-                  borderColor: tab.color,
-
-                  backgroundColor:
-                    tab.title === "Active"
-                      ? `${tab.color}15`
-                      : tab.title === "Cancel"
-                      ? `${tab.color}10`
-                      : `${tab.color}08`,
+                  borderColor: item.color,
+                  backgroundColor: isActive
+                    ? `${item.color}15` // active transparency
+                    : `${item.color}08`, // normal state
                 },
               ]}
             >
               <Text
-                style={[styles.tabText, { color: "#000", fontWeight: "600" }]}
+                style={[
+                  styles.tabText,
+                  {
+                    color: "#000",
+                    fontWeight: "600",
+                  },
+                ]}
               >
-                {tab.title}
+                {item.label}
               </Text>
+
               <View
                 style={{
                   width: scale(21),
@@ -86,196 +223,228 @@ const OrderScreen: React.FC = () => {
                   backgroundColor: "#fff",
                   borderRadius: scale(20),
                   justifyContent: "center",
+                  alignItems: "center",
                 }}
               >
-                <Text style={[styles.tabCount, { color: tab.color }]}>
-                  {tab.count}
+                <Text style={[styles.tabCount, { color: item.color }]}>
+                  {"10"}
                 </Text>
               </View>
             </TouchableOpacity>
-          ))}
+          );
+        }}
+        style={styles.tabContainer}
+      />
+    </View>
+  );
+
+  const renderFooter = () => {
+    if (!loading || serviceRequests.length === 0) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color="#153B93" />
+      </View>
+    );
+  };
+
+  const renderEmpty = () => {
+    if (loading && serviceRequests.length === 0) {
+      return (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#153B93" />
         </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={refreshWithFilters}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.emptyText}>No service requests found</Text>
+      </View>
+    );
+  };
+
+  function OrderCard({ item }: { item: ServiceRequest }) {
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate("OrderDetailsScreen", { item })}
+      >
+        <View style={styles.orderHeader}>
+          <ImageBackground
+            source={require("../../../assets/iconBG.png")}
+            style={styles.iconCircle}
+          >
+            <Text style={styles.iconText}>GE</Text>
+          </ImageBackground>
+          <View
+            style={{
+              flex: 1,
+              marginLeft: scale(10),
+              flexDirection: "row",
+              justifyContent: "space-between",
+            }}
+          >
+            <View>
+              <Text style={styles.heading}>Order No.</Text>
+              <Text style={styles.orderNo}>{item._id}</Text>
+            </View>
+            <View>
+              <Text style={styles.heading}>Price</Text>
+              <Text style={styles.price}>₹{item.finalPrice}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.infoRow}>
+          <View>
+            <Text style={styles.label}>{item.service.name}</Text>
+            <Text style={styles.subLabel}>Type Of Service</Text>
+          </View>
+          <View>
+            <Text style={styles.label}>{item.provider?.name}</Text>
+            <Text style={styles.subLabel}>Service Provider</Text>
+          </View>
+        </View>
+
         <View
           style={{
             borderWidth: 1,
-            borderRadius: moderateScale(8),
             borderColor: "#fff",
-            marginBottom: 200,
-            backgroundColor : '#FFFFFF1A'
+            backgroundColor: "#FFFFFF1A",
+            paddingVertical: verticalScale(14),
+            // paddingHorizontal: scale(21),
+            borderRadius: moderateScale(12),
+            marginTop: verticalScale(15),
           }}
         >
-          {/* Order Info */}
-          <View style={styles.card}>
-            <View style={styles.orderHeader}>
-              <ImageBackground source={require("../../../assets/iconBG.png")} style={styles.iconCircle}>
-                <Text style={styles.iconText}>GE</Text>
-              </ImageBackground>
-              <View style={{ flex: 1, marginLeft: scale(10) }}>
-                <Text style={styles.orderNo}>Order No. 2498756621</Text>
-                <Text style={styles.price}>₹1500</Text>
-              </View>
-            </View>
-
-            <View style={styles.infoRow}>
-              <View>
-                <Text style={styles.label}>AC SERVICE</Text>
-                <Text style={styles.subLabel}>Type Of Service</Text>
-              </View>
-              <View>
-                <Text style={styles.label}>Guramrit Electronic</Text>
-                <Text style={styles.subLabel}>Service Provider</Text>
-              </View>
-            </View>
-
+          {/* Progress Bar */}
+          <View style={styles.progressBar}>
             <View
-              style={{
-                borderWidth: 1,
-                borderColor: "#fff",
-                backgroundColor: "#FFFFFF1A",
-                paddingVertical: verticalScale(14),
-                // paddingHorizontal: scale(21),
-                borderRadius: moderateScale(12),
-                marginTop: verticalScale(15),
-              }}
-            >
-              {/* Progress Bar */}
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#0083D3" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#E6B325" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#4CAF50" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#9C27B0" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#9E9E9E" },
-                  ]}
-                />
-              </View>
-
-              <View style={styles.verifyRow}>
-                <Text style={styles.deviceText}>1 WINDOW AC</Text>
-              </View>
-
-              {/* Legend */}
-              <View style={styles.legendRow}>
-                {[
-                  { color: "#3B82F6", text: "Assigned" },
-                  { color: "#F59E0B", text: "In Progress" },
-                  { color: "#22C55E", text: "Done" },
-                  { color: "#8B5CF6", text: "Warranty" },
-                  { color: "#64748B", text: "Job Closed" },
-                ].map((item, i) => (
-                  <View key={i} style={styles.legendItem}>
-                    <View
-                      style={[
-                        styles.legendDot,
-                        { backgroundColor: item.color },
-                      ]}
-                    />
-                    <Text style={styles.legendText}>{item.text}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
+              style={[styles.progressSegment, { backgroundColor: "#0083D3" }]}
+            />
+            <View
+              style={[styles.progressSegment, { backgroundColor: "#E6B325" }]}
+            />
+            <View
+              style={[styles.progressSegment, { backgroundColor: "#4CAF50" }]}
+            />
+            <View
+              style={[styles.progressSegment, { backgroundColor: "#9C27B0" }]}
+            />
+            <View
+              style={[styles.progressSegment, { backgroundColor: "#9E9E9E" }]}
+            />
           </View>
 
-          {/* Timeline */}
-          <View style={styles.timelineContainer}>
-            {timeline.map((step, index) => (
-              <View key={index} style={styles.timelineItem}>
-                {/* Left date/time */}
-                <View style={styles.timeColumn}>
-                  <Text style={styles.timeText}>{step.date}</Text>
-                  <Text style={styles.timeSubText}>{step.time}</Text>
-                </View>
+          <View style={styles.verifyRow}>
+            <Text style={styles.deviceText}>1 WINDOW AC</Text>
+          </View>
 
-                {/* Arrow Line */}
-                <View style={styles.arrowColumn}>
-                  <View style={styles.arrowCircle} />
-                  {index !== timeline.length - 1 && (
-                    <View style={styles.arrowLine} />
-                  )}
-                </View>
-
-                {/* Right Content */}
-                <View style={styles.detailColumn}>
-                  <View style={styles.detailBox}>
-                    <Text style={styles.detailTitle}>{step.title}</Text>
-                    {step.highlight ? (
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{step.desc}</Text>
-                      </View>
-                    ) : (
-                      <Text numberOfLines={1} style={styles.detailDesc}>
-                        {step.desc}
-                      </Text>
-                    )}
-                  </View>
-                </View>
+          {/* Legend */}
+          <View style={styles.legendRow}>
+            {[
+              { color: "#3B82F6", text: "Assigned" },
+              { color: "#F59E0B", text: "In Progress" },
+              { color: "#22C55E", text: "Done" },
+              { color: "#8B5CF6", text: "Warranty" },
+              { color: "#64748B", text: "Job Closed" },
+            ].map((item, i) => (
+              <View key={i} style={styles.legendItem}>
+                <View
+                  style={[styles.legendDot, { backgroundColor: item.color }]}
+                />
+                <Text style={styles.legendText}>{item.text}</Text>
               </View>
             ))}
           </View>
         </View>
-      </ScrollView>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <ScreenWrapper style={{ paddingHorizontal: scale(9) }}>
+      <View style={styles.container}>
+        <FlatList
+          data={serviceRequests}
+          keyExtractor={(item) => item._id + item.bookedAt}
+          renderItem={({ item }) => (
+            // <ServiceRequestCard request={item} onPress={handleCardPress} />
+            <OrderCard item={item} />
+          )}
+          ListHeaderComponent={renderHeader}
+          ListFooterComponent={renderFooter}
+          ListEmptyComponent={renderEmpty}
+          refreshControl={
+            <RefreshControl
+              refreshing={loading && currentFilters.page === 1}
+              onRefresh={refreshWithFilters}
+              colors={["#153B93"]}
+            />
+          }
+          onEndReached={loadMoreServiceRequests}
+          onEndReachedThreshold={0.5}
+          contentContainerStyle={[
+            serviceRequests.length === 0 && styles.emptyContainer,
+            { gap: verticalScale(10), paddingBottom: verticalScale(300) },
+          ]}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          updateCellsBatchingPeriod={50}
+          initialNumToRender={10}
+          windowSize={10}
+        />
+      </View>
     </ScreenWrapper>
   );
-};
-
-export default OrderScreen;
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF1A",
-    padding: scale(16),
+    // marginBottom : verticalScale(100)
+    // backgroundColor: "#F5F5F5",
   },
-  tabContainer: {
-    flexDirection: "row",
-    // justifyContent: "space-between",
-    marginBottom: verticalScale(12),
-    marginTop: verticalScale(16),
-    gap: scale(4),
-  },
-  tabButton: {
-    // flex: 1,
-    flexDirection: "row",
-    // marginHorizontal: scale(3),
-    borderRadius: moderateScale(30),
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    height: verticalScale(40.66),
-    gap: scale(4),
-    paddingHorizontal: scale(9),
-  },
-  tabText: {
-    fontSize: moderateScale(12),
-    fontWeight: "400",
+  headerContainer: {
+    // backgroundColor: "#FFFFFF",
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   tabCount: {
     fontWeight: "700",
     fontSize: moderateScale(8),
     alignSelf: "center",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: "#F8F9FA",
+    marginHorizontal: 16,
+    borderRadius: 12,
+    marginBottom: 16,
   },
   card: {
     backgroundColor: "#FFFFFF1A",
@@ -285,6 +454,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: "#ffffff",
     // elevation: 2,
   },
   orderHeader: {
@@ -304,26 +475,31 @@ const styles = StyleSheet.create({
     // backgroundColor: "#0083D320",
     // justifyContent: "center",
     alignItems: "center",
-    position : 'relative',
-    bottom : verticalScale(-4)
+    position: "relative",
+    bottom: verticalScale(-4),
   },
   iconText: {
     color: "#fff",
     fontWeight: "700",
     fontSize: moderateScale(14),
-    position : 'relative',
-    bottom : verticalScale(-11),
-    left : scale(-1)
+    position: "relative",
+    bottom: verticalScale(-11),
+    left: scale(-1),
+  },
+  heading: {
+    color: "#939393",
+    fontSize: moderateScale(10),
+    fontWeight: "500",
   },
   orderNo: {
-    fontSize: moderateScale(12),
+    fontSize: moderateScale(14),
     color: "#333",
-    fontWeight: "600",
+    fontWeight: "500",
   },
   price: {
-    fontSize: moderateScale(13),
+    fontSize: moderateScale(14),
     color: "#2E2E2E",
-    fontWeight: "700",
+    fontWeight: "500",
   },
   infoRow: {
     flexDirection: "row",
@@ -351,7 +527,7 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(6),
     overflow: "hidden",
     marginTop: verticalScale(14),
-    paddingHorizontal : scale(20)
+    paddingHorizontal: scale(20),
   },
   progressSegment: {
     flex: 1,
@@ -365,7 +541,7 @@ const styles = StyleSheet.create({
   deviceText: {
     fontSize: moderateScale(12),
     fontWeight: "600",
-    paddingHorizontal : scale(20)
+    paddingHorizontal: scale(20),
   },
   verifyBtn: {
     backgroundColor: "#0083D3",
@@ -383,7 +559,7 @@ const styles = StyleSheet.create({
     // flexWrap: "wrap",
     marginTop: verticalScale(10),
     // justifyContent: "space-between",
-    paddingHorizontal : scale(10)
+    paddingHorizontal: scale(10),
   },
   legendItem: {
     flexDirection: "row",
@@ -401,94 +577,92 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(10.5),
     color: "#666",
   },
-  timelineContainer: {
-    marginTop: verticalScale(16),
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(14),
-    padding: scale(14),
+
+  statItem: {
+    alignItems: "center",
   },
-  timelineItem: {
+  statValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#666",
+  },
+  searchInput: {
+    backgroundColor: "#F5F5F5",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    fontSize: 15,
+  },
+  tabContainer: {
+    // paddingHorizontal: 16,
+    marginBottom: 8,
+    marginTop: verticalScale(12),
+    width : scale(393),
+    // gap : scale(1.5)
+    // borderWidth : 1
+  },
+  tabButton: {
+    // flex: 1,
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    // gap : 10,
-    marginBottom: verticalScale(29),
-    // borderWidth : 1,
-    marginHorizontal: scale(16),
-    // borderColor : 'red'
-  },
-  timeColumn: {
-    width: scale(121),
-    height: verticalScale(56),
+    // marginHorizontal: scale(3),
+    borderRadius: moderateScale(30),
     borderWidth: 1,
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(12),
-    borderColor: "#fff",
-    justifyContent: "center",
-    gap: verticalScale(4),
-    alignItems: "flex-end",
-    paddingRight: scale(25),
-  },
-  timeText: {
-    fontSize: moderateScale(11),
-    fontWeight: "600",
-    color: "#2E2E2E",
-  },
-  timeSubText: {
-    fontSize: moderateScale(10),
-    color: "#777",
-  },
-  arrowColumn: {
-    width: scale(20),
     alignItems: "center",
-  },
-  arrowCircle: {
-    width: scale(10),
-    height: scale(10),
-    borderRadius: 10,
-    backgroundColor: "#0083D3",
-  },
-  arrowLine: {
-    width: scale(2),
-    height: verticalScale(40),
-    backgroundColor: "#0083D3",
-    marginTop: verticalScale(4),
-  },
-  detailColumn: {
-    width: scale(121),
-    height: verticalScale(56),
-    borderWidth: 1,
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(12),
-    borderColor: "#fff",
     justifyContent: "center",
-    overflow: "hidden", // important!
+    height: verticalScale(40.66),
+    gap: scale(2),
+    paddingHorizontal: scale(6),
   },
-  detailBox: {
-    paddingLeft: scale(23), // short text → 23 left padding
-    paddingRight: scale(5),
+  tabButtonActive: {
+    backgroundColor: "#153B93",
   },
-  detailTitle: {
+  tabText: {
     fontSize: moderateScale(12),
+    fontWeight: "400",
+  },
+  tabTextActive: {
+    color: "#FFFFFF",
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: "center",
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyContainer: {
+    flexGrow: 1,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#DC143C",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: "#153B93",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: "#FFFFFF",
+    fontSize: 15,
     fontWeight: "600",
-    color: "#2E2E2E",
-  },
-  detailDesc: {
-    fontSize: moderateScale(10),
-    color: "#777",
-    marginTop: verticalScale(2),
-  },
-  badge: {
-    backgroundColor: "#FFCDD2",
-    borderRadius: moderateScale(6),
-    alignSelf: "flex-start",
-    paddingHorizontal: scale(8),
-    paddingVertical: verticalScale(3),
-    marginTop: verticalScale(4),
-  },
-  badgeText: {
-    color: "#D32F2F",
-    fontWeight: "600",
-    fontSize: moderateScale(10.5),
   },
 });

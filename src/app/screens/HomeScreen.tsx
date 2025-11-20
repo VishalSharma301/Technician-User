@@ -7,16 +7,10 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  Dimensions,
-  ImageBackground,
-  TouchableWithoutFeedback,
 } from "react-native";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import GradientBorder from "../components/GradientBorder";
-import { iconMap, IconName } from "../../utils/iconMap2";
 import ScreenWrapper from "../components/ScreenWrapper";
 import ServiceBottomSheet from "../components/BottomSheet";
 import Header from "../components/Header";
@@ -31,7 +25,7 @@ import { fetchBrandsByZip, fetchServicesByZip } from "../../utils/servicesApi";
 import { ServiceData } from "../../constants/types";
 import { innerColors, outerColors } from "../../constants/colors";
 import Tooltip from "../components/Tooltip";
-import { FlatList } from "react-native-gesture-handler";
+import { iconMap, IconName } from "../../utils/iconMap";
 
 const categories = ["Popular", "Emergency", "Seasonal", "Daily Use"];
 
@@ -39,21 +33,6 @@ interface Service {
   name: string;
   icon: IconName;
 }
-
-const servicess: Service[] = [
-  { name: "Plumbing", icon: "plumbing" },
-  { name: "Electricity", icon: "electricity" },
-  { name: "Drywall Rep", icon: "drywall" },
-  { name: "Painting", icon: "painting" },
-  { name: "Roof Clearn", icon: "roof" },
-  { name: "Moving", icon: "moving" },
-  { name: "HVAC", icon: "hvac" },
-  { name: "Fencing", icon: "fencing" },
-  { name: "Appliances", icon: "appliances" },
-  { name: "Water Heat", icon: "water" },
-  { name: "Painting", icon: "painting" },
-  { name: "Plumbing", icon: "plumbing" },
-];
 
 const HomeScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -83,25 +62,27 @@ const HomeScreen = () => {
       ? quickPickServices
       : services;
 
-  const zipcode = "140802";
+  const zipcode = selectedAddress.address.zipcode;
   console.log(services);
 
   useEffect(() => {
-    async function getAllServices() {
-      if (services.length > 0) {
-        console.log("Service Not Fetched");
+    console.log(selectedAddress);
 
-        return;
-      }
+    async function getAllServices() {
+      if (!zipcode) return; // safety
+
       try {
         setIsLoading(true);
         console.log("fetching services");
 
-        const services = await fetchServicesByZip(zipcode);
-        const brands = await fetchBrandsByZip(zipcode);
-        console.log("🔧 Services:", services);
-        setServices(services.data);
-        setBrands(brands.data);
+        const servicesRes = await fetchServicesByZip(zipcode);
+        const brandsRes = await fetchBrandsByZip(zipcode);
+
+        console.log("🔧 Services:", servicesRes);
+
+        setServices(servicesRes.data);
+        setBrands(brandsRes.data);
+
         setIsLoading(false);
       } catch (error) {
         setIsLoading(false);
@@ -110,7 +91,7 @@ const HomeScreen = () => {
     }
 
     getAllServices();
-  }, []);
+  }, [zipcode]);
 
   const ChangePinCode = () => {
     const [pin, setPin] = useState("");
@@ -220,57 +201,86 @@ const HomeScreen = () => {
           </View>
 
           {/* Services Grid */}
+          {/* Services Grid */}
           <View style={styles.gridContainer}>
-            {servicess.map((service) => (
-              <GradientBorder
-                key={service._id} // FIXED — stable key
-                gradientStyle={{ marginBottom: verticalScale(10) }}
+            {servicess.length === 0 ? (
+              <View
                 style={{
-                  width: scale(74.75),
-                  aspectRatio: 1,
-                  backgroundColor: "#E8E8E8",
-                  shadowColor: "#000",
-                  shadowOpacity: 0.05,
-                  shadowRadius: 3,
-                  elevation: 7,
-                  position: "relative", // required for tooltip
+                  alignItems: "center",
+                  marginTop: verticalScale(20),
+                  height: verticalScale(150),
+                  justifyContent: "center",
+                  // borderWidth : 1,
+                  alignSelf : 'center',
+                  width : '100%'
                 }}
               >
-                {/* Tooltip — only for active item */}
-                {activeTooltipId === service._id && (
-                  <Tooltip text={service.name} />
-                )}
-
-                <TouchableOpacity
-                  style={styles.serviceCard}
-                  onPress={() => selectBrand(service)}
-                  onLongPress={() => setActiveTooltipId(service._id)}
-                  onPressOut={() => setActiveTooltipId(null)}
-                  delayLongPress={300} // OPTIONAL: smooth UX
+                <Text
+                  style={{
+                    fontSize: moderateScale(14),
+                    fontWeight : '600',
+                    color: "#000",
+                    alignSelf: "center",
+                  }}
                 >
-                  <View style={styles.serviceIcon}>
-                    <Image
-                      source={iconMap["default"]}
-                      style={{
-                        height: "100%",
-                        width: "100%",
-                        minHeight: verticalScale(39),
-                        minWidth: scale(39),
-                        resizeMode: "contain",
-                      }}
-                    />
-                  </View>
+                  No Service Provider Available in this area
+                </Text>
+              </View>
+            ) : (
+              servicess.map((service) => (
+                <GradientBorder
+                  key={service._id}
+                  gradientStyle={{ marginBottom: verticalScale(10) }}
+                  style={{
+                    width: scale(74.75),
+                    aspectRatio: 1,
+                    backgroundColor: "#E8E8E8",
+                    shadowColor: "#000",
+                    shadowOpacity: 0.05,
+                    shadowRadius: 3,
+                    elevation: 7,
+                    position: "relative",
+                  }}
+                >
+                  {/* Tooltip */}
+                  {activeTooltipId === service._id && (
+                    <Tooltip text={service.name} />
+                  )}
 
-                  <Text
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                    style={styles.serviceText}
+                  <TouchableOpacity
+                    style={styles.serviceCard}
+                    onPress={() => selectBrand(service)}
+                    onLongPress={() => setActiveTooltipId(service._id)}
+                    onPressOut={() => setActiveTooltipId(null)}
+                    delayLongPress={300}
                   >
-                    {service.name}
-                  </Text>
-                </TouchableOpacity>
-              </GradientBorder>
-            ))}
+                    <View style={styles.serviceIcon}>
+                      <Image
+                        source={
+                          iconMap[service.icon as IconName] ??
+                          iconMap["default"]
+                        }
+                        style={{
+                          height: "100%",
+                          width: "100%",
+                          minHeight: verticalScale(39),
+                          minWidth: scale(39),
+                          resizeMode: "contain",
+                        }}
+                      />
+                    </View>
+
+                    <Text
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      style={styles.serviceText}
+                    >
+                      {service.name}
+                    </Text>
+                  </TouchableOpacity>
+                </GradientBorder>
+              ))
+            )}
           </View>
         </View>
         {/* Badges Section */}

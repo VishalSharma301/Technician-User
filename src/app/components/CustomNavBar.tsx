@@ -1,16 +1,24 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ImageBackground,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
+import { useCart } from "../../hooks/useCart";
 
 type Props = Partial<BottomTabBarProps> & {
   isLocal?: boolean;
 };
 
 export default function CustomNavBar({ state, navigation, isLocal }: Props) {
-
-    const nav = navigation ?? useNavigation();
+  const nav = navigation ?? useNavigation();
+  const {cartItems} = useCart()
 
   // 🔥 Hide ONLY when used as GLOBAL nav bar AND HomeScreen is active
   if (!isLocal && state) {
@@ -22,106 +30,111 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
 
   return (
     <View style={styles.bottomNav}>
-      {/* Home */}
-      <TouchableOpacity
-        onPress={() => nav?.navigate("HomeStack")}
-        style={[styles.navItem, { marginRight: scale(21) }]}
+      <ImageBackground
+        source={require("../../../assets/bg.png")}
+        style={styles.bottomNav2}
       >
-        <Icon
-          name="home-outline"
-          size={moderateScale(20)}
-          color={isLocal ? "#0583D0" : "#707070"}
-        />
-        <Text
-          style={[
-            styles.navText,
-            { color: state?.index === 0 ? "#0583D0" : "#707070" },
-          ]}
+        {/* Home */}
+        <TouchableOpacity
+          onPress={() => nav?.navigate("HomeStack")}
+          style={[styles.navItem, { marginRight: scale(21) }]}
         >
-          Home
-        </Text>
-      </TouchableOpacity>
+          <Icon
+            name="home-outline"
+            size={moderateScale(20)}
+            color={isLocal ? "#0583D0" : "#707070"}
+          />
+          <Text
+            style={[
+              styles.navText,
+              { color: state?.index === 0 ? "#0583D0" : "#707070" },
+            ]}
+          >
+            Home
+          </Text>
+        </TouchableOpacity>
 
-      {/* Jobs */}
-      <TouchableOpacity
-        onPress={() => nav?.navigate("JobsScreen")}
-        style={[styles.navItem, { marginRight: scale(30) }]}
-      >
-        <Icon
-          name="briefcase-outline"
-          size={moderateScale(20)}
-          color={state?.index === 1 ? "#0583D0" : "#707070"}
-        />
-        <Text
-          style={[
-            styles.navText,
-            { color: state?.index === 1 ? "#0583D0" : "#707070" },
-          ]}
+        {/* Jobs */}
+        <TouchableOpacity
+          onPress={() => nav?.navigate("JobsScreen")}
+          style={[styles.navItem, { marginRight: scale(30) }]}
         >
-          Jobs
-        </Text>
-      </TouchableOpacity>
+          <Icon
+            name="briefcase-outline"
+            size={moderateScale(20)}
+            color={state?.index === 1 ? "#0583D0" : "#707070"}
+          />
+          <Text
+            style={[
+              styles.navText,
+              { color: state?.index === 1 ? "#0583D0" : "#707070" },
+            ]}
+          >
+            Jobs
+          </Text>
+        </TouchableOpacity>
 
-      {/* Cart */}
-      <TouchableOpacity
-        onPress={() => nav?.navigate("CartScreen")}
-        style={styles.cartCenter}
-      >
-        <Image
-          source={require("../../../assets/CartNav.png")}
-          style={{
-            height: scale(55),
-            width: scale(55),
-            resizeMode: "cover",
-            position: "relative",
-            left: scale(1),
-            top: verticalScale(3),
-          }}
-        />
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>3</Text>
-        </View>
-      </TouchableOpacity>
-
-      {/* Category */}
-      <TouchableOpacity
-        onPress={() => nav?.navigate("CategoryScreen")}
-        style={[styles.navItem, { marginLeft: scale(21) }]}
-      >
-        <Icon
-          name="grid-outline"
-          size={moderateScale(20)}
-          color={state?.index === 3 ? "#0583D0" : "#707070"}
-        />
-        <Text
-          style={[
-            styles.navText,
-            { color: state?.index === 3 ? "#0583D0" : "#707070" },
-          ]}
+        {/* Cart */}
+        <TouchableOpacity
+          onPress={() => nav?.navigate("CartScreen")}
+          style={styles.cartCenter}
         >
-          Category
-        </Text>
-      </TouchableOpacity>
+          <Image
+            source={require("../../../assets/CartNav.png")}
+            style={{
+              height: scale(55),
+              width: scale(55),
+              resizeMode: "cover",
+              position: "relative",
+              left: scale(1),
+              top: verticalScale(3),
+            }}
+          />
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{cartItems.length}</Text>
+          </View>
+        </TouchableOpacity>
 
-      {/* Orders */}
-      <TouchableOpacity
-        onPress={() => nav?.navigate("OrderScreen")}
-        style={[styles.navItem, { marginLeft: scale(21) }]}
-      >
-        <Icon
-          name="document-text-outline"
-          size={moderateScale(20)}
-          color={state?.index === 4 ? "#0583D0" : "#707070"}
-        />
-        <Text
-          style={[
-            styles.navText,
-            { color: state?.index === 4 ? "#0583D0" : "#707070" },
-          ]}
+        {/* Category */}
+        <TouchableOpacity
+          onPress={() => nav?.navigate("CategoryScreen")}
+          style={[styles.navItem, { marginLeft: scale(21) }]}
         >
-          Order
-        </Text>
-      </TouchableOpacity>
+          <Icon
+            name="grid-outline"
+            size={moderateScale(20)}
+            color={state?.index === 3 ? "#0583D0" : "#707070"}
+          />
+          <Text
+            style={[
+              styles.navText,
+              { color: state?.index === 3 ? "#0583D0" : "#707070" },
+            ]}
+          >
+            Category
+          </Text>
+        </TouchableOpacity>
+
+        {/* Orders */}
+        <TouchableOpacity
+          onPress={() => nav?.navigate("OrderStack")}
+          style={[styles.navItem, { marginLeft: scale(21) }]}
+        >
+          <Icon
+            name="document-text-outline"
+            size={moderateScale(20)}
+            color={state?.index === 4 ? "#0583D0" : "#707070"}
+          />
+          <Text
+            style={[
+              styles.navText,
+              { color: state?.index === 4 ? "#0583D0" : "#707070" },
+            ]}
+          >
+            Order
+          </Text>
+        </TouchableOpacity>
+      </ImageBackground>
     </View>
   );
 }
@@ -130,7 +143,7 @@ const styles = StyleSheet.create({
   bottomNav: {
     flexDirection: "row",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF1A",
+    backgroundColor: "#fefefeff",
     borderRadius: moderateScale(30),
     paddingVertical: verticalScale(10),
     height: verticalScale(68),
@@ -140,6 +153,24 @@ const styles = StyleSheet.create({
     marginHorizontal: scale(23),
     borderWidth: 0.8,
     borderColor: "#FFFFFF",
+    alignItems : 'center',
+    overflow : 'hidden'
+  },
+  bottomNav2: {
+    flexDirection: "row",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF1A",
+    borderRadius: moderateScale(300),
+    paddingVertical: verticalScale(10),
+    height: verticalScale(888),
+    resizeMode : 'stretch',
+    // position: "absolute",
+    
+    width: scale(347),
+    // bottom: verticalScale(30),
+    // marginHorizontal: scale(23),
+    // borderWidth: 0.8,
+    // borderColor: "#FFFFFF",
   },
   navItem: { alignItems: "center", alignSelf: "center" },
   navText: {
@@ -172,4 +203,3 @@ const styles = StyleSheet.create({
     color: "#0082D3",
   },
 });
-  

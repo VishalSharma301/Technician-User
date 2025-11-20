@@ -10,6 +10,8 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  ImageBackground,
+  Alert,
 } from "react-native";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 import { iconMap } from "../../utils/iconMap2";
@@ -17,6 +19,7 @@ import ScreenWrapper from "../components/ScreenWrapper";
 import Header from "../components/Header";
 import { CartContext } from "../../store/CartContext";
 import { useNavigation } from "@react-navigation/native";
+import { BookingContext } from "../../store/BookingContext";
 
 const CartScreen = () => {
   const {
@@ -27,10 +30,12 @@ const CartScreen = () => {
     isCartEmpty,
     fetchCart,
     removeFromCart,
+    updateItemQuantity,
   } = useContext(CartContext);
 
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
+  const { bookCurrentCart, isBooking } = useContext(BookingContext);
 
   // Fetch cart on mount
   useEffect(() => {
@@ -52,6 +57,19 @@ const CartScreen = () => {
   const discount = 0;
   const grandTotal = subtotal + platformFee - discount;
 
+  const handleQuantityUpdate = async (itemId: string, newQuantity: number) => {
+    if (newQuantity > 0) {
+      await updateItemQuantity(itemId, newQuantity);
+    }
+  };
+
+  // Handle item removal
+  const handleRemoveItem = async (itemId: string) => {
+    console.log("id :", itemId);
+
+    await removeFromCart(itemId);
+  };
+
   // Loading Screen
   if (isLoading && !refreshing) {
     return (
@@ -67,15 +85,51 @@ const CartScreen = () => {
   // Empty cart screen
   if (isCartEmpty) {
     return (
-      <ScreenWrapper>
-        <View style={styles.emptyContainer}>
+      <ScreenWrapper style={{padding : scale(9)}}>
           <Header />
+        <View style={styles.emptyContainer}>
           <Text style={styles.emptyTitle}>Your Cart Is Empty</Text>
-          <Text style={styles.emptySubtitle}>Add some services to continue</Text>
+          <Text style={styles.emptySubtitle}>
+            Add some services to continue
+          </Text>
         </View>
       </ScreenWrapper>
     );
   }
+
+  const handleAutoBooking = async () => {
+    // 1. Generate tomorrow’s date
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+
+    const dateString = tomorrow.toISOString().split("T")[0];
+
+    // 2. Fixed time slot (backend accepts any slot)
+    const timeSlot = "10:00 AM - 12:00 PM";
+
+    // 3. Create date object
+    const scheduledDate = new Date(`${dateString}T10:00:00Z`);
+
+    // 4. Perform booking
+    const result = await bookCurrentCart(
+      scheduledDate,
+      timeSlot,
+      undefined, // no notes
+      "cash" // payment mode
+    );
+ console.log("result", result);
+ 
+
+    // 5. Navigate based on result
+    if (result) {
+      Alert.alert("Booking Successful");
+      console.log(result);
+      
+    } else {
+      alert("Booking failed. Please try again.");
+    }
+  };
 
   return (
     <ScreenWrapper>
@@ -107,37 +161,54 @@ const CartScreen = () => {
             <View style={styles.cardContainer}>
               {cartItems.map((item) => (
                 <View key={item._id} style={styles.card}>
-                  {/* ICON */}
-                  <Image
-                    source={
-                      
-                      iconMap["default"]
-                    }
-                    style={styles.itemImage}
-                  />
+                  {/* REMOVE BUTTON */}
+                  <TouchableOpacity
+                    style={styles.removeBtn}
+                    onPress={() => handleRemoveItem(item._id)}
+                  >
+                    <Text style={styles.removeBtnText}>×</Text>
+                  </TouchableOpacity>
 
-                  {/* NAME + CATEGORY */}
+                  {/* ITEM IMAGE */}
+                  <Image source={iconMap["default"]} style={styles.itemImage} />
+
+                  {/* ITEM DETAILS */}
                   <View style={styles.itemInfo}>
                     <Text style={styles.itemTitle}>{item.serviceName}</Text>
-                    <Text style={styles.itemCategory}>
-                      {item.selectedBrand || "Service"}
-                    </Text>
+                    {item.selectedBrand && (
+                      <Text style={styles.itemCategory}>
+                        Brand: {item.selectedBrand}
+                      </Text>
+                    )}
                   </View>
 
-                  {/* READ-ONLY QUANTITY */}
+                  {/* QUANTITY SECTION */}
                   <View style={styles.qtySection}>
-                    <Text style={styles.qtyText}>Qty {item.quantity}</Text>
+                    {/* Quantity Controls */}
+                    <View style={styles.qtyControls}>
+                      <TouchableOpacity
+                        disabled={item.quantity <= 1}
+                        onPress={() =>
+                          handleQuantityUpdate(item._id, item.quantity - 1)
+                        }
+                      >
+                        <Text style={styles.qtyBtn}>-</Text>
+                      </TouchableOpacity>
+
+                      <Text style={styles.qtyNumber}>{item.quantity}</Text>
+
+                      <TouchableOpacity
+                        onPress={() =>
+                          handleQuantityUpdate(item._id, item.quantity + 1)
+                        }
+                      >
+                        <Text style={styles.qtyBtn}>+</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
 
                   {/* PRICE */}
                   <Text style={styles.itemPrice}>₹{item.totalPrice}</Text>
-
-                  {/* REMOVE BUTTON (OPTIONAL - if you want later) */}
-                  {/* 
-                  <TouchableOpacity onPress={() => removeFromCart(item._id)}>
-                    <Text style={{ color: "red", marginLeft: 8 }}>Remove</Text>
-                  </TouchableOpacity>
-                  */}
                 </View>
               ))}
             </View>
@@ -167,7 +238,11 @@ const CartScreen = () => {
                 <Text
                   style={[
                     styles.label,
-                    { color: "#000", fontWeight: "700", fontSize: moderateScale(15) },
+                    {
+                      color: "#000",
+                      fontWeight: "700",
+                      fontSize: moderateScale(15),
+                    },
                   ]}
                 >
                   Total
@@ -185,9 +260,11 @@ const CartScreen = () => {
               {/* Checkout Button */}
               <TouchableOpacity
                 style={styles.button}
-                // onPress={() => navigation.navigate("BookingScheduleScreen")}
+                onPress={handleAutoBooking}
               >
-                <Text style={styles.buttonText}>Book Now</Text>
+                <Text style={styles.buttonText}>
+                  {isBooking ? "Booking..." : "Book Now"}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -322,7 +399,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingTop: verticalScale(40),
+    // paddingTop: verticalScale(40),
   },
   emptyTitle: {
     fontSize: moderateScale(16),
@@ -333,5 +410,43 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(12),
     color: "#555",
     marginTop: verticalScale(5),
+  },
+  removeBtn: {
+    position: "absolute",
+    right: scale(10),
+    top: scale(5),
+    zIndex: 10,
+    padding: scale(5),
+  },
+
+  removeBtnText: {
+    fontSize: moderateScale(18),
+    fontWeight: "700",
+    color: "#D9534F",
+  },
+
+  qtyControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F1F1F1",
+    paddingVertical: verticalScale(4),
+    paddingHorizontal: scale(8),
+    borderRadius: moderateScale(8),
+    gap: scale(12),
+  },
+
+  qtyBtn: {
+    fontSize: moderateScale(18),
+    color: "#333",
+    fontWeight: "700",
+    paddingHorizontal: scale(4),
+  },
+
+  qtyNumber: {
+    fontSize: moderateScale(14),
+    color: "#000",
+    fontWeight: "600",
+    minWidth: scale(20),
+    textAlign: "center",
   },
 });

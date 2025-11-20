@@ -22,7 +22,10 @@ import { HomeStackParamList } from "../../constants/navigation";
               size={moderateScale(16)}
               color="#000"
             />
+            <TouchableOpacity onPress={()=>navigation.navigate("Location")}>
+
             <Text style={styles.locationText}>Allow Location</Text>
+            </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={()=>navigation.navigate("ProfileScreen")}>
             <Image

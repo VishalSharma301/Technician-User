@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -15,14 +15,86 @@ import { RouteProp, useRoute } from "@react-navigation/native";
 import { OrderStackParamList } from "../../constants/navigation";
 import { ServiceRequest } from "../../constants/serviceRequestTypes";
 
-type NavigationProp = RouteProp<OrderStackParamList, "OrderDetailsScreen">
+type NavigationProp = RouteProp<OrderStackParamList, "OrderDetailsScreen">;
 
 const OrderDetailsScreen: React.FC = () => {
+  const route = useRoute<NavigationProp>();
+  const item: ServiceRequest = route.params?.item;
 
-    const route = useRoute<NavigationProp>()
+  // -----------------------------
+  // 🔥 Dynamic Timeline Logic
+  // -----------------------------
+  const timeline = useMemo(() => {
+    if (!item) return [];
 
-    const item : ServiceRequest = route.params?.item
-    
+    const createdDate = new Date(item.createdAt);
+
+    const formatDate = (dateInput: string | Date | null | undefined) => {
+      if (!dateInput) return "";
+      const date =
+        typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+      return date.toLocaleDateString("en-GB");
+    };
+
+    const formatTime = (dateInput: string | Date | null | undefined) => {
+      if (!dateInput) return "";
+      const date =
+        typeof dateInput === "string" ? new Date(dateInput) : dateInput;
+      return date.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
+    const addDays = (date: Date, days: number) => {
+      const result = new Date(date);
+      result.setDate(result.getDate() + days);
+      return result;
+    };
+
+    const status = item.status?.toLowerCase() || "pending";
+
+    return [
+      {
+        date: formatDate(item.createdAt),
+        time: formatTime(item.createdAt),
+        title: "Assigned",
+        desc: item.provider?.name || "Provider",
+        active: true,
+      },
+      {
+        date: formatDate(item.bookedAt || addDays(createdDate, 1)),
+        time: formatTime(item.bookedAt || addDays(createdDate, 1)),
+        title: "In-Progress",
+        desc: "Technician Working",
+        active: ["accepted", "technician_assigned", "in_progress", "ongoing", "completed"].includes(status),
+      },
+      {
+        date: formatDate(item.serviceCompletedAt || addDays(createdDate, 3)),
+        time: formatTime(item.serviceCompletedAt || addDays(createdDate, 3)),
+        title: "Done",
+        desc: "Fixed Issue",
+        active: ["completed"].includes(status),
+      },
+      {
+        date: formatDate(item.serviceCompletedAt || addDays(createdDate, 4)),
+        time: formatTime(item.serviceCompletedAt || addDays(createdDate, 4)),
+        title: "Warranty",
+        desc: "5 Days Left",
+        highlight: true,
+        active: ["completed"].includes(status),
+      },
+      {
+        date: formatDate(item.updatedAt || addDays(createdDate, 5)),
+        time: formatTime(item.updatedAt || addDays(createdDate, 5)),
+        title: "Job Closed",
+        desc: "😊",
+        active: ["completed"].includes(status),
+      },
+    ];
+  }, [item]);
+
+  // ------------------------------------------------------
 
   const statusTabs = [
     { title: "Active", count: 25, color: "#027CC7" },
@@ -31,43 +103,13 @@ const OrderDetailsScreen: React.FC = () => {
     { title: "Cancel", count: 100, color: "#FF0000" },
   ];
 
-  const timeline = [
-    {
-      date: "01 Jan, 2025",
-      time: "10:20AM",
-      title: "Assign",
-      desc: "Provider",
-    },
-    {
-      date: "02 Jan, 2025",
-      time: "10:20AM",
-      title: "In-Progress",
-      desc: "Technician Working",
-    },
-    {
-      date: "04 Jan, 2025",
-      time: "10:20AM",
-      title: "Done",
-      desc: "Fixed Issue",
-    },
-    {
-      date: "03 Jan, 2025",
-      time: "10:20AM",
-      title: "Warranty",
-      desc: "5 Days Left",
-      highlight: true,
-    },
-    { date: "05 Jan, 2025", time: "10:20AM", title: "Job Closed", desc: "😊" },
-  ];
-
   return (
     <ScreenWrapper>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Header />
 
         {/* Tabs */}
-
-        <View style={styles.tabContainer}>
+        {/* <View style={styles.tabContainer}>
           {statusTabs.map((tab, index) => (
             <TouchableOpacity
               key={index}
@@ -75,7 +117,6 @@ const OrderDetailsScreen: React.FC = () => {
                 styles.tabButton,
                 {
                   borderColor: tab.color,
-
                   backgroundColor:
                     tab.title === "Active"
                       ? `${tab.color}15`
@@ -105,7 +146,9 @@ const OrderDetailsScreen: React.FC = () => {
               </View>
             </TouchableOpacity>
           ))}
-        </View>
+        </View> */}
+
+        {/* Order Info */}
         <View
           style={{
             borderWidth: 1,
@@ -113,10 +156,9 @@ const OrderDetailsScreen: React.FC = () => {
             borderColor: "#fff",
             marginBottom: 200,
             backgroundColor: "#FFFFFF1A",
+            marginTop : verticalScale(12)
           }}
         >
-          
-          {/* Order Info */}
           <View style={styles.card}>
             <View style={styles.orderHeader}>
               <ImageBackground
@@ -125,6 +167,7 @@ const OrderDetailsScreen: React.FC = () => {
               >
                 <Text style={styles.iconText}>GE</Text>
               </ImageBackground>
+
               <View
                 style={{
                   flex: 1,
@@ -137,6 +180,7 @@ const OrderDetailsScreen: React.FC = () => {
                   <Text style={styles.heading}>Order No.</Text>
                   <Text style={styles.orderNo}>{item._id}</Text>
                 </View>
+
                 <View>
                   <Text style={styles.heading}>Price</Text>
                   <Text style={styles.price}>₹{item.finalPrice}</Text>
@@ -155,56 +199,29 @@ const OrderDetailsScreen: React.FC = () => {
               </View>
             </View>
 
+            {/* Progress Bar */}
             <View
               style={{
                 borderWidth: 1,
                 borderColor: "#fff",
                 backgroundColor: "#FFFFFF1A",
                 paddingVertical: verticalScale(14),
-                // paddingHorizontal: scale(21),
                 borderRadius: moderateScale(12),
                 marginTop: verticalScale(15),
               }}
             >
-              {/* Progress Bar */}
               <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#0083D3" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#E6B325" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#4CAF50" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#9C27B0" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#9E9E9E" },
-                  ]}
-                />
+                <View style={[styles.progressSegment, { backgroundColor: "#0083D3" }]} />
+                <View style={[styles.progressSegment, { backgroundColor: "#E6B325" }]} />
+                <View style={[styles.progressSegment, { backgroundColor: "#4CAF50" }]} />
+                <View style={[styles.progressSegment, { backgroundColor: "#9C27B0" }]} />
+                <View style={[styles.progressSegment, { backgroundColor: "#9E9E9E" }]} />
               </View>
 
               <View style={styles.verifyRow}>
                 <Text style={styles.deviceText}>1 WINDOW AC</Text>
               </View>
 
-              {/* Legend */}
               <View style={styles.legendRow}>
                 {[
                   { color: "#3B82F6", text: "Assigned" },
@@ -214,12 +231,7 @@ const OrderDetailsScreen: React.FC = () => {
                   { color: "#64748B", text: "Job Closed" },
                 ].map((item, i) => (
                   <View key={i} style={styles.legendItem}>
-                    <View
-                      style={[
-                        styles.legendDot,
-                        { backgroundColor: item.color },
-                      ]}
-                    />
+                    <View style={[styles.legendDot, { backgroundColor: item.color }]} />
                     <Text style={styles.legendText}>{item.text}</Text>
                   </View>
                 ))}
@@ -227,40 +239,104 @@ const OrderDetailsScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Timeline */}
+          {/* ------------------------- */}
+          {/* 🔥 Dynamic Timeline UI */}
+          {/* ------------------------- */}
           <View style={styles.timelineContainer}>
             {timeline.map((step, index) => (
-              <View key={index} style={styles.timelineItem}>
-                {/* Left date/time */}
-                <View style={styles.timeColumn}>
-                  <Text style={styles.timeText}>{step.date}</Text>
-                  <Text style={styles.timeSubText}>{step.time}</Text>
-                </View>
+             <View key={index} style={styles.timelineItem}>
+  {/* LEFT TIME BOX */}
+  <View
+    style={[
+      styles.timeColumn,
+      !step.active && { opacity: 0.4 }
+    ]}
+  >
+    <Text
+      style={[
+        styles.timeText,
+        !step.active && { color: "#777" }
+      ]}
+    >
+      {step.date}
+    </Text>
 
-                {/* Arrow Line */}
-                <View style={styles.arrowColumn}>
-                  <View style={styles.arrowCircle} />
-                  {index !== timeline.length - 1 && (
-                    <View style={styles.arrowLine} />
-                  )}
-                </View>
+    <Text
+      style={[
+        styles.timeSubText,
+        !step.active && { color: "#777" }
+      ]}
+    >
+      {step.time}
+    </Text>
+  </View>
 
-                {/* Right Content */}
-                <View style={styles.detailColumn}>
-                  <View style={styles.detailBox}>
-                    <Text style={styles.detailTitle}>{step.title}</Text>
-                    {step.highlight ? (
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{step.desc}</Text>
-                      </View>
-                    ) : (
-                      <Text numberOfLines={1} style={styles.detailDesc}>
-                        {step.desc}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              </View>
+  {/* MIDDLE ARROW */}
+  <View style={styles.arrowColumn}>
+    <View
+      style={[
+        styles.arrowCircle,
+        { backgroundColor: step.active ? "#0083D3" : "#9CA3AF" }
+      ]}
+    />
+
+    {index !== timeline.length - 1 && (
+      <View
+        style={[
+          styles.arrowLine,
+          { backgroundColor: step.active ? "#0083D3" : "#9CA3AF" }
+        ]}
+      />
+    )}
+  </View>
+
+  {/* RIGHT DETAIL BOX */}
+  <View
+    style={[
+      styles.detailColumn,
+      !step.active && { opacity: 0.4 }
+    ]}
+  >
+    <View style={styles.detailBox}>
+      <Text
+        style={[
+          styles.detailTitle,
+          !step.active && { color: "#777" }
+        ]}
+      >
+        {step.title}
+      </Text>
+
+      {step.highlight ? (
+        <View
+          style={[
+            styles.badge,
+            !step.active && { backgroundColor: "#E5E7EB" }
+          ]}
+        >
+          <Text
+            style={[
+              styles.badgeText,
+              !step.active && { color: "#555" }
+            ]}
+          >
+            {step.desc}
+          </Text>
+        </View>
+      ) : (
+        <Text
+          numberOfLines={1}
+          style={[
+            styles.detailDesc,
+            !step.active && { color: "#777" }
+          ]}
+        >
+          {step.desc}
+        </Text>
+      )}
+    </View>
+  </View>
+</View>
             ))}
           </View>
         </View>
@@ -270,6 +346,9 @@ const OrderDetailsScreen: React.FC = () => {
 };
 
 export default OrderDetailsScreen;
+
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -293,8 +372,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     height: verticalScale(40.66),
-    gap: scale(4),
-    paddingHorizontal: scale(9),
+    gap: scale(2),
+    paddingHorizontal: scale(7),
   },
   tabText: {
     fontSize: moderateScale(12),
