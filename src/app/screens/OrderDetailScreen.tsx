@@ -67,7 +67,13 @@ const OrderDetailsScreen: React.FC = () => {
         time: formatTime(item.bookedAt || addDays(createdDate, 1)),
         title: "In-Progress",
         desc: "Technician Working",
-        active: ["accepted", "technician_assigned", "in_progress", "ongoing", "completed"].includes(status),
+        active: [
+          "accepted",
+          "technician_assigned",
+          "in_progress",
+          "ongoing",
+          "completed",
+        ].includes(status),
       },
       {
         date: formatDate(item.serviceCompletedAt || addDays(createdDate, 3)),
@@ -156,7 +162,7 @@ const OrderDetailsScreen: React.FC = () => {
             borderColor: "#fff",
             marginBottom: 200,
             backgroundColor: "#FFFFFF1A",
-            marginTop : verticalScale(12)
+            marginTop: verticalScale(12),
           }}
         >
           <View style={styles.card}>
@@ -211,15 +217,52 @@ const OrderDetailsScreen: React.FC = () => {
               }}
             >
               <View style={styles.progressBar}>
-                <View style={[styles.progressSegment, { backgroundColor: "#0083D3" }]} />
-                <View style={[styles.progressSegment, { backgroundColor: "#E6B325" }]} />
-                <View style={[styles.progressSegment, { backgroundColor: "#4CAF50" }]} />
-                <View style={[styles.progressSegment, { backgroundColor: "#9C27B0" }]} />
-                <View style={[styles.progressSegment, { backgroundColor: "#9E9E9E" }]} />
+                <View
+                  style={[
+                    styles.progressSegment,
+                    { backgroundColor: "#0083D3" },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.progressSegment,
+                    { backgroundColor: "#E6B325" },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.progressSegment,
+                    { backgroundColor: "#4CAF50" },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.progressSegment,
+                    { backgroundColor: "#9C27B0" },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.progressSegment,
+                    { backgroundColor: "#9E9E9E" },
+                  ]}
+                />
               </View>
 
               <View style={styles.verifyRow}>
                 <Text style={styles.deviceText}>1 WINDOW AC</Text>
+                <Text
+                  style={{
+                    backgroundColor: "#027CC7",
+                    paddingHorizontal: moderateScale(6),
+                    borderRadius: moderateScale(4),
+                    color: "#fff",
+                    fontWeight : '600',
+                    fontSize : moderateScale(14)
+                  }}
+                >
+                  PIN : {item.completionPin}
+                </Text>
               </View>
 
               <View style={styles.legendRow}>
@@ -231,7 +274,12 @@ const OrderDetailsScreen: React.FC = () => {
                   { color: "#64748B", text: "Job Closed" },
                 ].map((item, i) => (
                   <View key={i} style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                    <View
+                      style={[
+                        styles.legendDot,
+                        { backgroundColor: item.color },
+                      ]}
+                    />
                     <Text style={styles.legendText}>{item.text}</Text>
                   </View>
                 ))}
@@ -244,99 +292,95 @@ const OrderDetailsScreen: React.FC = () => {
           {/* ------------------------- */}
           <View style={styles.timelineContainer}>
             {timeline.map((step, index) => (
-             <View key={index} style={styles.timelineItem}>
-  {/* LEFT TIME BOX */}
-  <View
-    style={[
-      styles.timeColumn,
-      !step.active && { opacity: 0.4 }
-    ]}
-  >
-    <Text
-      style={[
-        styles.timeText,
-        !step.active && { color: "#777" }
-      ]}
-    >
-      {step.date}
-    </Text>
+              <View key={index} style={styles.timelineItem}>
+                {/* LEFT TIME BOX */}
+                <View
+                  style={[styles.timeColumn, !step.active && { opacity: 0.4 }]}
+                >
+                  <Text
+                    style={[styles.timeText, !step.active && { color: "#777" }]}
+                  >
+                    {step.date}
+                  </Text>
 
-    <Text
-      style={[
-        styles.timeSubText,
-        !step.active && { color: "#777" }
-      ]}
-    >
-      {step.time}
-    </Text>
-  </View>
+                  <Text
+                    style={[
+                      styles.timeSubText,
+                      !step.active && { color: "#777" },
+                    ]}
+                  >
+                    {step.time}
+                  </Text>
+                </View>
 
-  {/* MIDDLE ARROW */}
-  <View style={styles.arrowColumn}>
-    <View
-      style={[
-        styles.arrowCircle,
-        { backgroundColor: step.active ? "#0083D3" : "#9CA3AF" }
-      ]}
-    />
+                {/* MIDDLE ARROW */}
+                <View style={styles.arrowColumn}>
+                  <View
+                    style={[
+                      styles.arrowCircle,
+                      { backgroundColor: step.active ? "#0083D3" : "#9CA3AF" },
+                    ]}
+                  />
 
-    {index !== timeline.length - 1 && (
-      <View
-        style={[
-          styles.arrowLine,
-          { backgroundColor: step.active ? "#0083D3" : "#9CA3AF" }
-        ]}
-      />
-    )}
-  </View>
+                  {index !== timeline.length - 1 && (
+                    <View
+                      style={[
+                        styles.arrowLine,
+                        {
+                          backgroundColor: step.active ? "#0083D3" : "#9CA3AF",
+                        },
+                      ]}
+                    />
+                  )}
+                </View>
 
-  {/* RIGHT DETAIL BOX */}
-  <View
-    style={[
-      styles.detailColumn,
-      !step.active && { opacity: 0.4 }
-    ]}
-  >
-    <View style={styles.detailBox}>
-      <Text
-        style={[
-          styles.detailTitle,
-          !step.active && { color: "#777" }
-        ]}
-      >
-        {step.title}
-      </Text>
+                {/* RIGHT DETAIL BOX */}
+                <View
+                  style={[
+                    styles.detailColumn,
+                    !step.active && { opacity: 0.4 },
+                  ]}
+                >
+                  <View style={styles.detailBox}>
+                    <Text
+                      style={[
+                        styles.detailTitle,
+                        !step.active && { color: "#777" },
+                      ]}
+                    >
+                      {step.title}
+                    </Text>
 
-      {step.highlight ? (
-        <View
-          style={[
-            styles.badge,
-            !step.active && { backgroundColor: "#E5E7EB" }
-          ]}
-        >
-          <Text
-            style={[
-              styles.badgeText,
-              !step.active && { color: "#555" }
-            ]}
-          >
-            {step.desc}
-          </Text>
-        </View>
-      ) : (
-        <Text
-          numberOfLines={1}
-          style={[
-            styles.detailDesc,
-            !step.active && { color: "#777" }
-          ]}
-        >
-          {step.desc}
-        </Text>
-      )}
-    </View>
-  </View>
-</View>
+                    {step.highlight ? (
+                      <View
+                        style={[
+                          styles.badge,
+                          !step.active && { backgroundColor: "#E5E7EB" },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.badgeText,
+                            !step.active && { color: "#555" },
+                          ]}
+                        >
+                          {step.desc}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.detailDesc,
+                          !step.active && { color: "#777" },
+                        ]}
+                      >
+                        {step.desc}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              </View>
             ))}
           </View>
         </View>
@@ -346,9 +390,6 @@ const OrderDetailsScreen: React.FC = () => {
 };
 
 export default OrderDetailsScreen;
-
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -422,10 +463,10 @@ const styles = StyleSheet.create({
     bottom: verticalScale(-11),
     left: scale(-1),
   },
-  heading :{
-    color : '#939393',
-    fontSize : moderateScale(10),
-    fontWeight : '500'
+  heading: {
+    color: "#939393",
+    fontSize: moderateScale(10),
+    fontWeight: "500",
   },
   orderNo: {
     fontSize: moderateScale(14),
@@ -471,6 +512,8 @@ const styles = StyleSheet.create({
   verifyRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    // borderWidth : 1,
+    marginRight: scale(20),
     alignItems: "center",
     marginTop: verticalScale(10),
   },

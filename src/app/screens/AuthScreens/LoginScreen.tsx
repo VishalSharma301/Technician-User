@@ -52,15 +52,15 @@ const LoginScreen = () => {
   };
 
   const handleLogin = async () => {
-    const result = await login(phoneNumber);
+    navigation.navigate("VerificationScreen");
+    // const result = await login(phoneNumber);
 
-    if (result) {
-      Alert.alert("OTP Sent", "Check your phone for OTP");
-      // You can now navigate to OTP screen or store data
-      navigation.navigate("VerificationScreen");
-    } else {
-      Alert.alert("Login Failed", "Invalid phone number or server error");
-    }
+    // if (result) {
+    //   Alert.alert("OTP Sent", "Check your phone for OTP");
+    //   navigation.navigate("VerificationScreen");
+    // } else {
+    //   Alert.alert("Login Failed", "Invalid phone number or server error");
+    // }
   };
 
   const handleAuthAction = () => {

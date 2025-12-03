@@ -1,4 +1,11 @@
-import React, { useCallback, useState, useContext } from "react"; // ⭐ CHANGED: added useContext
+// src/app/components/BookingBottomSheet.tsx
+import React, {
+  useCallback,
+  useMemo,
+  useState,
+  useContext,
+  useEffect,
+} from "react";
 import {
   View,
   Text,
@@ -6,7 +13,7 @@ import {
   TouchableOpacity,
   FlatList,
   ImageBackground,
-  Alert, // ⭐ ADDED
+  Alert,
 } from "react-native";
 import GradientBorder from "./GradientBorder";
 import { scale, moderateScale, verticalScale } from "../../utils/scaling";
@@ -24,6 +31,8 @@ interface ServiceType {
   acCount: number;
 }
 
+const EXTRA_UNIT_PRICE = 590; // static extra price for units beyond triple
+
 const BookingBottomSheet = ({
   close,
   service,
@@ -36,137 +45,196 @@ const BookingBottomSheet = ({
   const [selectedType, setSelectedType] = useState<ServiceOption | null>(null);
   const [selectedPricing, setSelectedPricing] = useState<string | null>(null);
   const [addMoreQuantity, setAddMoreQuantity] = useState<number>(0);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // ⭐ ADDED: CartContext usage
   const { addToCart, isItemInTheCart } = useCart();
 
-  let a = service.name; // example
-  let b = "";
+  // ------------------ Unit detection ------------------
+  const detectUnitType = (name: string) => {
+    const n = (name || "").toLowerCase();
+    if (n.includes("ac")) return "AC";
+    if (n.includes("machine")) return "Machine";
+    return "Unit";
+  };
 
-  if (/\bac\b/i.test(a)) {
-    b = "AC";
-  } else if (a.toLowerCase().includes("machine")) {
-    b = "Mach..";
-  }
+  // const unitType = useMemo(() => detectUnitType(service.name), [service.name]);
+  const unitType = "Unit";
 
-  // TYPES (Service options from API)
+  // ---------- TYPES & PRICING (memoized) ----------
   const TYPES = service.options ?? [];
 
-  // PRICING derived from selectedType (base prices for single/double/triple)
-  const PRICING: ServiceType[] = [
-    {
-      id: "single",
-      title: `Single ${b}`,
-      price: selectedType?.singlePrice ?? 0,
-      acCount: 1,
-    },
-    {
-      id: "double",
-      title: `Double ${b}`,
-      price: selectedType?.doublePrice ?? 0,
-      acCount: 2,
-    },
-    {
-      id: "triple",
-      title: `Triple ${b}`,
-      price: selectedType?.triplePrice ?? 0,
-      acCount: 3,
-    },
-  ];
+  const PRICING: ServiceType[] = useMemo(() => {
+    return [
+      {
+        id: "single",
+        title: `Single ${unitType}`,
+        price: selectedType?.singlePrice ?? 0,
+        acCount: 1,
+      },
+      {
+        id: "double",
+        title: `Double ${unitType}`,
+        price: selectedType?.doublePrice ?? 0,
+        acCount: 2,
+      },
+      {
+        id: "triple",
+        title: `Triple ${unitType}`,
+        price: selectedType?.triplePrice ?? 0,
+        acCount: 3,
+      },
+    ];
+  }, [selectedType, unitType]);
 
-  const BRANDS = service.brands ?? [];
-
+  // ---------- Close handler ----------
   const onClose = () => {
     close();
     setStep(0);
-    // ⭐ CHANGED: reset selections on close
     setSelectedBrand(null);
     setSelectedType(null);
     setSelectedPricing(null);
     setAddMoreQuantity(0);
   };
 
-  const goNext = useCallback(() => setStep((s) => Math.min(2, s + 1)), []);
-  const goPrev = useCallback(() => setStep((s) => Math.max(0, s - 1)), []);
+  // ---------- Step navigation with validation ----------
+  const goPrev = useCallback(() => {
+    setStep((s) => Math.max(0, s - 1));
+    setErrorMessage("");
+  }, []);
 
-  const renderBrand = ({ item }: { item: ServiceBrand }) => {
-    const active = selectedBrand === item._id;
-    return (
-      <GradientBorder
-        style={[
-          {
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: verticalScale(20) },
-            shadowOpacity: 0.12,
-            shadowRadius: 24,
-            elevation: 4,
-          },
-          active && styles.brandChipActive,
-        ]}
-      >
-        <TouchableOpacity onPress={() => setSelectedBrand(item._id)}>
-          <View style={[styles.brandChip, active && styles.brandChipActive]}>
-            <Text style={[styles.brandText, active && { color: "#fff" }]}>
-              {item.name}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </GradientBorder>
-    );
+  const goNext = () => {
+    if (step === 0 && !selectedBrand) {
+      setErrorMessage("Select Brand*");
+      return;
+    }
+
+    if (step === 1 && !selectedType) {
+      setErrorMessage("Select Type*");
+      return;
+    }
+
+    // Clear error on valid step change
+    setErrorMessage("");
+    setStep((s) => Math.min(2, s + 1));
   };
 
-  const renderPricing = ({ item }: { item: ServiceType }) => {
-    const active = selectedPricing === item.id;
-    return (
-      <GradientBorder style={{ marginRight: scale(10) }}>
-        <TouchableOpacity
-          style={[styles.pricingCard, active && styles.pricingCardActive]}
-          onPress={() => {
-            setSelectedPricing(item.id);
-            // Keep selectedType same — pricing depends on selectedType's prices (already in PRICING)
-          }}
-        >
-          <View style={styles.pricingRow}>
-            <View style={{ flex: 1, marginLeft: scale(12) }}>
-              <Text style={styles.pricingTitle}>{item.title}</Text>
-              <Text style={styles.pricingPrice}>₹{item.price}</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </GradientBorder>
-    );
-  };
-
-  // ---------- COUNT & PRICE LOGIC (⭐ ADDED) ----------
-
-  // Get selected pricing ServiceType object
+  // ---------- Helper: get current service type object ----------
   const getCurrentServiceType = (): ServiceType => {
     const found = PRICING.find((p) => p.id === selectedPricing);
     return found || PRICING[0];
   };
 
-  const getTotalACCount = (): number => {
-    const currentService = getCurrentServiceType();
-    return currentService.acCount + addMoreQuantity;
-  };
+  const getTotalACCount = () => 1 + addMoreQuantity;
 
+  // ---------- Calculate total price with smart tier logic ----------
   const calculateTotalPrice = (): number => {
-    const currentService = getCurrentServiceType();
-    // Additional ACs at fixed rate (same as ACServiceCard)
-    const additionalACPrice = addMoreQuantity * 590;
-    return currentService.price + additionalACPrice;
+    const total = getTotalACCount();
+
+    if (total === 1) return PRICING.find((p) => p.id === "single")?.price ?? 0;
+    if (total === 2) return PRICING.find((p) => p.id === "double")?.price ?? 0;
+    if (total === 3) return PRICING.find((p) => p.id === "triple")?.price ?? 0;
+
+    const triple = PRICING.find((p) => p.id === "triple")?.price ?? 0;
+    return triple + (total - 3) * EXTRA_UNIT_PRICE;
   };
 
-  const handleAddMoreQuantity = (increment: boolean): void => {
-    if (increment) {
-      setAddMoreQuantity((prev) => prev + 1);
-    } else {
-      setAddMoreQuantity((prev) => Math.max(0, prev - 1));
+  useEffect(() => {
+    if (step === 2 && !selectedPricing) {
+      setSelectedPricing("single");
+      setAddMoreQuantity(0); // total = 1
     }
-  };
-  // ---------- END COUNT & PRICE LOGIC ----------
+  }, [step]);
+  // ---------- Quantity increment/decrement with auto-pricing ----------
+  const handleAddMoreQuantity = (increment: boolean) => {
+    setAddMoreQuantity((prev) => {
+      const newAdd = increment ? prev + 1 : Math.max(0, prev - 1);
 
-  // ---------- CART LOGIC (⭐ ADDED) ----------
+      const totalACs = 1 + newAdd; // <-- ALWAYS based on initial 1 unit
+
+      // Auto-select pricing based on count
+      if (totalACs === 1) {
+        setSelectedPricing("single");
+      } else if (totalACs === 2) {
+        setSelectedPricing("double");
+      } else if (totalACs === 3) {
+        setSelectedPricing("triple");
+      } else if (totalACs > 3) {
+        setSelectedPricing("triple"); // triple + extras
+      }
+
+      return newAdd;
+    });
+  };
+
+  // ---------- Brand rendering ----------
+  const renderBrand = useCallback(
+    ({ item }: { item: ServiceBrand }) => {
+      const active = selectedBrand === item._id;
+      return (
+        <GradientBorder
+          style={[
+            {
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: verticalScale(20) },
+              shadowOpacity: 0.12,
+              shadowRadius: 24,
+              elevation: 4,
+            },
+            active && styles.brandChipActive,
+          ]}
+        >
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedBrand(item._id);
+            }}
+          >
+            <View style={[styles.brandChip, active && styles.brandChipActive]}>
+              <Text style={[styles.brandText, active && { color: "#fff" }]}>
+                {item.name}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </GradientBorder>
+      );
+    },
+    [selectedBrand]
+  );
+
+  // ---------- Pricing rendering ----------
+  const renderPricing = useCallback(
+    ({ item }: { item: ServiceType }) => {
+      const active = selectedPricing === item.id;
+      return (
+        <GradientBorder style={{ marginRight: scale(10) }}>
+          <TouchableOpacity
+            style={[styles.pricingCard, active && styles.pricingCardActive]}
+            onPress={() => {
+              setSelectedPricing(item.id);
+
+              // Set quantity correctly based on selected pricing
+              if (item.id === "single") {
+                setAddMoreQuantity(0); // total = 1
+              } else if (item.id === "double") {
+                setAddMoreQuantity(1); // total = 2
+              } else if (item.id === "triple") {
+                setAddMoreQuantity(2); // total = 3
+              }
+            }}
+          >
+            <View style={styles.pricingRow}>
+              <View style={{ flex: 1, marginLeft: scale(12) }}>
+                <Text style={styles.pricingTitle}>{item.title}</Text>
+                <Text style={styles.pricingPrice}>₹{item.price}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </GradientBorder>
+      );
+    },
+    [selectedPricing]
+  );
+
+  // ---------- Add to cart helpers ----------
   const showSuccessAlert = () => {
     const totalACs = getTotalACCount();
     const totalPrice = calculateTotalPrice();
@@ -181,8 +249,10 @@ const BookingBottomSheet = ({
   };
 
   const proceedWithAddToCart = () => {
-    // Build service object for cart (similar to ACServiceCard)
     const currentServiceType = getCurrentServiceType();
+    const totalACs = getTotalACCount();
+
+    // Build minimal cart service object (keeps existing fields as you requested not to change)
     const serviceForCart: ServiceData = {
       _id: service._id,
       name: `${selectedType?.name ?? ""} ${service.name} - ${
@@ -208,11 +278,10 @@ const BookingBottomSheet = ({
     };
 
     const brandObject =
-      BRANDS.find((b) => b._id === selectedBrand) ?? (null as any);
-    const totalACs = getTotalACCount();
+      service.brands?.find((b) => b._id === selectedBrand) ?? (null as any);
 
-    // Duplicate check by service.name (same as ACServiceCard)
     const itemName = service.name;
+
     if (isItemInTheCart(itemName)) {
       Alert.alert(
         "Item Already in Cart",
@@ -222,11 +291,20 @@ const BookingBottomSheet = ({
             text: "Add Again",
             onPress: () => {
               if (selectedType) {
-                serviceForCart.name = `${itemName} (${Date.now()})`;
-                addToCart(serviceForCart, selectedType, brandObject, totalACs);
-                close();
+                // clone instead of mutating
+                const duplicatedItem = {
+                  ...serviceForCart,
+                  name: `${itemName} (${Date.now()})`,
+                };
+                addToCart(duplicatedItem, selectedType, brandObject, totalACs);
+                onClose();
                 showSuccessAlert();
-              } else Alert.prompt("Select a suitable option");
+              } else {
+                Alert.alert(
+                  "Selection Required",
+                  "Please select a suitable option."
+                );
+              }
             },
           },
           { text: "Cancel", style: "cancel" },
@@ -235,15 +313,16 @@ const BookingBottomSheet = ({
     } else {
       if (selectedType) {
         addToCart(serviceForCart, selectedType, brandObject, totalACs);
-        close();
+        onClose();
         showSuccessAlert();
-      } else Alert.prompt("Select a suitable option");
+      } else {
+        Alert.alert("Selection Required", "Please select a suitable option.");
+      }
     }
   };
 
   const handleAddToCart = () => {
     try {
-      // Basic validations
       if (!selectedBrand) {
         Alert.alert("Selection Required", "Please select a brand.");
         return;
@@ -260,15 +339,22 @@ const BookingBottomSheet = ({
         return;
       }
 
-      // Ask if brand not selected (previous code asked to Add Anyway) — but we enforce brand selection above.
       proceedWithAddToCart();
     } catch (error) {
       console.error("Error adding to cart:", error);
       Alert.alert("Error", "Failed to add item to cart. Please try again.");
     }
   };
-  // ---------- END CART LOGIC ----------
 
+  // ---------- Type selection: if on step 2, go back to 1 when type changes ----------
+  const handleTypeSelect = (t: ServiceOption) => {
+    setSelectedType(t);
+    setSelectedPricing(null);
+    // If user changes type while viewing pricing, return them to type step to pick pricing
+    if (step === 2) setStep(1);
+  };
+
+  // ---------- Render ----------
   return (
     <ImageBackground
       source={require("../../../assets/bottomWrapper.png")}
@@ -284,7 +370,8 @@ const BookingBottomSheet = ({
 
           <View
             style={{
-              width: scale(110),
+              // borderWidth : 1,
+              // width: scale(110),
               height: verticalScale(28),
               backgroundColor: "#767676",
               alignItems: "center",
@@ -292,14 +379,16 @@ const BookingBottomSheet = ({
               borderRadius: scale(4),
             }}
           >
-            <Text style={styles.headerTitle}>Installation</Text>
+            <Text numberOfLines={1} style={styles.headerTitle}>
+              {service.name}
+            </Text>
           </View>
         </View>
 
         {/* STEP CONTENT */}
         <View style={styles.stepContainer}>
           {step === 0 && (
-            <View>
+            <View style={{ marginTop: verticalScale(20) }}>
               <View
                 style={{
                   flexDirection: "row",
@@ -311,12 +400,13 @@ const BookingBottomSheet = ({
               </View>
 
               <FlatList
-                data={BRANDS}
+                data={service.brands ?? []}
                 renderItem={renderBrand}
                 keyExtractor={(i) => i._id}
                 numColumns={3}
                 columnWrapperStyle={{
-                  justifyContent: "space-between",
+                  justifyContent:
+                    service.brands.length > 3 ? "flex-start" : "space-evenly",
                   marginBottom: verticalScale(12),
                   gap: 5,
                 }}
@@ -326,8 +416,16 @@ const BookingBottomSheet = ({
           )}
 
           {step === 1 && (
-            <View>
-              <Text style={styles.sectionTitle}>Type</Text>
+            <View style={{ marginTop: verticalScale(40) }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={styles.sectionTitle}>Type</Text>
+                <Text style={styles.sectionTitle}>{step + 1}/3</Text>
+              </View>
 
               <View style={styles.typeRow}>
                 {TYPES.map((t) => {
@@ -339,11 +437,7 @@ const BookingBottomSheet = ({
                           styles.typeChip,
                           active && styles.typeChipActive,
                         ]}
-                        onPress={() => {
-                          setSelectedType(t);
-                          // Reset pricing selection when type changes so pricing reads from new selectedType's prices
-                          setSelectedPricing(null);
-                        }}
+                        onPress={() => handleTypeSelect(t)}
                       >
                         <Text
                           style={[styles.typeText, active && { color: "#fff" }]}
@@ -360,8 +454,15 @@ const BookingBottomSheet = ({
 
           {step === 2 && (
             <View>
-              <Text style={styles.sectionTitle}>Pricing</Text>
-
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={styles.sectionTitle}>Pricing</Text>
+                <Text style={styles.sectionTitle}>{step + 1}/3</Text>
+              </View>
               <FlatList
                 data={PRICING}
                 renderItem={renderPricing}
@@ -392,10 +493,11 @@ const BookingBottomSheet = ({
                   }}
                 >
                   <TouchableOpacity
-                    onPress={() => handleAddMoreQuantity(false)} // ⭐ CHANGED (fixed): decrement
+                    onPress={() => handleAddMoreQuantity(false)}
                     style={{
-                      height: scale(12),
-                      width: scale(12),
+                      // height: scale(14),
+                      width: scale(14),
+                      aspectRatio: 1,
                       backgroundColor: "#fff",
                       alignItems: "center",
                       justifyContent: "center",
@@ -403,10 +505,10 @@ const BookingBottomSheet = ({
                   >
                     <Text
                       style={{
-                        lineHeight: scale(12),
+                        lineHeight: scale(14),
                         color: "#FFC300",
                         fontWeight: "600",
-                        fontSize: moderateScale(16),
+                        fontSize: moderateScale(14),
                       }}
                     >
                       -
@@ -421,15 +523,15 @@ const BookingBottomSheet = ({
                       fontSize: moderateScale(16),
                     }}
                   >
-                    {getTotalACCount()}{" "}
-                    {/* ⭐ CHANGED: display total AC count */}
+                    {getTotalACCount()}
                   </Text>
 
                   <TouchableOpacity
-                    onPress={() => handleAddMoreQuantity(true)} // ⭐ CHANGED (fixed): increment
+                    onPress={() => handleAddMoreQuantity(true)}
                     style={{
-                      height: scale(12),
-                      width: scale(12),
+                      // height: scale(14),
+                      width: scale(14),
+                      aspectRatio: 1,
                       backgroundColor: "#fff",
                       alignItems: "center",
                       justifyContent: "center",
@@ -437,10 +539,10 @@ const BookingBottomSheet = ({
                   >
                     <Text
                       style={{
-                        lineHeight: scale(12),
+                        lineHeight: scale(14),
                         color: "#FFC300",
                         fontWeight: "600",
-                        fontSize: moderateScale(16),
+                        fontSize: moderateScale(14),
                       }}
                     >
                       +
@@ -451,7 +553,7 @@ const BookingBottomSheet = ({
                 <Text
                   style={{ fontSize: moderateScale(25), fontWeight: "500" }}
                 >
-                  ₹{calculateTotalPrice()} {/* ⭐ CHANGED: dynamic price */}
+                  ₹{calculateTotalPrice()}
                 </Text>
               </View>
             </View>
@@ -471,13 +573,16 @@ const BookingBottomSheet = ({
 
           <TouchableOpacity
             style={[styles.navBtnPrimary, step === 2 && { width: scale(244) }]}
-            onPress={step === 2 ? handleAddToCart : goNext} // ⭐ CHANGED: on final step call handleAddToCart
+            onPress={step === 2 ? handleAddToCart : goNext}
           >
             <Text style={[styles.navBtnText, { color: "#fff" }]}>
               {step === 2 ? "Add To Cart" : "Next"}
             </Text>
           </TouchableOpacity>
         </View>
+        {errorMessage ? (
+          <Text style={styles.errorText}>{errorMessage}</Text>
+        ) : null}
       </View>
     </ImageBackground>
   );
@@ -487,8 +592,9 @@ export default BookingBottomSheet;
 
 const styles = StyleSheet.create({
   container: {
+    height: verticalScale(350),
     paddingHorizontal: scale(8),
-    paddingVertical: verticalScale(12),
+    paddingVertical: verticalScale(24),
   },
 
   headerRow: {
@@ -501,11 +607,12 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(16),
     fontWeight: "500",
     color: "#fff",
+    paddingHorizontal: scale(6),
   },
 
   infoBubble: {
-    width: scale(14),
-    height: scale(14),
+    width: scale(16),
+    height: scale(16),
     borderRadius: scale(14),
     backgroundColor: "#00000080",
     alignItems: "center",
@@ -515,11 +622,13 @@ const styles = StyleSheet.create({
   infoText: {
     fontWeight: "700",
     color: "#fff",
-    lineHeight: scale(12),
+    lineHeight: scale(13),
+    fontSize: moderateScale(12),
+    // borderWidth : 1
   },
 
   stepContainer: {
-    marginTop: verticalScale(16),
+    marginTop: verticalScale(20),
   },
 
   sectionTitle: {
@@ -551,7 +660,6 @@ const styles = StyleSheet.create({
   typeRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    // gap: scale(12),
     marginBottom: verticalScale(5),
   },
 
@@ -602,7 +710,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     gap: scale(12),
-    marginTop: verticalScale(12),
+    marginTop: verticalScale(24),
     marginBottom: verticalScale(23),
   },
 
@@ -616,6 +724,9 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
     borderWidth: 1,
     elevation: 25,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    // elevation: 4,
   },
 
   navBtnDisabled: {
@@ -629,9 +740,19 @@ const styles = StyleSheet.create({
     width: scale(96),
     alignItems: "center",
     justifyContent: "center",
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
   },
 
   navBtnText: {
     fontWeight: "600",
+  },
+  errorText: {
+    color: "red",
+    marginTop: verticalScale(4),
+    alignSelf: "center",
+    fontSize: moderateScale(14),
+    fontWeight: "500",
   },
 });

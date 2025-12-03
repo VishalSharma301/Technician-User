@@ -4,7 +4,6 @@ import { createStackNavigator } from "@react-navigation/stack";
 import LoginScreen from "./src/app/screens/AuthScreens/LoginScreen";
 import VerificationScreen from "./src/app/screens/AuthScreens/VerificationScreen";
 import HomeScreen from "./src/app/screens/HomeScreen";
-import JobsScreen from "./src/app/screens/JobsScreen";
 import CartScreen from "./src/app/screens/CartScreen";
 import CategoryScreen from "./src/app/screens/CategoryScreen";
 import OrderScreen from "./src/app/screens/OrderScreen";
@@ -25,6 +24,7 @@ import LocationScreen from "./src/app/screens/AddressScreens/LocationScreen";
 import AddressListScreen from "./src/app/screens/AddressScreens/AddressListScreen";
 import AddAddressScreen from "./src/app/screens/AddressScreens/AddAddressScreen";
 import OrderDetailsScreen from "./src/app/screens/OrderDetailScreen";
+import JobsScreen from "./src/app/screens/JobsScreen";
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<HomeTabParamList>();

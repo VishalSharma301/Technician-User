@@ -94,11 +94,13 @@ export default function CartContextProvider({ children }: PropsWithChildren) {
             id: apiItem._id, // ✅ Also provide id
             serviceId: apiItem.service._id,
             serviceName: apiItem.service.name,
+            icon : apiItem.service.icon,
             quantity: apiItem.quantity,
             basePrice: apiItem.priceDescription.items[0].basePrice,
-            totalPrice: apiItem.priceDescription.total ?? 0,
+            totalPrice: apiItem.priceDescription.subtotal ?? 0,
+            selectedOption: apiItem.selectedOption.name || undefined,
             selectedBrand:
-              apiItem.selectedOption?.name ||
+             
               apiItem.selectedBrand?.name ||
               undefined,
           })

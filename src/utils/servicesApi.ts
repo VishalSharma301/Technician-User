@@ -184,7 +184,7 @@ export async function fetchBrandsByZip(zipcode : string){
       params: { zipcode },
       timeout: 10000,
     })
-    console.log('brands fetched : ', response.data);
+    console.log( response.data?'brands fetched ' : 'brands fetch failed');
     
     return response.data
     
@@ -267,7 +267,7 @@ export async function fetchzipcodes(){
       params: { limit : 1000 },
       timeout: 10000,
     })
-    console.log('zipcodes fetched : ', response.data);
+    console.log('zipcodes fetched : ', response.data ? "fetched" : "fetch failed");
     
     return response.data
     

@@ -25,12 +25,7 @@ import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { OrderStackParamList } from "../../constants/navigation";
 
-const STATUS_TABS: {
-  label: string;
-  value: ServiceRequestStatus | "all" | "upcoming" | "past";
-  color: string;
-}[] = [
-  // { label: "All", value: "all" },
+const STATUS_TABS = [
   { label: "Active", value: "in_progress", color: "#027CC7" },
   { label: "Pending", value: "pending", color: "#FFD768" },
   { label: "Completed", value: "completed", color: "#22C55E" },
@@ -39,6 +34,38 @@ const STATUS_TABS: {
 
 type NavigationProp = StackNavigationProp<OrderStackParamList, "OrderScreen">;
 
+const PROGRESS_STAGES = [
+  "assigned",
+  "in_progress",
+  "completed",
+  "warranty",
+  "job_closed",
+] as const;
+
+const PROGRESS_COLORS = {
+  assigned: "#3B82F6",
+  in_progress: "#F59E0B",
+  completed: "#22C55E",
+  warranty: "#8B5CF6",
+  job_closed: "#64748B",
+} as const;
+
+// 🔥 FIX: Normalize ANY backend status to a valid progress stage
+const STATUS_TO_PROGRESS: Record<string, (typeof PROGRESS_STAGES)[number]> = {
+  // Backend → Progress Stage
+
+  booked: "assigned",               // booking created
+  technician_assigned: "in_progress",  // technician allocated
+
+  assigned: "assigned",
+  in_progress: "in_progress",
+  completed: "completed",
+  warranty: "completed",
+  job_closed: "job_closed",
+
+  pending: "assigned",
+  cancelled: "job_closed",
+};
 export default function OrderScreen() {
   const {
     serviceRequests,
@@ -57,126 +84,85 @@ export default function OrderScreen() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const navigation = useNavigation<NavigationProp>();
 
-  // Debounce timer ref
+  
+
+  const getTabCount = (value: string) => {
+    if (!stats) return 0;
+
+    switch (value) {
+      case "in_progress":
+        return stats.inProgress || 0;
+      case "pending":
+        return stats.booked || 0;
+      case "completed":
+        return stats.completed || 0;
+      case "cancelled":
+        return stats.cancelled || 0;
+      case "all":
+        return stats.totalRequests || 0;
+      default:
+        return 0;
+    }
+  };
+
+  // Debounce ref
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     fetchServiceRequests();
 
-    // Cleanup debounce on unmount
     return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
   }, []);
 
   const handleTabChange = (tab: (typeof STATUS_TABS)[0]) => {
     setSelectedTab(tab.value);
 
-    // Update filters to include upcoming if tab is upcoming
-    if (tab.value === "upcoming") {
-      updateFilters({ upcoming: true, status: undefined, past: undefined });
-    } else if (tab.value === "past") {
-      updateFilters({ past: true, upcoming: undefined, status: undefined });
-    } else if (tab.value === "all") {
-      updateFilters({
-        status: undefined,
-        upcoming: undefined,
-        past: undefined,
-      });
+    if (tab.value === "all") {
+      updateFilters({ status: undefined });
     } else {
-      updateFilters({
-        status: tab.value as ServiceRequestStatus,
-        upcoming: undefined,
-        past: undefined,
-      });
+      updateFilters({ status: tab.value as ServiceRequestStatus });
     }
   };
 
   useEffect(() => {
-    // Clear any previous timer
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
 
-    // Only run search when query has at least 3 characters
     if (searchQuery.length > 2) {
       searchTimeoutRef.current = setTimeout(() => {
-        console.log("Debounced search for:", searchQuery);
-
-        let filters: any = {
+        const filters: any = {
           page: 1,
           limit: 10,
           search: searchQuery,
         };
 
-        // Apply current tab filters
-        if (selectedTab === "upcoming") {
-          filters.upcoming = true;
-        } else if (selectedTab === "past") {
-          filters.past = true;
-        } else if (selectedTab !== "all") {
+        if (selectedTab !== "all") {
           filters.status = selectedTab;
         }
 
         fetchServiceRequests(filters);
-      }, 800); // delay before calling API
+      }, 800);
     }
 
-    // Cleanup on re-run
     return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
-  }, [searchQuery, selectedTab]); // run
+  }, [searchQuery, selectedTab]);
 
-  // Refresh with current tab filters
   const refreshWithFilters = () => {
-    let filters: any = { page: 1, limit: 10 };
+    const filters: any = { page: 1, limit: 10 };
 
-    if (selectedTab === "upcoming") {
-      filters.upcoming = true;
-    } else if (selectedTab === "past") {
-      filters.past = true;
-    } else if (selectedTab !== "all") {
+    if (selectedTab !== "all") {
       filters.status = selectedTab;
     }
 
-    // Include search query if present
-    if (searchQuery && searchQuery.length > 2) {
+    if (searchQuery.length > 2) {
       filters.search = searchQuery;
     }
 
     fetchServiceRequests(filters);
   };
-
-  // const handleCardPress = (item: ServiceRequest) => {
-  //   const data: ItemData = {
-  //     _id: item._id,
-  //     name: item.service?.name || "Service",
-  //     createdAt: formatDate(item.createdAt),
-  //     description: item.notes || "No description",
-  //     price: item.finalPrice || "unavailable",
-  //     subType: "General",
-  //     notes: item.notes || "No additional notes",
-  //     image: "https://via.placeholder.com/150",
-  //     isMakingNoise: "false",
-  //     mainType: "General",
-  //     phone: "N/A",
-  //     address: item.address,
-  //     quantity: item.quantity || 1,
-  //   };
-
-  //   // Navigate to detail screen
-  //   // console.log("Service Request pressed:", item);
-  //   navigation.navigate("OrderDetailsScreen", {
-  //     data: data,
-  //     pin: item.completionPin,
-  //     item: item,
-  //   });
-  // };
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
@@ -187,7 +173,12 @@ export default function OrderScreen() {
         showsHorizontalScrollIndicator={false}
         data={STATUS_TABS}
         keyExtractor={(item) => item.value}
-        contentContainerStyle={{ gap : scale(3.5)}}
+        contentContainerStyle={{
+          gap: scale(3.5),
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: scale(370),
+        }}
         renderItem={({ item }) => {
           const isActive = selectedTab === item.value;
 
@@ -199,35 +190,18 @@ export default function OrderScreen() {
                 {
                   borderColor: item.color,
                   backgroundColor: isActive
-                    ? `${item.color}15` // active transparency
-                    : `${item.color}08`, // normal state
+                    ? `${item.color}15`
+                    : `${item.color}08`,
                 },
               ]}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  {
-                    color: "#000",
-                    fontWeight: "600",
-                  },
-                ]}
-              >
+              <Text style={[styles.tabText, { color: "#000", fontWeight: "600" }]}>
                 {item.label}
               </Text>
 
-              <View
-                style={{
-                  width: scale(21),
-                  height: scale(21),
-                  backgroundColor: "#fff",
-                  borderRadius: scale(20),
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
+              <View style={styles.countCircle}>
                 <Text style={[styles.tabCount, { color: item.color }]}>
-                  {"10"}
+                  {getTabCount(item.value)}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -260,10 +234,7 @@ export default function OrderScreen() {
       return (
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={refreshWithFilters}
-          >
+          <TouchableOpacity style={styles.retryButton} onPress={refreshWithFilters}>
             <Text style={styles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -278,26 +249,23 @@ export default function OrderScreen() {
   };
 
   function OrderCard({ item }: { item: ServiceRequest }) {
+    const normalizedStatus = STATUS_TO_PROGRESS[item.status];
+
+
     return (
       <TouchableOpacity
         style={styles.card}
         onPress={() => navigation.navigate("OrderDetailsScreen", { item })}
+        // onPress={() => console.log("STATUS FROM API:", item.status)}
       >
         <View style={styles.orderHeader}>
-          <ImageBackground
-            source={require("../../../assets/iconBG.png")}
+          <View
             style={styles.iconCircle}
           >
             <Text style={styles.iconText}>GE</Text>
-          </ImageBackground>
-          <View
-            style={{
-              flex: 1,
-              marginLeft: scale(10),
-              flexDirection: "row",
-              justifyContent: "space-between",
-            }}
-          >
+          </View>
+
+          <View style={styles.orderHeaderRight}>
             <View>
               <Text style={styles.heading}>Order No.</Text>
               <Text style={styles.orderNo}>{item._id}</Text>
@@ -320,41 +288,34 @@ export default function OrderScreen() {
           </View>
         </View>
 
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: "#fff",
-            backgroundColor: "#FFFFFF1A",
-            paddingVertical: verticalScale(14),
-            // paddingHorizontal: scale(21),
-            borderRadius: moderateScale(12),
-            marginTop: verticalScale(15),
-          }}
-        >
-          {/* Progress Bar */}
+        <View style={styles.progressContainer}>
+          {/* 🔥 FIXED PROGRESS BAR */}
           <View style={styles.progressBar}>
-            <View
-              style={[styles.progressSegment, { backgroundColor: "#0083D3" }]}
-            />
-            <View
-              style={[styles.progressSegment, { backgroundColor: "#E6B325" }]}
-            />
-            <View
-              style={[styles.progressSegment, { backgroundColor: "#4CAF50" }]}
-            />
-            <View
-              style={[styles.progressSegment, { backgroundColor: "#9C27B0" }]}
-            />
-            <View
-              style={[styles.progressSegment, { backgroundColor: "#9E9E9E" }]}
-            />
+            {PROGRESS_STAGES.map((stage) => {
+              const isActive =
+                PROGRESS_STAGES.indexOf(normalizedStatus) >=
+                PROGRESS_STAGES.indexOf(stage);
+
+              return (
+                <View
+                  key={stage}
+                  style={[
+                    styles.progressSegment,
+                    {
+                      backgroundColor: isActive
+                        ? PROGRESS_COLORS[stage]
+                        : "#D1D5DB",
+                    },
+                  ]}
+                />
+              );
+            })}
           </View>
 
           <View style={styles.verifyRow}>
             <Text style={styles.deviceText}>1 WINDOW AC</Text>
           </View>
 
-          {/* Legend */}
           <View style={styles.legendRow}>
             {[
               { color: "#3B82F6", text: "Assigned" },
@@ -364,9 +325,7 @@ export default function OrderScreen() {
               { color: "#64748B", text: "Job Closed" },
             ].map((item, i) => (
               <View key={i} style={styles.legendItem}>
-                <View
-                  style={[styles.legendDot, { backgroundColor: item.color }]}
-                />
+                <View style={[styles.legendDot, { backgroundColor: item.color }]} />
                 <Text style={styles.legendText}>{item.text}</Text>
               </View>
             ))}
@@ -382,10 +341,7 @@ export default function OrderScreen() {
         <FlatList
           data={serviceRequests}
           keyExtractor={(item) => item._id + item.bookedAt}
-          renderItem={({ item }) => (
-            // <ServiceRequestCard request={item} onPress={handleCardPress} />
-            <OrderCard item={item} />
-          )}
+          renderItem={({ item }) => <OrderCard item={item} />}
           ListHeaderComponent={renderHeader}
           ListFooterComponent={renderFooter}
           ListEmptyComponent={renderEmpty}
@@ -402,7 +358,7 @@ export default function OrderScreen() {
             serviceRequests.length === 0 && styles.emptyContainer,
             { gap: verticalScale(10), paddingBottom: verticalScale(300) },
           ]}
-          removeClippedSubviews={true}
+          removeClippedSubviews
           maxToRenderPerBatch={10}
           updateCellsBatchingPeriod={50}
           initialNumToRender={10}
@@ -449,66 +405,72 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FFFFFF1A",
     borderRadius: moderateScale(14),
-    padding: scale(14),
+    // padding: scale(14),
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
     borderWidth: 1,
     borderColor: "#ffffff",
+    overflow: "hidden",
     // elevation: 2,
   },
   orderHeader: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#fff",
-    backgroundColor: "#FFFFFF1A",
+    // borderWidth: 1,
+    // borderColor: "#fff",
+    backgroundColor: "#027CC7",
     paddingVertical: verticalScale(14),
     paddingHorizontal: scale(21),
-    borderRadius: moderateScale(12),
+    // borderRadius: moderateScale(12),
   },
   iconCircle: {
     width: scale(46),
     height: scale(46),
     borderRadius: 50,
-    // backgroundColor: "#0083D320",
-    // justifyContent: "center",
     alignItems: "center",
-    position: "relative",
-    bottom: verticalScale(-4),
+    // position: "relative",
+    // bottom: verticalScale(-4),
+    borderColor : '#1A98E5',
+    borderWidth : 1,
+    justifyContent : "center",
   },
   iconText: {
     color: "#fff",
     fontWeight: "700",
     fontSize: moderateScale(14),
-    position: "relative",
-    bottom: verticalScale(-11),
-    left: scale(-1),
+  },
+    orderHeaderRight: {
+    flex: 1,
+    marginLeft: scale(10),
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   heading: {
-    color: "#939393",
+    color: "#fff",
     fontSize: moderateScale(10),
     fontWeight: "500",
   },
   orderNo: {
     fontSize: moderateScale(14),
-    color: "#333",
+    color: "#fff",
     fontWeight: "500",
   },
   price: {
     fontSize: moderateScale(14),
-    color: "#2E2E2E",
+    color: "#ffffff",
     fontWeight: "500",
   },
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: verticalScale(12),
-    borderWidth: 1,
-    borderColor: "#fff",
+    // marginTop: verticalScale(12),
+    // borderWidth: 1,
+    // borderColor: "#fff",
     backgroundColor: "#FFFFFF1A",
-    paddingVertical: verticalScale(14),
+    paddingTop: verticalScale(19),
+    paddingBottom: verticalScale(15),
     paddingHorizontal: scale(21),
     borderRadius: moderateScale(12),
   },
@@ -520,6 +482,14 @@ const styles = StyleSheet.create({
   subLabel: {
     fontSize: moderateScale(11),
     color: "#888",
+  },
+   progressContainer: {
+    borderTopWidth: 1,
+    borderColor: "#fff",
+    backgroundColor: "#FFFFFF1A",
+    paddingVertical: verticalScale(14),
+    // borderRadius: moderateScale(12),
+    marginTop: verticalScale(15),
   },
   progressBar: {
     flexDirection: "row",
@@ -604,7 +574,7 @@ const styles = StyleSheet.create({
     // paddingHorizontal: 16,
     marginBottom: 8,
     marginTop: verticalScale(12),
-    width : scale(393),
+    width: scale(393),
     // gap : scale(1.5)
     // borderWidth : 1
   },
@@ -629,6 +599,14 @@ const styles = StyleSheet.create({
   },
   tabTextActive: {
     color: "#FFFFFF",
+  },
+  countCircle: {
+    width: scale(21),
+    height: scale(21),
+    backgroundColor: "#fff",
+    borderRadius: scale(20),
+    justifyContent: "center",
+    alignItems: "center",
   },
   footerLoader: {
     paddingVertical: 20,

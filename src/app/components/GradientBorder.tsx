@@ -33,7 +33,7 @@ interface GradientBorderProps {
  * Creates a smooth two-layer gradient border effect using nested LinearGradients.
  */
 const GradientBorder: React.FC<GradientBorderProps> = ({
-  innerWidth = moderateScale(2),
+  innerWidth = moderateScale(1),
   outerWidth = moderateScale(0),
   borderRadius = moderateScale(12),
   innerColors = [

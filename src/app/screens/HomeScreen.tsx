@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  ImageBackground,
 } from "react-native";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
@@ -26,6 +27,8 @@ import { ServiceData } from "../../constants/types";
 import { innerColors, outerColors } from "../../constants/colors";
 import Tooltip from "../components/Tooltip";
 import { iconMap, IconName } from "../../utils/iconMap";
+import ServiceOfTheWeek from "../components/Slider";
+import BookingChatBot from "../components/BookingChatBot";
 
 const categories = ["Popular", "Emergency", "Seasonal", "Daily Use"];
 
@@ -47,9 +50,10 @@ const HomeScreen = () => {
     popularServices,
     dailyNeedServices,
     quickPickServices,
+    mostBookedServices,
   } = useServices();
-  const [visible, setVisible] = useState(false);
   const [pinVisible, setPinVisible] = useState(false);
+  const [visible, setVisible] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceData>();
   const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
 
@@ -63,7 +67,11 @@ const HomeScreen = () => {
       : services;
 
   const zipcode = selectedAddress.address.zipcode;
-  console.log(services);
+  // console.log("services fetched");
+
+  const serviceOfTheWeek = useMemo(() => {
+    return mostBookedServices.length > 0 ? mostBookedServices[0] : null;
+  }, [mostBookedServices]);
 
   useEffect(() => {
     console.log(selectedAddress);
@@ -78,7 +86,7 @@ const HomeScreen = () => {
         const servicesRes = await fetchServicesByZip(zipcode);
         const brandsRes = await fetchBrandsByZip(zipcode);
 
-        console.log("🔧 Services:", servicesRes);
+        console.log(servicesRes ? "🔧 Services fetched:" : "services failed");
 
         setServices(servicesRes.data);
         setBrands(brandsRes.data);
@@ -96,40 +104,46 @@ const HomeScreen = () => {
   const ChangePinCode = () => {
     const [pin, setPin] = useState("");
     return (
-      <View style={styles.card}>
-        <Text style={styles.title}>Change Pin Code</Text>
+      <ImageBackground
+        source={require("../../../assets/bottomWrapper.png")}
+        style={{ width: "100%", alignSelf: "flex-start" }}
+        resizeMode="cover"
+      >
+        <View style={styles.card}>
+          <Text style={styles.title}>Change Pin Code</Text>
 
-        <View style={styles.inputContainer}>
-          <Icon
-            name="location-sharp"
-            size={moderateScale(16)}
-            color="#FF3B30"
-            style={{ marginRight: scale(6) }}
-          />
+          <View style={styles.inputContainer}>
+            <Icon
+              name="location-sharp"
+              size={moderateScale(16)}
+              color="#FF3B30"
+              style={{ marginRight: scale(6) }}
+            />
 
-          <TextInput
-            style={styles.input}
-            value={pin}
-            placeholder="Enter Pin Code"
-            keyboardType="numeric"
-            maxLength={6}
-            onChangeText={setPin}
-          />
+            <TextInput
+              style={styles.input}
+              value={pin}
+              placeholder="Enter Pin Code"
+              keyboardType="numeric"
+              maxLength={6}
+              onChangeText={setPin}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.submitBtn}
+            onPress={() => {
+              console.log("pin", pin);
+
+              setZipcode(pin);
+
+              setPinVisible(false);
+            }}
+          >
+            <Text style={styles.submitText}>SUBMIT</Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={styles.submitBtn}
-          onPress={() => {
-            console.log("pin", pin);
-
-            setZipcode(pin);
-
-            setPinVisible(false);
-          }}
-        >
-          <Text style={styles.submitText}>SUBMIT</Text>
-        </TouchableOpacity>
-      </View>
+      </ImageBackground>
     );
   };
 
@@ -166,9 +180,9 @@ const HomeScreen = () => {
             borderRadius: moderateScale(12),
             marginTop: verticalScale(9),
             paddingTop: verticalScale(16),
-            paddingBottom: verticalScale(8),
+            paddingBottom: verticalScale(10),
             backgroundColor: "#FFFFFF1A",
-            //   height: verticalScale(353),
+            // height: verticalScale(353),
           }}
         >
           {/* Category Tabs */}
@@ -211,14 +225,14 @@ const HomeScreen = () => {
                   height: verticalScale(150),
                   justifyContent: "center",
                   // borderWidth : 1,
-                  alignSelf : 'center',
-                  width : '100%'
+                  alignSelf: "center",
+                  width: "100%",
                 }}
               >
                 <Text
                   style={{
                     fontSize: moderateScale(14),
-                    fontWeight : '600',
+                    fontWeight: "600",
                     color: "#000",
                     alignSelf: "center",
                   }}
@@ -228,57 +242,129 @@ const HomeScreen = () => {
               </View>
             ) : (
               servicess.map((service) => (
-                <GradientBorder
+                //   <View  key={service._id} style={{ borderWidth:0,  height: verticalScale(94), width : scale(85)}}>
+                //  {/* Tooltip */}
+                //     {activeTooltipId === service._id && (
+                //       <Tooltip text={service.name} />
+                //     )}
+                //   <ImageBackground
+                //     key={service._id}
+                //     source={require("../../../assets/vv.png")}
+                //     resizeMode="contain"
+                //     style={{
+                //       height: verticalScale(140),
+                //       width: scale(110),
+                //       // borderWidth: 1,
+                //       alignItems: "center",
+                //       marginHorizontal: -12,
+
+                //       // marginLeft : -14,
+                //       // marginRight : -10,
+                //       // marginVertical: -10,
+                //       // marginTop : verticalScale(2),
+
+                //     }}
+                //   >
+
+                //     <TouchableOpacity
+                //       style={styles.serviceCard}
+                //       onPress={() => selectBrand(service)}
+                //       onLongPress={() => setActiveTooltipId(service._id)}
+                //       onPressOut={() => setActiveTooltipId(null)}
+                //       delayLongPress={300}
+                //     >
+                //       <View style={styles.serviceIcon}>
+                //         <Image
+                //           source={
+                //             iconMap[service.icon as IconName] ??
+                //             iconMap["default"]
+                //           }
+                //           style={{
+                //             height: "100%",
+                //             width: "100%",
+                //             minHeight: verticalScale(39),
+                //             minWidth: scale(39),
+                //             resizeMode: "contain",
+                //           }}
+                //         />
+                //       </View>
+
+                //       <Text
+                //         numberOfLines={1}
+                //         ellipsizeMode="tail"
+                //         style={styles.serviceText}
+                //       >
+                //         {service.name}
+                //       </Text>
+                //     </TouchableOpacity>
+                //   </ImageBackground>
+                //   </View>
+                <View
                   key={service._id}
-                  gradientStyle={{ marginBottom: verticalScale(10) }}
                   style={{
-                    width: scale(74.75),
-                    aspectRatio: 1,
-                    backgroundColor: "#E8E8E8",
                     shadowColor: "#000",
                     shadowOpacity: 0.05,
                     shadowRadius: 3,
-                    elevation: 7,
-                    position: "relative",
+                    paddingBottom: verticalScale(10),
                   }}
                 >
-                  {/* Tooltip */}
-                  {activeTooltipId === service._id && (
-                    <Tooltip text={service.name} />
-                  )}
+                  <GradientBorder
+                    key={service._id}
+                    gradientStyle={{}}
+                    style={{
+                      width: scale(80),
+                      height: scale(80),
+                      backgroundColor: "#E8E8E8",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      // borderWidth: 1,
 
-                  <TouchableOpacity
-                    style={styles.serviceCard}
-                    onPress={() => selectBrand(service)}
-                    onLongPress={() => setActiveTooltipId(service._id)}
-                    onPressOut={() => setActiveTooltipId(null)}
-                    delayLongPress={300}
+                      // elevation: 7,
+                      position: "relative",
+                      //                 shadowColor: "#000",
+                      // shadowOpacity: 0.05,
+                      // shadowRadius: 3,
+                      // elevation: 2,
+                    }}
                   >
-                    <View style={styles.serviceIcon}>
-                      <Image
-                        source={
-                          iconMap[service.icon as IconName] ??
-                          iconMap["default"]
-                        }
-                        style={{
-                          height: "100%",
-                          width: "100%",
-                          minHeight: verticalScale(39),
-                          minWidth: scale(39),
-                          resizeMode: "contain",
-                        }}
-                      />
-                    </View>
+                    {/* Tooltip */}
+                    {activeTooltipId === service._id && (
+                      <Tooltip text={service.name} />
+                    )}
 
-                    <Text
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                      style={styles.serviceText}
+                    <TouchableOpacity
+                      style={styles.serviceCard}
+                      onPress={() => selectBrand(service)}
+                      onLongPress={() => setActiveTooltipId(service._id)}
+                      onPressOut={() => setActiveTooltipId(null)}
+                      delayLongPress={300}
                     >
-                      {service.name}
-                    </Text>
-                  </TouchableOpacity>
-                </GradientBorder>
+                      <View style={styles.serviceIcon}>
+                        <Image
+                          source={
+                            iconMap[service.icon as IconName] ??
+                            iconMap["default"]
+                          }
+                          style={{
+                            height: "100%",
+                            width: "100%",
+                            minHeight: verticalScale(39),
+                            minWidth: scale(39),
+                            resizeMode: "contain",
+                          }}
+                        />
+                      </View>
+
+                      <Text
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        style={styles.serviceText}
+                      >
+                        {service.name}
+                      </Text>
+                    </TouchableOpacity>
+                  </GradientBorder>
+                </View>
               ))
             )}
           </View>
@@ -300,53 +386,42 @@ const HomeScreen = () => {
         </View>
 
         {/* Technician of the Week */}
-        <Text style={styles.techHeader}>Technician Of The Week</Text>
-        <View style={styles.techCard}>
-          <View style={styles.techInfo}>
-            <View
-              style={{
-                width: scale(45),
-                aspectRatio: 1,
-                borderWidth: 1,
-                borderColor: "#fff",
-                borderRadius: moderateScale(10),
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: scale(10),
-              }}
-            >
-              <Image
-                source={require("../../../assets/AcOut.png")}
-                style={styles.techImage}
-              />
-            </View>
-            <View>
-              <Text style={styles.techName}>Single Ac Service 🛡️</Text>
-              <Text style={styles.techDesc}>Ac Services • 4.5 ⭐</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.cartButton}>
-            <Image
-              source={require("../../../assets/cart.png")}
-              style={{
-                width: scale(22),
-                height: scale(22),
-                resizeMode: "cover",
-              }}
-            />
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.techHeader}>Service Of The Week</Text>
+
+        <ServiceOfTheWeek
+          onPressService={(serviceOfTheWeek) => selectBrand(serviceOfTheWeek)}
+        />
       </ScrollView>
-      <CustomNavBar isLocal={true} />
-      <BottomSheet visible={visible}>
+      <CustomNavBar isLocal={"Home"} />
+      {/* <BottomSheet visible={visible} onClose={() => setVisible(false)}> */}
+      <View
+        style={{
+          height: verticalScale(500),
+          opacity: 1,
+          display: visible ? "flex" : "none",
+          borderWidth: 1,
+        }}
+      >
         {selectedService && (
-          <BookingBottomSheet
-            close={() => setVisible(false)}
+          // <BookingBottomSheet
+          //   close={() => setVisible(false)}
+          //   service={selectedService}
+          // />
+          <BookingChatBot
             service={selectedService}
+            onClose={() => setVisible(false)}
+            onAddToCart={({ brand, type, pricingId }) => {
+              console.log("Brand:", brand);
+              console.log("Type:", type);
+              console.log("Pricing:", pricingId);
+
+              // Here you call your real addToCart logic
+            }}
           />
         )}
-      </BottomSheet>
-      <BottomSheet visible={pinVisible}>
+      </View>
+      {/* </BottomSheet> */}
+      <BottomSheet visible={pinVisible} onClose={() => setPinVisible(false)}>
         <ChangePinCode />
       </BottomSheet>
     </ScreenWrapper>
@@ -356,10 +431,9 @@ const HomeScreen = () => {
 export default HomeScreen;
 
 const styles = StyleSheet.create({
-  container: {
+  container:{
     padding: scale(9),
   },
-
   pinContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -386,6 +460,7 @@ const styles = StyleSheet.create({
     width: scale(80),
     alignItems: "center",
     justifyContent: "center",
+    elevation: 8,
   },
   activeCategory: {
     backgroundColor: "#027CC7",
@@ -403,24 +478,35 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    // paddingBottom : verticalScale(20),
+    // gap : scale(3)
+    // borderWidth : 1,
+    // paddingTop: verticalScale(25),
   },
   serviceCard: {
-    width: scale(74.75),
-    aspectRatio: 1,
-    backgroundColor: "#E8E8E8",
+    width: "100%",
+    height: "100%",
+    // aspectRatio: 1,
+    // backgroundColor: "#E8E8E8",
     alignItems: "center",
+    justifyContent: "center",
     borderRadius: moderateScale(12),
-    paddingVertical: verticalScale(8),
-    marginBottom: verticalScale(12),
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    // paddingVertical: verticalScale(8),
+    // marginBottom: verticalScale(12),
+    // shadowColor: "#000",
+    // shadowOpacity: 0.05,
+    // shadowRadius: 3,
+    // elevation: 2,
+    // borderWidth: 1,
+    // flex : 1
   },
   serviceIcon: {
     // marginBottom: verticalScale(6),
+
     height: verticalScale(41),
     width: scale(50),
+    marginTop: verticalScale(6),
+    marginBottom: verticalScale(2),
   },
   iconText: { fontSize: moderateScale(24) },
   serviceText: {
@@ -438,7 +524,7 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(20),
     borderWidth: 0.7,
     borderColor: "#fff",
-    height: verticalScale(113),
+    height: verticalScale(100),
     width: scale(373),
     alignSelf: "center",
     alignItems: "center",
@@ -446,51 +532,25 @@ const styles = StyleSheet.create({
     borderRadius: scale(12),
     backgroundColor: "#FFFFFF1A",
   },
-  badgeIcon: { width: scale(73), height: scale(73), resizeMode: "contain" },
+  badgeIcon: {
+    width: moderateScale(73),
+    height: moderateScale(73),
+    resizeMode: "contain",
+  },
   techHeader: {
     fontWeight: "600",
     fontSize: moderateScale(16),
     marginBottom: verticalScale(8),
-    marginTop: verticalScale(16),
+    marginTop: verticalScale(12),
     marginLeft: scale(1),
   },
-  techCard: {
-    backgroundColor: "#D4D4D440",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: scale(12),
-    borderRadius: moderateScale(16),
-    borderWidth: 2,
-    borderColor: "#fff",
-    height: verticalScale(74),
-    // shadowColor: "#000",
-    // shadowOpacity: 0.05,
-    // shadowRadius: 3,
-    // elevation: 2,
-    marginBottom: verticalScale(20),
-  },
-  techInfo: { flexDirection: "row", alignItems: "center" },
-  techImage: {
-    width: scale(33),
-    height: scale(31),
-    borderRadius: moderateScale(10),
 
-    resizeMode: "cover",
-  },
-  techName: { fontWeight: "600", fontSize: moderateScale(14) },
-  techDesc: { color: "#555", fontSize: moderateScale(12) },
-  cartButton: {
-    backgroundColor: "#f0f0f0",
-    borderRadius: moderateScale(10),
-    padding: scale(6),
-  },
   card: {
-    width: scale(360),
+    width: "100%",
     paddingVertical: verticalScale(20),
     paddingHorizontal: scale(18),
-    backgroundColor: "#FFFFFF",
-    borderRadius: moderateScale(14),
+    // backgroundColor: "#FFFFFF10",
+    // borderRadius: moderateScale(14),
     alignSelf: "center",
     shadowColor: "#000",
     shadowOpacity: 0.08,

@@ -1,38 +1,43 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
-  Dimensions,
   Easing,
   StyleSheet,
   View,
+  Pressable,
+  LayoutChangeEvent,
 } from "react-native";
 import { scale } from "../../utils/scaling";
 
 interface BottomSheetProps {
   visible: boolean;
   children: React.ReactNode;
+  onClose?: () => void;
 }
 
-const BottomSheet: React.FC<BottomSheetProps> = ({ visible, children }) => {
+const BottomSheet: React.FC<BottomSheetProps> = ({ visible, children, onClose }) => {
   const [contentHeight, setContentHeight] = useState(0);
+  const [isMounted, setIsMounted] = useState(visible); // NEW
 
   const translateY = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
-  // ALWAYS start the sheet hidden by its own height
+  // Mount on visible=true
   useEffect(() => {
-    if (contentHeight > 0) {
-      translateY.setValue(contentHeight);
+    if (visible) {
+      setIsMounted(true);
     }
-  }, [contentHeight]);
+  }, [visible]);
 
+  // Animate open / close
   useEffect(() => {
     if (contentHeight === 0) return;
 
     if (visible) {
+      // OPEN animation
       Animated.parallel([
         Animated.timing(translateY, {
-          toValue: 0, // slide UP fully
+          toValue: 0,
           duration: 300,
           easing: Easing.out(Easing.ease),
           useNativeDriver: true,
@@ -44,9 +49,10 @@ const BottomSheet: React.FC<BottomSheetProps> = ({ visible, children }) => {
         }),
       ]).start();
     } else {
+      // CLOSE animation
       Animated.parallel([
         Animated.timing(translateY, {
-          toValue: contentHeight, // slide DOWN by its own height
+          toValue: contentHeight,
           duration: 250,
           easing: Easing.in(Easing.ease),
           useNativeDriver: true,
@@ -56,35 +62,42 @@ const BottomSheet: React.FC<BottomSheetProps> = ({ visible, children }) => {
           duration: 200,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]).start(() => {
+        setIsMounted(false); // unmount AFTER animation
+      });
     }
   }, [visible, contentHeight]);
 
+  const onContentLayout = (e: LayoutChangeEvent) => {
+    const h = e.nativeEvent.layout.height;
+    if (h !== contentHeight) setContentHeight(h);
+  };
+
+  if (!isMounted) return null; // sheet/backdrop unmounted only after animation ends
+
   return (
     <>
-      {/* Backdrop */}
-      <Animated.View style={[styles.backdrop, { opacity }]} pointerEvents={"none"} />
+      {/* BACKDROP */}
+      <Animated.View style={[styles.backdrop, { opacity }]}>
+        <Pressable
+          style={[StyleSheet.absoluteFill, { bottom: contentHeight }]}
+          onPress={() => onClose?.()}
+        />
+      </Animated.View>
 
-      {/* Sheet */}
+      {/* SHEET */}
       <Animated.View
         style={[
           styles.sheetContainer,
           {
             transform: [{ translateY }],
-            width: scale(375),
-            marginHorizontal: scale(9),
+            // width: scale(375),
+            // marginHorizontal: scale(9),
           },
         ]}
+        pointerEvents="box-none"
       >
-        <View
-          onLayout={(e) => {
-            const h = e.nativeEvent.layout.height;
-          
-            setContentHeight(h);
-          }}
-        >
-          {children}
-        </View>
+        <View onLayout={onContentLayout}>{children}</View>
       </Animated.View>
     </>
   );
@@ -93,7 +106,8 @@ const BottomSheet: React.FC<BottomSheetProps> = ({ visible, children }) => {
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#f5f5f561",
+    // backgroundColor: "#f5f5f561",
+     backgroundColor: "rgba(0, 0, 0, 0.93)", 
   },
   sheetContainer: {
     position: "absolute",
@@ -101,8 +115,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    // borderTopLeftRadius: 20,
+    // borderTopRightRadius: 20,
     overflow: "hidden",
     zIndex: 999,
     elevation: 20,

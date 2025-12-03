@@ -94,7 +94,8 @@ export type CartItemLocal = {
   basePrice: number;       // Price per unit
   totalPrice: number;      // Total for this item
   selectedBrand?: string;  // Optional brand name
-  
+  selectedOption?: string;  // Option name
+  icon : string;         // Service icon  name
 };
 
 

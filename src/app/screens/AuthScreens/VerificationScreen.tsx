@@ -11,7 +11,7 @@ import { moderateScale, scale, verticalScale } from "../../../utils/scaling";
 import ScreenWrapper from "../../components/ScreenWrapper";
 import { useAuth } from "../../../hooks/useAuth";
 import { useProfile } from "../../../hooks/useProfile";
-import { verifyOtp } from "../../../utils/authApi";
+import { loginDirect, verifyOtp } from "../../../utils/authApi";
 
 const VerificationScreen = () => {
   const { setIsAuthenticated, setToken } = useAuth();
@@ -29,8 +29,9 @@ const VerificationScreen = () => {
 
   const verifyOtpCode = async (code: string) => {
     // ✅ ADDED
-    console.log("otpdata : ", phoneNumber + code);
-    const result = await verifyOtp(phoneNumber, code); // ✅ ADDED
+    // console.log("otpdata : ", phoneNumber + code);
+    const result = await loginDirect(); // ✅ ADDED
+    // const result = await verifyOtp(phoneNumber, code); // ✅ ADDED
 
     if (result && result.token?.token) {
       const jwtToken = result.token.token;

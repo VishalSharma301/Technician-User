@@ -13,7 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useCart } from "../../hooks/useCart";
 
 type Props = Partial<BottomTabBarProps> & {
-  isLocal?: boolean;
+  isLocal?: "Home" | "Category";
 };
 
 export default function CustomNavBar({ state, navigation, isLocal }: Props) {
@@ -23,17 +23,22 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
   // 🔥 Hide ONLY when used as GLOBAL nav bar AND HomeScreen is active
   if (!isLocal && state) {
     const currentRoute = state.routes[state.index].name;
-    if (currentRoute === "HomeStack") {
+    if (currentRoute === "HomeStack" || currentRoute === "CategoryScreen") {
       return null;
     }
   }
 
   return (
+    // <View style={{borderWidth : 0, paddingBottom : verticalScale(10), backgroundColor : 'transparent'}}>
     <View style={styles.bottomNav}>
       <ImageBackground
-        source={require("../../../assets/bg.png")}
+        source={require("../../../assets/Navbg.png")}
         style={styles.bottomNav2}
       >
+      {/* <ImageBackground
+        source={require("../../../assets/bg0.png")}
+        style={styles.bottomNav2}
+      > */}
         {/* Home */}
         <TouchableOpacity
           onPress={() => nav?.navigate("HomeStack")}
@@ -42,7 +47,7 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
           <Icon
             name="home-outline"
             size={moderateScale(20)}
-            color={isLocal ? "#0583D0" : "#707070"}
+            color={isLocal === "Home" ? "#0583D0" : "#707070"}
           />
           <Text
             style={[
@@ -103,7 +108,9 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
           <Icon
             name="grid-outline"
             size={moderateScale(20)}
-            color={state?.index === 3 ? "#0583D0" : "#707070"}
+             color={isLocal === "Category" ? "#0583D0" : "#707070"
+
+            }
           />
           <Text
             style={[
@@ -134,8 +141,10 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
             Order
           </Text>
         </TouchableOpacity>
+      {/* </ImageBackground> */}
       </ImageBackground>
     </View>
+    // </View>
   );
 }
 
@@ -143,18 +152,18 @@ const styles = StyleSheet.create({
   bottomNav: {
     flexDirection: "row",
     justifyContent: "center",
-    backgroundColor: "#fefefeff",
+    backgroundColor: "#ffffff10",
     borderRadius: moderateScale(30),
     paddingVertical: verticalScale(10),
     height: verticalScale(68),
-    position: "absolute",
     width: scale(347),
-    bottom: verticalScale(30),
-    marginHorizontal: scale(23),
     borderWidth: 0.8,
     borderColor: "#FFFFFF",
     alignItems : 'center',
-    overflow : 'hidden'
+    overflow : 'hidden',
+    position: "absolute",
+    bottom: verticalScale(10),
+    marginHorizontal: scale(23),
   },
   bottomNav2: {
     flexDirection: "row",

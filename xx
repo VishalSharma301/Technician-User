@@ -1,527 +1,310 @@
-import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  ImageBackground,
-} from "react-native";
-import { moderateScale, scale, verticalScale } from "../../utils/scaling";
-import ScreenWrapper from "../components/ScreenWrapper";
-import Header from "../components/Header";
-import { RouteProp, useRoute } from "@react-navigation/native";
-import { OrderStackParamList } from "../../constants/navigation";
-import { ServiceRequest } from "../../constants/serviceRequestTypes";
-
-type NavigationProp = RouteProp<OrderStackParamList, "OrderDetailsScreen">
-
-const OrderDetailsScreen: React.FC = () => {
-
-    const route = useRoute<NavigationProp>()
-
-    const item : ServiceRequest = route.params?.item
-    
-
-  const statusTabs = [
-    { title: "Active", count: 25, color: "#027CC7" },
-    { title: "Pending", count: 125, color: "#FFD768" },
-    { title: "Completed", count: 145, color: "#22C55E" },
-    { title: "Cancel", count: 100, color: "#FF0000" },
-  ];
-
-  const timeline = [
-    {
-      date: "01 Jan, 2025",
-      time: "10:20AM",
-      title: "Assign",
-      desc: "Provider",
+[
+  {
+    _id: "68dc0cead0d2597c709e28b2",
+    availableInZipcode: true,
+    basePrice: 700,
+    brands: [[Object], [Object], [Object], [Object], [Object], [Object]],
+    category: {
+      _id: "68d4e04986915940b7699562",
+      icon: "ac_icon",
+      name: "AC Services",
     },
-    {
-      date: "02 Jan, 2025",
-      time: "10:20AM",
-      title: "In-Progress",
-      desc: "Technician Working",
+    dailyNeed: true,
+    description: "General servicing and repair of AC units",
+    estimatedTime: "1-2 hours",
+    icon: "ac_repair",
+    mostBooked: true,
+    name: "AC Repair",
+    options: [[Object], [Object]],
+    popular: true,
+    providerCount: 1,
+    quickPick: true,
+    slug: "ac-repair",
+    specialty: "repair",
+    subServices: [],
+    subcategoryName: "AC Repair",
+  },
+  {
+    _id: "68dfbcdf3aaaf9246b920c62",
+    availableInZipcode: true,
+    basePrice: 400,
+    brands: [[Object], [Object], [Object]],
+    category: {
+      _id: "68dce2428b8e8257e84163f1",
+      icon: "electric_icon",
+      name: "Electrical Services",
     },
-    {
-      date: "04 Jan, 2025",
-      time: "10:20AM",
-      title: "Done",
-      desc: "Fixed Issue",
+    dailyNeed: false,
+    description: "Install or replace ceiling fans with proper wiring.",
+    estimatedTime: "30-45 mins",
+    icon: "ceiling_fan_icon",
+    mostBooked: true,
+    name: "Ceiling Fan Installation",
+    options: [],
+    popular: true,
+    providerCount: 1,
+    quickPick: true,
+    slug: "ceiling-fan-installation",
+    specialty: "Cooling Appliances",
+    subServices: [],
+    subcategoryName: "Appliance Fitting",
+  },
+  {
+    _id: "68e63bd2fa2740518c84da4e",
+    availableInZipcode: true,
+    basePrice: 600,
+    brands: [[Object]],
+    category: {
+      _id: "68dce2428b8e8257e84163f1",
+      icon: "electric_icon",
+      name: "Electrical Services",
     },
-    {
-      date: "03 Jan, 2025",
-      time: "10:20AM",
-      title: "Warranty",
-      desc: "5 Days Left",
-      highlight: true,
+    dailyNeed: false,
+    description:
+      "nstallation and maintenance of inverters for residential and commercial use.",
+    estimatedTime: "2 hours",
+    icon: "inverter_installation_icon",
+    mostBooked: false,
+    name: "Inverter Installation & Maintenance",
+    options: [],
+    popular: true,
+    providerCount: 1,
+    quickPick: false,
+    slug: "inverter-installation-maintenance",
+    specialty: "Backup Power",
+    subServices: [],
+    subcategoryName: "Appliance Fitting",
+  },
+  {
+    _id: "68e64c9bfa2740518c84db89",
+    availableInZipcode: true,
+    basePrice: 400,
+    brands: [[Object], [Object], [Object]],
+    category: {
+      _id: "68dce2428b8e8257e84163f1",
+      icon: "electric_icon",
+      name: "Electrical Services",
     },
-    { date: "05 Jan, 2025", time: "10:20AM", title: "Job Closed", desc: "😊" },
-  ];
-
-  return (
-    <ScreenWrapper>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Header />
-
-        {/* Tabs */}
-
-        <View style={styles.tabContainer}>
-          {statusTabs.map((tab, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.tabButton,
-                {
-                  borderColor: tab.color,
-
-                  backgroundColor:
-                    tab.title === "Active"
-                      ? `${tab.color}15`
-                      : tab.title === "Cancel"
-                      ? `${tab.color}10`
-                      : `${tab.color}08`,
-                },
-              ]}
-            >
-              <Text
-                style={[styles.tabText, { color: "#000", fontWeight: "600" }]}
-              >
-                {tab.title}
-              </Text>
-              <View
-                style={{
-                  width: scale(21),
-                  height: scale(21),
-                  backgroundColor: "#fff",
-                  borderRadius: scale(20),
-                  justifyContent: "center",
-                }}
-              >
-                <Text style={[styles.tabCount, { color: tab.color }]}>
-                  {tab.count}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <View
-          style={{
-            borderWidth: 1,
-            borderRadius: moderateScale(8),
-            borderColor: "#fff",
-            marginBottom: 200,
-            backgroundColor: "#FFFFFF1A",
-          }}
-        >
-          
-          {/* Order Info */}
-          <View style={styles.card}>
-            <View style={styles.orderHeader}>
-              <ImageBackground
-                source={require("../../../assets/iconBG.png")}
-                style={styles.iconCircle}
-              >
-                <Text style={styles.iconText}>GE</Text>
-              </ImageBackground>
-              <View
-                style={{
-                  flex: 1,
-                  marginLeft: scale(10),
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <View>
-                  <Text style={styles.heading}>Order No.</Text>
-                  <Text style={styles.orderNo}>{item._id}</Text>
-                </View>
-                <View>
-                  <Text style={styles.heading}>Price</Text>
-                  <Text style={styles.price}>₹{item.finalPrice}</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.infoRow}>
-              <View>
-                <Text style={styles.label}>{item.service.name}</Text>
-                <Text style={styles.subLabel}>Type Of Service</Text>
-              </View>
-              <View>
-                <Text style={styles.label}>{item.provider?.name}</Text>
-                <Text style={styles.subLabel}>Service Provider</Text>
-              </View>
-            </View>
-
-            <View
-              style={{
-                borderWidth: 1,
-                borderColor: "#fff",
-                backgroundColor: "#FFFFFF1A",
-                paddingVertical: verticalScale(14),
-                // paddingHorizontal: scale(21),
-                borderRadius: moderateScale(12),
-                marginTop: verticalScale(15),
-              }}
-            >
-              {/* Progress Bar */}
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#0083D3" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#E6B325" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#4CAF50" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#9C27B0" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#9E9E9E" },
-                  ]}
-                />
-              </View>
-
-              <View style={styles.verifyRow}>
-                <Text style={styles.deviceText}>1 WINDOW AC</Text>
-              </View>
-
-              {/* Legend */}
-              <View style={styles.legendRow}>
-                {[
-                  { color: "#3B82F6", text: "Assigned" },
-                  { color: "#F59E0B", text: "In Progress" },
-                  { color: "#22C55E", text: "Done" },
-                  { color: "#8B5CF6", text: "Warranty" },
-                  { color: "#64748B", text: "Job Closed" },
-                ].map((item, i) => (
-                  <View key={i} style={styles.legendItem}>
-                    <View
-                      style={[
-                        styles.legendDot,
-                        { backgroundColor: item.color },
-                      ]}
-                    />
-                    <Text style={styles.legendText}>{item.text}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </View>
-
-          {/* Timeline */}
-          <View style={styles.timelineContainer}>
-            {timeline.map((step, index) => (
-              <View key={index} style={styles.timelineItem}>
-                {/* Left date/time */}
-                <View style={styles.timeColumn}>
-                  <Text style={styles.timeText}>{step.date}</Text>
-                  <Text style={styles.timeSubText}>{step.time}</Text>
-                </View>
-
-                {/* Arrow Line */}
-                <View style={styles.arrowColumn}>
-                  <View style={styles.arrowCircle} />
-                  {index !== timeline.length - 1 && (
-                    <View style={styles.arrowLine} />
-                  )}
-                </View>
-
-                {/* Right Content */}
-                <View style={styles.detailColumn}>
-                  <View style={styles.detailBox}>
-                    <Text style={styles.detailTitle}>{step.title}</Text>
-                    {step.highlight ? (
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{step.desc}</Text>
-                      </View>
-                    ) : (
-                      <Text numberOfLines={1} style={styles.detailDesc}>
-                        {step.desc}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-    </ScreenWrapper>
-  );
-};
-
-export default OrderDetailsScreen;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF1A",
-    padding: scale(16),
+    dailyNeed: true,
+    description:
+      "Installation and repair of instant and storage geysers with proper electrical safety.",
+    estimatedTime: "1 hour",
+    icon: "geyser_installation_icon",
+    mostBooked: true,
+    name: "Geyser Installation & Repair",
+    options: [],
+    popular: true,
+    providerCount: 1,
+    quickPick: false,
+    slug: "geyser-installation-repair",
+    specialty: "Water Heating",
+    subServices: [],
+    subcategoryName: "Appliance Fitting",
   },
-  tabContainer: {
-    flexDirection: "row",
-    // justifyContent: "space-between",
-    marginBottom: verticalScale(12),
-    marginTop: verticalScale(16),
-    gap: scale(4),
+  {
+    _id: "68e65535fa2740518c84df62",
+    availableInZipcode: true,
+    basePrice: 400,
+    brands: [[Object], [Object]],
+    category: {
+      _id: "68dce2428b8e8257e84163f1",
+      icon: "electric_icon",
+      name: "Electrical Services",
+    },
+    dailyNeed: true,
+    description:
+      "Replace damaged or faulty MCBs, fuses, and ensure safe circuit protection for your home or office.",
+    estimatedTime: "30 mins",
+    icon: "mcb_replacement_icon",
+    mostBooked: true,
+    name: "MCB & Fuse Replacement",
+    options: [],
+    popular: true,
+    providerCount: 1,
+    quickPick: false,
+    slug: "mcb-fuse-replacement",
+    specialty: "Safety & Protection",
+    subServices: [],
+    subcategoryName: "Wiring & Switches",
   },
-  tabButton: {
-    // flex: 1,
-    flexDirection: "row",
-    // marginHorizontal: scale(3),
-    borderRadius: moderateScale(30),
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    height: verticalScale(40.66),
-    gap: scale(4),
-    paddingHorizontal: scale(9),
+  {
+    _id: "68df7624d4f37b75a3aa7ff1",
+    availableInZipcode: true,
+    basePrice: 400,
+    brands: [[Object], [Object], [Object], [Object]],
+    category: {
+      _id: "68dcd3998b8e8257e8415fbf",
+      icon: "plumbing_icon",
+      name: "Plumbing Services",
+    },
+    dailyNeed: true,
+    description:
+      "Repairing leaks in taps, showerheads and pipes to prevent water wastage.",
+    estimatedTime: "30-45 mins",
+    icon: "leak_repair-icon",
+    mostBooked: true,
+    name: "Tap & Shower Leak Repair",
+    options: [],
+    popular: true,
+    providerCount: 1,
+    quickPick: true,
+    slug: "tap-shower-leak-repair",
+    specialty: "Plumbing Leakage",
+    subServices: [],
+    subcategoryName: "Leak Repair",
   },
-  tabText: {
-    fontSize: moderateScale(12),
-    fontWeight: "400",
+  {
+    _id: "68dc0e03d0d2597c709e2acd",
+    availableInZipcode: true,
+    basePrice: 1000,
+    brands: [[Object], [Object], [Object], [Object], [Object], [Object]],
+    category: {
+      _id: "68d4e2d886915940b76995e4",
+      icon: "appliance_icon",
+      name: "Appliance Repair",
+    },
+    dailyNeed: true,
+    description: "Genaral Washing Machine Repair",
+    estimatedTime: "2-3 Hours",
+    icon: "wm_icon",
+    mostBooked: true,
+    name: "Washing Machine Repair",
+    options: [[Object], [Object]],
+    popular: true,
+    providerCount: 1,
+    quickPick: false,
+    slug: "washing-machine-repair",
+    specialty: "repair",
+    subServices: [],
+    subcategoryName: "Washing Machine Repair",
   },
-  tabCount: {
-    fontWeight: "700",
-    fontSize: moderateScale(8),
-    alignSelf: "center",
+  {
+    _id: "68e63885fa2740518c84d977",
+    availableInZipcode: true,
+    basePrice: 300,
+    brands: [[Object], [Object]],
+    category: {
+      _id: "68dce2428b8e8257e84163f1",
+      icon: "electric_icon",
+      name: "Electrical Services",
+    },
+    dailyNeed: true,
+    description:
+      "Repair or replace faulty switches, sockets, and burnt switchboards safely.",
+    estimatedTime: "1 hour",
+    icon: "switchboard_repair_icon",
+    mostBooked: false,
+    name: "Switchboard Repair & Replacement",
+    options: [],
+    popular: false,
+    providerCount: 1,
+    quickPick: false,
+    slug: "switchboard-repair-replacement",
+    specialty: "Household Electrical",
+    subServices: [],
+    subcategoryName: "Wiring & Switches",
   },
-  card: {
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(14),
-    padding: scale(14),
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    // elevation: 2,
+  {
+    _id: "68dc0d70d0d2597c709e2981",
+    availableInZipcode: true,
+    basePrice: 1500,
+    brands: [[Object], [Object], [Object], [Object], [Object], [Object]],
+    category: {
+      _id: "68d4e04986915940b7699562",
+      icon: "ac_icon",
+      name: "AC Services",
+    },
+    dailyNeed: false,
+    description: "AC gas Refilling",
+    estimatedTime: "2-3 Hours",
+    icon: "",
+    mostBooked: false,
+    name: "AC Gas Refilling",
+    options: [[Object], [Object]],
+    popular: false,
+    providerCount: 1,
+    quickPick: false,
+    slug: "ac-gas-refilling",
+    specialty: "Gas Reffiling",
+    subServices: [],
+    subcategoryName: "AC Gas Refilling",
   },
-  orderHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#fff",
-    backgroundColor: "#FFFFFF1A",
-    paddingVertical: verticalScale(14),
-    paddingHorizontal: scale(21),
-    borderRadius: moderateScale(12),
+  {
+    _id: "68e655e6fa2740518c84e03d",
+    availableInZipcode: true,
+    basePrice: 250,
+    brands: [[Object], [Object], [Object]],
+    category: {
+      _id: "68dce2428b8e8257e84163f1",
+      icon: "electric_icon",
+      name: "Electrical Services",
+    },
+    dailyNeed: true,
+    description:
+      "Installation and repair of exhaust fans in kitchens, bathrooms, and industrial spaces.",
+    estimatedTime: "30 mins",
+    icon: "exhaust_fan_icon",
+    mostBooked: true,
+    name: "Exhaust Fan Installation & Repair",
+    options: [],
+    popular: true,
+    providerCount: 1,
+    quickPick: false,
+    slug: "exhaust-fan-installation-repair",
+    specialty: "Home Ventilation",
+    subServices: [],
+    subcategoryName: "Appliance Fitting",
   },
-  iconCircle: {
-    width: scale(46),
-    height: scale(46),
-    borderRadius: 50,
-    // backgroundColor: "#0083D320",
-    // justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-    bottom: verticalScale(-4),
+  {
+    _id: "68df6db6d4f37b75a3aa776d",
+    availableInZipcode: true,
+    basePrice: 1200,
+    brands: [[Object], [Object], [Object], [Object], [Object]],
+    category: {
+      _id: "68d4e04986915940b7699562",
+      icon: "ac_icon",
+      name: "AC Services",
+    },
+    dailyNeed: false,
+    description:
+      "Installation and mounting of AC on wall including electrical & bracket work.",
+    estimatedTime: "1 hour",
+    icon: "ac_install_icon",
+    mostBooked: false,
+    name: "AC Installation",
+    options: [[Object], [Object]],
+    popular: false,
+    providerCount: 1,
+    quickPick: true,
+    slug: "ac-installation",
+    specialty: "Setup",
+    subServices: [],
+    subcategoryName: "AC Installation",
   },
-  iconText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: moderateScale(14),
-    position: "relative",
-    bottom: verticalScale(-11),
-    left: scale(-1),
+  {
+    _id: "68df776fd4f37b75a3aa80ca",
+    availableInZipcode: true,
+    basePrice: 2000,
+    brands: [[Object], [Object], [Object], [Object], [Object]],
+    category: {
+      _id: "68d4e2d886915940b76995e4",
+      icon: "appliance_icon",
+      name: "Appliance Repair",
+    },
+    dailyNeed: true,
+    description:
+      "Full deep cleaning, defrosting, thermostat check & condenser servicing.",
+    estimatedTime: "2-3 hours",
+    icon: "fridge_deep_servicing_icon",
+    mostBooked: false,
+    name: "Refrigerator Deep Servicing",
+    options: [],
+    popular: false,
+    providerCount: 1,
+    quickPick: false,
+    slug: "refrigerator-deep-servicing",
+    specialty: "Efficiency & Cleanliness",
+    subServices: [],
+    subcategoryName: "Refrigerator Repair",
   },
-  heading :{
-    color : '#939393',
-    fontSize : moderateScale(10),
-    fontWeight : '500'
-  },
-  orderNo: {
-    fontSize: moderateScale(14),
-    color: "#333",
-    fontWeight: "500",
-  },
-  price: {
-    fontSize: moderateScale(14),
-    color: "#2E2E2E",
-    fontWeight: "500",
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: verticalScale(12),
-    borderWidth: 1,
-    borderColor: "#fff",
-    backgroundColor: "#FFFFFF1A",
-    paddingVertical: verticalScale(14),
-    paddingHorizontal: scale(21),
-    borderRadius: moderateScale(12),
-  },
-  label: {
-    fontSize: moderateScale(12.5),
-    fontWeight: "600",
-    color: "#2E2E2E",
-  },
-  subLabel: {
-    fontSize: moderateScale(11),
-    color: "#888",
-  },
-  progressBar: {
-    flexDirection: "row",
-    height: verticalScale(6),
-    borderRadius: moderateScale(6),
-    overflow: "hidden",
-    marginTop: verticalScale(14),
-    paddingHorizontal: scale(20),
-  },
-  progressSegment: {
-    flex: 1,
-  },
-  verifyRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: verticalScale(10),
-  },
-  deviceText: {
-    fontSize: moderateScale(12),
-    fontWeight: "600",
-    paddingHorizontal: scale(20),
-  },
-  verifyBtn: {
-    backgroundColor: "#0083D3",
-    borderRadius: moderateScale(8),
-    paddingHorizontal: scale(16),
-    paddingVertical: verticalScale(6),
-  },
-  verifyText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: moderateScale(12),
-  },
-  legendRow: {
-    flexDirection: "row",
-    // flexWrap: "wrap",
-    marginTop: verticalScale(10),
-    // justifyContent: "space-between",
-    paddingHorizontal: scale(10),
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: scale(6),
-    marginTop: verticalScale(4),
-  },
-  legendDot: {
-    width: scale(8),
-    height: scale(8),
-    borderRadius: 8,
-    marginRight: scale(4),
-  },
-  legendText: {
-    fontSize: moderateScale(10.5),
-    color: "#666",
-  },
-  timelineContainer: {
-    marginTop: verticalScale(16),
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(14),
-    padding: scale(14),
-  },
-  timelineItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    // gap : 10,
-    marginBottom: verticalScale(29),
-    // borderWidth : 1,
-    marginHorizontal: scale(16),
-    // borderColor : 'red'
-  },
-  timeColumn: {
-    width: scale(121),
-    height: verticalScale(56),
-    borderWidth: 1,
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(12),
-    borderColor: "#fff",
-    justifyContent: "center",
-    gap: verticalScale(4),
-    alignItems: "flex-end",
-    paddingRight: scale(25),
-  },
-  timeText: {
-    fontSize: moderateScale(11),
-    fontWeight: "600",
-    color: "#2E2E2E",
-  },
-  timeSubText: {
-    fontSize: moderateScale(10),
-    color: "#777",
-  },
-  arrowColumn: {
-    width: scale(20),
-    alignItems: "center",
-  },
-  arrowCircle: {
-    width: scale(10),
-    height: scale(10),
-    borderRadius: 10,
-    backgroundColor: "#0083D3",
-  },
-  arrowLine: {
-    width: scale(2),
-    height: verticalScale(40),
-    backgroundColor: "#0083D3",
-    marginTop: verticalScale(4),
-  },
-  detailColumn: {
-    width: scale(121),
-    height: verticalScale(56),
-    borderWidth: 1,
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(12),
-    borderColor: "#fff",
-    justifyContent: "center",
-    overflow: "hidden", // important!
-  },
-  detailBox: {
-    paddingLeft: scale(23), // short text → 23 left padding
-    paddingRight: scale(5),
-  },
-  detailTitle: {
-    fontSize: moderateScale(12),
-    fontWeight: "600",
-    color: "#2E2E2E",
-  },
-  detailDesc: {
-    fontSize: moderateScale(10),
-    color: "#777",
-    marginTop: verticalScale(2),
-  },
-  badge: {
-    backgroundColor: "#FFCDD2",
-    borderRadius: moderateScale(6),
-    alignSelf: "flex-start",
-    paddingHorizontal: scale(8),
-    paddingVertical: verticalScale(3),
-    marginTop: verticalScale(4),
-  },
-  badgeText: {
-    color: "#D32F2F",
-    fontWeight: "600",
-    fontSize: moderateScale(10.5),
-  },
-});
+];

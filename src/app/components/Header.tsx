@@ -5,7 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { HomeStackParamList } from "../../constants/navigation";
 
- export default function Header() {
+ export default function Header({showSearchBar = true} : {showSearchBar? : boolean}) {
   const navigation = useNavigation<StackNavigationProp<HomeStackParamList , "HomeScreen">>()
   return (
     <>
@@ -36,7 +36,7 @@ import { HomeStackParamList } from "../../constants/navigation";
         </View>
 
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
+      { showSearchBar && <View style={styles.searchContainer}>
           <Icon
             name="search-outline"
             size={moderateScale(20)}
@@ -52,7 +52,7 @@ import { HomeStackParamList } from "../../constants/navigation";
             size={moderateScale(26)}
             color="#000000B2"
           />
-        </View>
+        </View>}
     </>
   );
 };

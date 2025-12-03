@@ -14,12 +14,13 @@ import {
   Alert,
 } from "react-native";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
-import { iconMap } from "../../utils/iconMap2";
 import ScreenWrapper from "../components/ScreenWrapper";
 import Header from "../components/Header";
 import { CartContext } from "../../store/CartContext";
 import { useNavigation } from "@react-navigation/native";
 import { BookingContext } from "../../store/BookingContext";
+import { iconMap, IconName } from "../../utils/iconMap";
+import { EvilIcons as Icon } from "@expo/vector-icons";
 
 const CartScreen = () => {
   const {
@@ -36,6 +37,7 @@ const CartScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
   const { bookCurrentCart, isBooking } = useContext(BookingContext);
+  const [itemLoadingId, setItemLoadingId] = useState<string | null>(null);
 
   // Fetch cart on mount
   useEffect(() => {
@@ -58,35 +60,33 @@ const CartScreen = () => {
   const grandTotal = subtotal + platformFee - discount;
 
   const handleQuantityUpdate = async (itemId: string, newQuantity: number) => {
-    if (newQuantity > 0) {
-      await updateItemQuantity(itemId, newQuantity);
-    }
+    setItemLoadingId(itemId);
+    await updateItemQuantity(itemId, newQuantity);
+    setItemLoadingId(null);
   };
-
   // Handle item removal
   const handleRemoveItem = async (itemId: string) => {
-    console.log("id :", itemId);
-
+    setItemLoadingId(itemId);
     await removeFromCart(itemId);
+    setItemLoadingId(null);
   };
-
   // Loading Screen
-  if (isLoading && !refreshing) {
-    return (
-      <ScreenWrapper>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#027CC7" />
-          <Text style={styles.loadingText}>Loading cart...</Text>
-        </View>
-      </ScreenWrapper>
-    );
-  }
+  // if (isLoading && !refreshing) {
+  //   return (
+  //     <ScreenWrapper>
+  //       <View style={styles.loadingContainer}>
+  //         <ActivityIndicator size="large" color="#027CC7" />
+  //         <Text style={styles.loadingText}>Loading cart...</Text>
+  //       </View>
+  //     </ScreenWrapper>
+  //   );
+  // }
 
   // Empty cart screen
   if (isCartEmpty) {
     return (
-      <ScreenWrapper style={{padding : scale(9)}}>
-          <Header />
+      <ScreenWrapper style={{ padding: scale(9) }}>
+        <Header />
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyTitle}>Your Cart Is Empty</Text>
           <Text style={styles.emptySubtitle}>
@@ -118,14 +118,12 @@ const CartScreen = () => {
       undefined, // no notes
       "cash" // payment mode
     );
- console.log("result", result);
- 
+    console.log("result", result);
 
     // 5. Navigate based on result
     if (result) {
       Alert.alert("Booking Successful");
       console.log(result);
-      
     } else {
       alert("Booking failed. Please try again.");
     }
@@ -141,74 +139,122 @@ const CartScreen = () => {
           }
         >
           {/* Header */}
-          <Header />
+          <Header showSearchBar={false} />
 
           <Text style={styles.headerText}>Order Summary</Text>
 
           {/* Main card container */}
           <View
             style={{
-              height: verticalScale(580),
+              // height: verticalScale(580),
               width: scale(375),
               borderWidth: 1,
               justifyContent: "space-between",
               backgroundColor: "#FFFFFF1A",
               borderRadius: moderateScale(14),
               borderColor: "#ffffff",
+              marginBottom: verticalScale(70),
             }}
           >
             {/* Order Items */}
             <View style={styles.cardContainer}>
               {cartItems.map((item) => (
-                <View key={item._id} style={styles.card}>
-                  {/* REMOVE BUTTON */}
-                  <TouchableOpacity
-                    style={styles.removeBtn}
-                    onPress={() => handleRemoveItem(item._id)}
-                  >
-                    <Text style={styles.removeBtnText}>×</Text>
-                  </TouchableOpacity>
-
-                  {/* ITEM IMAGE */}
-                  <Image source={iconMap["default"]} style={styles.itemImage} />
-
-                  {/* ITEM DETAILS */}
-                  <View style={styles.itemInfo}>
-                    <Text style={styles.itemTitle}>{item.serviceName}</Text>
-                    {item.selectedBrand && (
-                      <Text style={styles.itemCategory}>
-                        Brand: {item.selectedBrand}
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* QUANTITY SECTION */}
-                  <View style={styles.qtySection}>
-                    {/* Quantity Controls */}
-                    <View style={styles.qtyControls}>
-                      <TouchableOpacity
-                        disabled={item.quantity <= 1}
-                        onPress={() =>
-                          handleQuantityUpdate(item._id, item.quantity - 1)
-                        }
-                      >
-                        <Text style={styles.qtyBtn}>-</Text>
-                      </TouchableOpacity>
-
-                      <Text style={styles.qtyNumber}>{item.quantity}</Text>
-
-                      <TouchableOpacity
-                        onPress={() =>
-                          handleQuantityUpdate(item._id, item.quantity + 1)
-                        }
-                      >
-                        <Text style={styles.qtyBtn}>+</Text>
-                      </TouchableOpacity>
+                <View
+                  key={item._id}
+                  style={[
+                    styles.card,
+                    itemLoadingId === item._id && { opacity: 0.4 },
+                  ]}
+                >
+                  {/* LOADING SPINNER OVERLAY */}
+                  {itemLoadingId === item._id && (
+                    <View style={styles.itemLoader}>
+                      <ActivityIndicator size="small" color="#027CC7" />
                     </View>
-                  </View>
+                  )}
 
+                  <View
+                    style={{
+                      marginLeft: scale(17),
+                      flexDirection: "row",
+                      alignItems: "center",
+                      borderWidth: 0,
+                    }}
+                  >
+                    {/* ITEM IMAGE */}
+                    <View
+                      style={{
+                        height: moderateScale(52),
+                        width: moderateScale(52),
+                        marginRight: scale(11),
+                        justifyContent: "center",
+                        alignItems: "center",
+                        // borderWidth: 1,
+                        borderRadius: moderateScale(16),
+                        backgroundColor: "#79ccff29",
+                      }}
+                    >
+                      <Image
+                        source={
+                          iconMap[item.icon as IconName] || iconMap["default"]
+                        }
+                        style={styles.itemImage}
+                      />
+                    </View>
+                    {/* ITEM DETAILS */}
+                    <View style={styles.itemInfo}>
+                      <Text style={styles.itemTitle}>{item.serviceName}</Text>
+                      {item.selectedBrand && (
+                        <Text style={styles.itemCategory}>
+                          {item.selectedBrand} : {item.selectedOption}
+                        </Text>
+                      )}
+                    </View>
+                    <Text style={styles.itemPrice}>₹{item.totalPrice}</Text>
+                  </View>
+                  {/* QUANTITY */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      borderWidth: 0,
+                      marginTop: verticalScale(11),
+                    }}
+                  >
+                    <View style={styles.qtySection}>
+                      <View style={styles.qtyControls}>
+                        <TouchableOpacity
+                          disabled={
+                            item.quantity <= 1 || itemLoadingId === item._id
+                          }
+                          onPress={() =>
+                            handleQuantityUpdate(item._id, item.quantity - 1)
+                          }
+                        >
+                          <Text style={styles.qtyBtn}>-</Text>
+                        </TouchableOpacity>
+
+                        <Text style={styles.qtyNumber}>{item.quantity}</Text>
+
+                        <TouchableOpacity
+                          disabled={itemLoadingId === item._id}
+                          onPress={() =>
+                            handleQuantityUpdate(item._id, item.quantity + 1)
+                          }
+                        >
+                          <Text style={styles.qtyBtn}>+</Text>
+                        </TouchableOpacity>
+                        {/* REMOVE BUTTON */}
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      disabled={itemLoadingId === item._id}
+                      style={styles.removeBtn}
+                      onPress={() => handleRemoveItem(item._id)}
+                    >
+                      <Icon name="trash" size={26} color="#E80000" />
+                    </TouchableOpacity>
+                  </View>
                   {/* PRICE */}
-                  <Text style={styles.itemPrice}>₹{item.totalPrice}</Text>
                 </View>
               ))}
             </View>
@@ -299,37 +345,55 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   card: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "column",
+    // alignItems: "center",
     borderRadius: moderateScale(14),
-    padding: scale(10),
-    height: verticalScale(74),
+    paddingTop: scale(13),
+    // paddingLeft: scale(17),
+    paddingRight: scale(10),
+    height: verticalScale(128),
     width: scale(351),
     borderWidth: 0.8,
     borderColor: "#ffffff",
   },
   itemImage: {
-    width: scale(40),
-    height: scale(40),
-    borderRadius: moderateScale(8),
-    marginRight: scale(10),
-    backgroundColor: "#E8E8E8",
+    width: "80%",
+    // aspectRatio : 0,
+    height: "80%",
+    resizeMode: "contain",
+    // borderRadius: moderateScale(8),
+    // marginRight: scale(10),
+    // backgroundColor: "#E8E8E8",
   },
   itemInfo: {
     flex: 1,
   },
   itemTitle: {
-    fontSize: moderateScale(13),
-    fontWeight: "600",
+    fontSize: moderateScale(14),
+    fontWeight: "500",
     color: "#2E2E2E",
   },
+  itemLoader: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 20,
+  },
   itemCategory: {
-    fontSize: moderateScale(11),
+    fontSize: moderateScale(12),
+    fontWeight: "400",
     color: "#8B8B8B",
     marginTop: verticalScale(2),
   },
   qtySection: {
     marginRight: scale(10),
+    // borderWidth : 1,
+    marginLeft: scale(80),
+    width: scale(182),
   },
   qtyText: {
     fontSize: moderateScale(12),
@@ -337,7 +401,7 @@ const styles = StyleSheet.create({
   },
   itemPrice: {
     fontSize: moderateScale(14),
-    fontWeight: "600",
+    fontWeight: "500",
     color: "#2E2E2E",
   },
   detailsContainer: {
@@ -412,9 +476,9 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(5),
   },
   removeBtn: {
-    position: "absolute",
-    right: scale(10),
-    top: scale(5),
+    // position: "absolute",
+    // right: scale(10),
+    // top: scale(5),
     zIndex: 10,
     padding: scale(5),
   },
@@ -428,24 +492,30 @@ const styles = StyleSheet.create({
   qtyControls: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F1F1F1",
+    backgroundColor: "#FFFFFF1A",
     paddingVertical: verticalScale(4),
-    paddingHorizontal: scale(8),
-    borderRadius: moderateScale(8),
+    paddingHorizontal: scale(14),
+    borderRadius: moderateScale(4),
     gap: scale(12),
+    borderWidth: 1,
+    borderColor: "#fff",
+    justifyContent: "space-between",
+    height: verticalScale(36),
   },
 
   qtyBtn: {
-    fontSize: moderateScale(18),
-    color: "#333",
-    fontWeight: "700",
+    fontSize: moderateScale(20),
+    color: "#00000080",
+    fontWeight: "500",
     paddingHorizontal: scale(4),
+    // borderWidth : 1,
+    lineHeight: verticalScale(22),
   },
 
   qtyNumber: {
     fontSize: moderateScale(14),
     color: "#000",
-    fontWeight: "600",
+    fontWeight: "500",
     minWidth: scale(20),
     textAlign: "center",
   },

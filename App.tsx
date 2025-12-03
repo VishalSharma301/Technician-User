@@ -20,13 +20,15 @@ import CartContextProvider from "./src/store/CartContext";
 import { ServiceRequestsProvider } from "./src/store/ServiceRequestContext";
 import AddressContextProvider from "./src/store/AddressContext";
 import BookingContextProvider from "./src/store/BookingContext";
+import { useCart } from "./src/hooks/useCart";
 
 function Navigator() {
   const { isAuthenticated, isLoading, token, setToken, setIsAuthenticated } =
     useAuth();
-  const { setEmail, setFirstName, setPhoneNumber, setLastName, setUserId } =
+  const { setEmail, setFirstName, setPhoneNumber, setLastName, setUserId, userId } =
     useProfile();
   const [restoring, setRestoring] = useState(true);
+  const {fetchCart} = useCart()
 
   useEffect(() => {
     async function fetchingToken() {
@@ -49,6 +51,10 @@ function Navigator() {
 
     fetchingToken();
   }, []);
+
+    useEffect(() => {
+    if (userId) fetchCart();
+  }, [userId]);
 
   return (
     <NavigationContainer>
