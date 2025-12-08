@@ -15,13 +15,13 @@ import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 
 interface AuthInputProps extends TextInputProps {
   iconName: keyof typeof MaterialCommunityIcons.glyphMap;
-  title: string;
+  title?: string;
 }
 
 const AuthInput: React.FC<AuthInputProps> = ({ iconName, title, ...props }) => {
   return (
     <View style={{ marginBottom: verticalScale(16) }}>
-      <Text
+    { title && <Text
         style={{
           fontSize: moderateScale(14),
           fontWeight: "600",
@@ -32,7 +32,7 @@ const AuthInput: React.FC<AuthInputProps> = ({ iconName, title, ...props }) => {
       >
         {" "}
         {title}
-      </Text>
+      </Text>}
       <View style={styles.container}>
         <Icon
           name={iconName}

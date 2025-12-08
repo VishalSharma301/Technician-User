@@ -8,6 +8,7 @@ export type RootStackParamList = {
   LoadingScreen: undefined;
   LoginScreen: undefined;
   VerificationScreen: undefined;
+  ResetPasswordScreen: undefined;
   AuthenticatedTabs: undefined; // tabs entry point
   SelectLocationScreen: undefined;
 };

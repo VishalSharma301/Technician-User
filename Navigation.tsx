@@ -25,6 +25,7 @@ import AddressListScreen from "./src/app/screens/AddressScreens/AddressListScree
 import AddAddressScreen from "./src/app/screens/AddressScreens/AddAddressScreen";
 import OrderDetailsScreen from "./src/app/screens/OrderDetailScreen";
 import JobsScreen from "./src/app/screens/JobsScreen";
+import ResetPasswordScreen from "./src/app/screens/AuthScreens/ResetPasswordScreen";
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<HomeTabParamList>();
@@ -36,6 +37,7 @@ export default function AuthStack() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="LoginScreen" component={LoginScreen} />
       <Stack.Screen name="VerificationScreen" component={VerificationScreen} />
+      <Stack.Screen name="ResetPasswordScreen" component={ResetPasswordScreen} />
     </Stack.Navigator>
   );
 }

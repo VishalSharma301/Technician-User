@@ -29,6 +29,9 @@ import Tooltip from "../components/Tooltip";
 import { iconMap, IconName } from "../../utils/iconMap";
 import ServiceOfTheWeek from "../components/Slider";
 import BookingChatBot from "../components/BookingChatBot";
+import Recorder from "../components/BookingChatBot";
+import ChatbotBooking from "../components/ChatBot";
+import CB1 from "../components/CB1";
 
 const categories = ["Popular", "Emergency", "Seasonal", "Daily Use"];
 
@@ -36,6 +39,9 @@ interface Service {
   name: string;
   icon: IconName;
 }
+
+
+
 
 const HomeScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -335,6 +341,7 @@ const HomeScreen = () => {
                     <TouchableOpacity
                       style={styles.serviceCard}
                       onPress={() => selectBrand(service)}
+                      // onPress={() => setVisible(!visible)}
                       onLongPress={() => setActiveTooltipId(service._id)}
                       onPressOut={() => setActiveTooltipId(null)}
                       delayLongPress={300}
@@ -396,29 +403,23 @@ const HomeScreen = () => {
       {/* <BottomSheet visible={visible} onClose={() => setVisible(false)}> */}
       <View
         style={{
-          height: verticalScale(500),
+          height: '100%',
           opacity: 1,
           display: visible ? "flex" : "none",
-          borderWidth: 1,
+          // borderWidth: 1,
         }}
       >
-        {selectedService && (
-          // <BookingBottomSheet
-          //   close={() => setVisible(false)}
-          //   service={selectedService}
-          // />
-          <BookingChatBot
+         {/* <Recorder /> */}
+         {/* {selectedService && <CB1 service={selectedService} close={() => setVisible(false)} />} */}
+         {selectedService && <ChatbotBooking service={selectedService} close={() => setVisible(false)} />}
+        {/* {selectedService && (
+          <BookingBottomSheet
+            close={() => setVisible(false)}
             service={selectedService}
-            onClose={() => setVisible(false)}
-            onAddToCart={({ brand, type, pricingId }) => {
-              console.log("Brand:", brand);
-              console.log("Type:", type);
-              console.log("Pricing:", pricingId);
-
-              // Here you call your real addToCart logic
-            }}
           />
-        )}
+
+         
+        )} */}
       </View>
       {/* </BottomSheet> */}
       <BottomSheet visible={pinVisible} onClose={() => setPinVisible(false)}>

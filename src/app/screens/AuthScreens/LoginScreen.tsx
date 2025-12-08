@@ -151,7 +151,7 @@ const LoginScreen = () => {
 
             {/* Forgot Password */}
             {!isSignup && !isOtpLogin && (
-              <TouchableOpacity>
+              <TouchableOpacity onPress={()=>navigation.navigate('ResetPasswordScreen')}>
                 <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
             )}
