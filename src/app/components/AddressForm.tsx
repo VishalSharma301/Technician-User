@@ -9,7 +9,11 @@ import {
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 import { useAddress } from "../../hooks/useAddress";
 
-export default function AddressComponent() {
+export default function AddressComponent({
+  onAddressSaved,
+}: {
+  onAddressSaved: (address: any) => void;
+}) {
   const { setAddresses, setSelectedAddress } = useAddress();
   const [streetAddress, setStreetAddress] = useState("");
   const [city, setCity] = useState("");
@@ -18,36 +22,37 @@ export default function AddressComponent() {
   const [label, setLabel] = useState("");
   const [phone, setPhone] = useState("");
 
-  function handleConfirm() {
-    const newAddress = {
-      label,
-      phone,
-      address: {
-        street: streetAddress,
-        city,
-        state,
-        zipcode,
-        coordinates: { lat: 0, lon: 0 }, // You can update later if needed
-      },
-    };
+function handleConfirm() {
+  const newAddress = {
+    label,
+    phone,
+    address: {
+      street: streetAddress,
+      city,
+      state,
+      zipcode,
+      coordinates: { lat: 0, lon: 0 },
+    },
+  };
 
-    // 1️⃣ Add to global address list
+  // 🟢 FIRST: notify chatbot synchronously
+  onAddressSaved(newAddress);
+
+  // 🟢 SECOND: defer global state updates
+  setTimeout(() => {
     setAddresses((prev) => [...prev, newAddress]);
-
-    // 2️⃣ Set as selected
     setSelectedAddress(newAddress);
+  }, 0);
 
-    // 3️⃣ Reset fields
-    setStreetAddress("");
-    setCity("");
-    setZipcode("");
-    setState("");
-    setLabel("");
-    setPhone("");
+  // Reset fields
+  setStreetAddress("");
+  setCity("");
+  setZipcode("");
+  setState("");
+  setLabel("");
+  setPhone("");
+}
 
-    // (optional) Alert
-    // Alert.alert("Success", "Address added successfully");
-  }
 
   return (
     <View style={{ gap: verticalScale(8), marginTop: verticalScale(8) }}>

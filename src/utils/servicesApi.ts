@@ -2,9 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE } from "./BASE_URL";
 import axios, { AxiosError } from "axios";
 
-
-
-const API_URL = `${BASE}/api/users/get-all-services` 
+const API_URL = `${BASE}/api/users/get-all-services`;
 
 export async function fetchServices({
   page = 1,
@@ -12,26 +10,23 @@ export async function fetchServices({
   popular,
   category,
   isActive,
-  zipcode = 140802
+  zipcode = 140802,
 }: {
   page?: number;
   limit?: number;
   popular?: boolean;
   category?: string;
   isActive?: boolean;
-  zipcode? : string | number
+  zipcode?: string | number;
 }) {
   try {
     console.log("📡 Fetching services...");
-
-  
- 
 
     // 2. Build query params safely
     const params = new URLSearchParams();
     params.append("page", page.toString());
     params.append("limit", limit.toString());
-    params.append("zipcode", zipcode.toString())
+    params.append("zipcode", zipcode.toString());
 
     if (popular !== undefined) params.append("popular", String(popular));
     if (category) params.append("category", category);
@@ -46,7 +41,6 @@ export async function fetchServices({
       headers: {
         Accept: "application/json",
       },
-      
     }).catch((err) => {
       throw new Error(`Network request failed: ${err.message}`);
     });
@@ -92,15 +86,15 @@ export async function fetchServices({
   }
 }
 
-
-
-
-
 const API = axios.create({
-  baseURL: `${BASE}/api/users`, 
+  baseURL: `${BASE}/api/users`,
 });
 
-export const cancelServiceRequest = async (requestId : string, reason : string, token : string) => {
+export const cancelServiceRequest = async (
+  requestId: string,
+  reason: string,
+  token: string
+) => {
   try {
     const { data } = await API.put(
       `/cancel-service-request/${requestId}`,
@@ -112,7 +106,7 @@ export const cancelServiceRequest = async (requestId : string, reason : string, 
       }
     );
     return data;
-  } catch (error : any) {
+  } catch (error: any) {
     throw (
       error.response?.data?.message ||
       error.message ||
@@ -120,8 +114,6 @@ export const cancelServiceRequest = async (requestId : string, reason : string, 
     );
   }
 };
-
-
 
 export async function fetchServicesByZip(zipcode: string) {
   // ✅ 1. Validate input
@@ -176,18 +168,15 @@ export async function fetchServicesByZip(zipcode: string) {
   }
 }
 
-
-
-export async function fetchBrandsByZip(zipcode : string){
-  try{
-    const response = await axios.get(`${BASE}/api/test/users/brands`,{
+export async function fetchBrandsByZip(zipcode: string) {
+  try {
+    const response = await axios.get(`${BASE}/api/test/users/brands`, {
       params: { zipcode },
       timeout: 10000,
-    })
-    console.log( response.data?'brands fetched ' : 'brands fetch failed');
-    
-    return response.data
-    
+    });
+    console.log(response.data ? "brands fetched " : "brands fetch failed");
+
+    return response.data;
   } catch (error) {
     // ✅ 5. Handle different error types
     if (axios.isAxiosError(error)) {
@@ -218,17 +207,18 @@ export async function fetchBrandsByZip(zipcode : string){
   }
 }
 
-
-export async function fetchServiceDetails(serviceId : string,zipcode : string){
-  try{
-    const response = await axios.get(`${BASE}/api/test/users/services/${serviceId}`,{
-      params: { zipcode },
-      timeout: 10000,
-    })
+export async function fetchServiceDetails(serviceId: string, zipcode: string) {
+  try {
+    const response = await axios.get(
+      `${BASE}/api/users/services/${serviceId}`,
+      {
+        params: { zipcode },
+        timeout: 10000,
+      }
+    );
     // console.log('details fetched : ', response.data);
-    
-    return response.data
-    
+
+    return response.data;
   } catch (error) {
     // ✅ 5. Handle different error types
     if (axios.isAxiosError(error)) {
@@ -259,18 +249,18 @@ export async function fetchServiceDetails(serviceId : string,zipcode : string){
   }
 }
 
-
-
-export async function fetchzipcodes(){
-  try{
-    const response = await axios.get(`${BASE}/api/test/zipcodes`,{
-      params: { limit : 1000 },
+export async function fetchzipcodes() {
+  try {
+    const response = await axios.get(`${BASE}/api/test/zipcodes`, {
+      params: { limit: 1000 },
       timeout: 10000,
-    })
-    console.log('zipcodes fetched : ', response.data ? "fetched" : "fetch failed");
-    
-    return response.data
-    
+    });
+    console.log(
+      "zipcodes fetched : ",
+      response.data ? "fetched" : "fetch failed"
+    );
+
+    return response.data;
   } catch (error) {
     // ✅ 5. Handle different error types
     if (axios.isAxiosError(error)) {
@@ -300,3 +290,28 @@ export async function fetchzipcodes(){
     }
   }
 }
+
+export const getServiceConversationDetails = async (
+  serviceId: string,
+  zipcode: string
+) => {
+  try {
+    const response = await axios.get(
+      `${BASE}/api/test/services/${serviceId}/get-details/conversation`,
+      {
+        params: {
+          zipcode: zipcode,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error("API error:", error.response?.data);
+    } else {
+      console.error("Unknown error:", error);
+    }
+    throw error;
+  }
+};

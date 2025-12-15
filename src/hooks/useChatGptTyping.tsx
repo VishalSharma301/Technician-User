@@ -13,12 +13,19 @@ export function useChatGPTTyping() {
   // HUMAN-LIKE TYPING SPEED
   // ---------------------------------------
   const getTypingDelay = (char: string) => {
-    if (/[.!?]/.test(char)) return 350 + Math.random() * 100;
-    if (/[,:;]/.test(char)) return 180 + Math.random() * 80;
-    if (char === " ") return 40 + Math.random() * 60;
-    if (/[A-Z]/.test(char)) return 70 + Math.random() * 40;
-    return 30 + Math.random() * 50;
+    if (/[.!?]/.test(char)) return 350 * Math.random() * 0;
+    if (/[,:;]/.test(char)) return 180 * Math.random() * 0;
+    if (char === " ") return 40 * Math.random() * 0;
+    if (/[A-Z]/.test(char)) return 70 * Math.random() * 0;
+    return 30 * Math.random() * 0;
   };
+  // const getTypingDelay = (char: string) => {
+  //   if (/[.!?]/.test(char)) return 350 + Math.random() * 100;
+  //   if (/[,:;]/.test(char)) return 180 + Math.random() * 80;
+  //   if (char === " ") return 40 + Math.random() * 60;
+  //   if (/[A-Z]/.test(char)) return 70 + Math.random() * 20;
+  //   return 30 + Math.random() * 10;
+  // };
 
   // ---------------------------------------
   // SHOW DOT TYPING INDICATOR FIRST

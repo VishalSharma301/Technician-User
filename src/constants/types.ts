@@ -1,5 +1,3 @@
-
-
 export type Coordinates = {
   lat: number;
   lon: number;
@@ -23,12 +21,12 @@ export type ServiceDetailsData = {
   mainType: string;
   subType: string | null;
   isMakingNoise: string | null;
-  image:  null | undefined;
+  image: null | undefined;
   notes: string | undefined | null;
 };
 
 export type ItemData = {
-  _id : string
+  _id: string;
   name: string;
   mainType: string;
   subType: string | null;
@@ -84,20 +82,18 @@ export type NotificationData = {
   read: boolean;
 };
 
-
 // ✅ UNIFIED: Single cart item type
 export type CartItemLocal = {
-  _id: string;              // Cart item ID from API
-  serviceId: string;       // Service ID
-  serviceName: string;     // Service name
-  quantity: number;        // Quantity
-  basePrice: number;       // Price per unit
-  totalPrice: number;      // Total for this item
-  selectedBrand?: string;  // Optional brand name
-  selectedOption?: string;  // Option name
-  icon : string;         // Service icon  name
+  _id: string; // Cart item ID from API
+  serviceId: string; // Service ID
+  serviceName: string; // Service name
+  quantity: number; // Quantity
+  basePrice: number; // Price per unit
+  totalPrice: number; // Total for this item
+  selectedBrand?: string; // Optional brand name
+  selectedOption?: string; // Option name
+  icon: string; // Service icon  name
 };
-
 
 export type ServiceOption = {
   _id: string;
@@ -105,26 +101,80 @@ export type ServiceOption = {
   singlePrice: number;
   doublePrice: number;
   triplePrice: number;
-}
+};
 
 export type ServiceBrand = {
   _id: string;
   name: string;
   description: string;
   logo: string;
-}
+};
 
 export type ServiceCategory = {
   _id: string;
   name: string;
   icon: string;
-}
+};
+
+export type ConversationSettings = {
+  agentNames: string[];
+  enableConversationMode: boolean;
+};
+export type ConversationStepConfig = {
+  allowSavedAddress?: boolean;
+  requireAddress?: boolean;
+
+  // brand selection
+  brandsSource?: "service.supportedBrands" | string;
+  showBrands?: boolean;
+
+  // option selection
+  optionsSource?: "service.options" | string;
+  showOptions?: boolean;
+
+  // pricing
+  showPricing?: boolean;
+  pricingType?: "all" | "single" | "double" | "triple";
+
+  // notes
+  notesRequired?: boolean;
+  notesPlaceholder?: string;
+
+  // custom options array (unused but exists)
+  customOptions?: any[];
+};
+export type ConversationStepType =
+  | "GREETING"
+  | "OPTION_SELECTION"
+  | "BRAND_SELECTION"
+  | "QUANTITY_SELECTION"
+  | "QUANTITY_CONFIRM"
+  | "ADDRESS_INPUT"
+  | "NOTES_INPUT"
+  | "FINAL_CONFIRMATION";
+export type ConversationStep = {
+  _id: string;
+
+  stepNumber: number;
+  stepType: ConversationStepType;
+
+  agentName: string;
+
+  messageTemplate: string;
+
+  isActive: boolean;
+  isSkippable: boolean;
+
+  config: ConversationStepConfig;
+};
 
 export type ServiceData = {
   _id: string;
   name: string;
   description: string;
   estimatedTime: string;
+  conversationSettings: ConversationSettings;
+  conversationSteps: ConversationStep[];
   icon: string;
   specialty: string;
   slug: string;
@@ -140,10 +190,7 @@ export type ServiceData = {
   options: ServiceOption[];
   brands: ServiceBrand[];
   subServices: any[]; // or define a proper type if subServices have structure later
-}
-
-
-
+};
 
 export type AddToCartPayload = {
   userId: string;
@@ -161,4 +208,4 @@ export type AddToCartPayload = {
     brandId: string;
   };
   quantity?: number;
-}
+};

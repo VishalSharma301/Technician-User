@@ -26,8 +26,8 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { OrderStackParamList } from "../../constants/navigation";
 
 const STATUS_TABS = [
-  { label: "Active", value: "in_progress", color: "#027CC7" },
-  { label: "Pending", value: "pending", color: "#FFD768" },
+  { label: "All", value: "all", color: "#027CC7" },
+  { label: "Booked", value: "booked", color: "#FFD768" },
   { label: "Completed", value: "completed", color: "#22C55E" },
   { label: "Cancelled", value: "cancelled", color: "#FF0000" },
 ];
@@ -86,25 +86,22 @@ export default function OrderScreen() {
 
   
 
-  const getTabCount = (value: string) => {
-    if (!stats) return 0;
+ const getTabCount = (value: string) => {
+  if (!stats) return 0;
 
-    switch (value) {
-      case "in_progress":
-        return stats.inProgress || 0;
-      case "pending":
-        return stats.booked || 0;
-      case "completed":
-        return stats.completed || 0;
-      case "cancelled":
-        return stats.cancelled || 0;
-      case "all":
-        return stats.totalRequests || 0;
-      default:
-        return 0;
-    }
-  };
-
+  switch (value) {
+    case "booked":
+      return stats.booked || 0;
+    case "completed":
+      return stats.completed || 0;
+    case "cancelled":
+      return stats.cancelled || 0;
+    case "all":
+      return stats.totalRequests || 0;
+    default:
+      return 0;
+  }
+};
   // Debounce ref
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -174,10 +171,11 @@ export default function OrderScreen() {
         data={STATUS_TABS}
         keyExtractor={(item) => item.value}
         contentContainerStyle={{
-          gap: scale(3.5),
+          // gap: scale(3.5),
           alignItems: "center",
           justifyContent: "space-between",
           width: scale(370),
+          // borderWidth : 1
         }}
         renderItem={({ item }) => {
           const isActive = selectedTab === item.value;
@@ -587,8 +585,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     height: verticalScale(40.66),
-    gap: scale(2),
-    paddingHorizontal: scale(6),
+    gap: scale(4),
+    paddingHorizontal: scale(10),
+    
   },
   tabButtonActive: {
     backgroundColor: "#153B93",

@@ -22,7 +22,12 @@ import { useAuth } from "../../hooks/useAuth";
 import { useProfile } from "../../hooks/useProfile";
 import { useAddress } from "../../hooks/useAddress";
 import { useServices } from "../../hooks/useServices";
-import { fetchBrandsByZip, fetchServicesByZip } from "../../utils/servicesApi";
+import {
+  fetchBrandsByZip,
+  fetchServiceDetails,
+  fetchServicesByZip,
+  getServiceConversationDetails,
+} from "../../utils/servicesApi";
 import { ServiceData } from "../../constants/types";
 import { innerColors, outerColors } from "../../constants/colors";
 import Tooltip from "../components/Tooltip";
@@ -32,6 +37,12 @@ import BookingChatBot from "../components/BookingChatBot";
 import Recorder from "../components/BookingChatBot";
 import ChatbotBooking from "../components/ChatBot";
 import CB1 from "../components/CB1";
+import ChatbotBooking_NewFlow from "../components/ChatBot2";
+import ChatbotBooking3 from "../components/CC4";
+import ChatbotEngine from "../components/cbbcc/CB5";
+import ChatbotBooking4 from "../components/CC4";
+import ChatbotBookingSimpleRewind from "../components/CC5";
+import ChatbotBookingManualUI from "../components/CC5";
 
 const categories = ["Popular", "Emergency", "Seasonal", "Daily Use"];
 
@@ -39,15 +50,21 @@ interface Service {
   name: string;
   icon: IconName;
 }
-
-
-
+type ServiceObject = {
+  data: ServiceData;
+  zipcode: string;
+};
 
 const HomeScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const { setIsLoading } = useAuth();
   const {} = useProfile();
   const { selectedAddress, setZipcode } = useAddress();
+  const [userAddresses] = useState([
+    "123 Main Street, New York, NY 10001",
+    "456 Park Avenue, Brooklyn, NY 11201",
+    "789 Broadway, Queens, NY 11355",
+  ]);
   const {
     setBrands,
     setServices,
@@ -60,7 +77,9 @@ const HomeScreen = () => {
   } = useServices();
   const [pinVisible, setPinVisible] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [selectedService, setSelectedService] = useState<ServiceData>();
+  // const [selectedService, setSelectedService] = useState<ServiceData>();
+  const [selectedServiceObject, setSelectedServiceObject] =
+    useState<ServiceObject>();
   const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
 
   const servicess =
@@ -153,9 +172,20 @@ const HomeScreen = () => {
     );
   };
 
-  function selectBrand(service: ServiceData) {
-    setVisible(true);
-    setSelectedService(service);
+  // async function serviceDetails(id: string) {
+  //   // const data =   await getServiceConversationDetails(id,'140802')
+  //   const data = await fetchServiceDetails(id, "140802");
+  //   console.log("data2", data);
+  // }
+
+  async function selectBrand(service: ServiceData) {
+    const clickedService = await fetchServiceDetails(service._id, "140802");
+    if (clickedService) {
+      console.log("service : ", clickedService);
+
+      setSelectedServiceObject(clickedService);
+      setVisible(true);
+    }
   }
 
   return (
@@ -341,6 +371,7 @@ const HomeScreen = () => {
                     <TouchableOpacity
                       style={styles.serviceCard}
                       onPress={() => selectBrand(service)}
+                      // onPress={() => serviceDetails(service._id)}
                       // onPress={() => setVisible(!visible)}
                       onLongPress={() => setActiveTooltipId(service._id)}
                       onPressOut={() => setActiveTooltipId(null)}
@@ -401,18 +432,54 @@ const HomeScreen = () => {
       </ScrollView>
       <CustomNavBar isLocal={"Home"} />
       {/* <BottomSheet visible={visible} onClose={() => setVisible(false)}> */}
-      <View
+      {visible && (
+        <View style={{ height: "100%" }}>
+          {/* <ChatbotBooking3
+            serviceObject={selectedServiceObject!}
+            close={() => setVisible(false)}
+          />   */}
+          {/* <ChatbotEngine  backend={{
+    service: selectedServiceObject?.data,
+    conversationSteps: selectedServiceObject?.data?.conversationSteps,
+    conversationSettings: selectedServiceObject?.data?.conversationSettings
+  }}/> */}
+          {/* <ChatbotBooking4
+            serviceObject={selectedServiceObject!}
+            close={() => setVisible(false)}
+          /> */}
+          <ChatbotBookingManualUI serviceObject={selectedServiceObject!}
+            close={() => setVisible(false)} />
+          {/* <ChatbotEngine
+        serviceData={selectedServiceObject?.data!}
+        userAddresses={userAddresses}
+        onComplete={()=>{}}
+        onCancel={()=> setVisible(false)}
+      /> */}
+
+          {/* <ChatbotBooking_NewFlow
+            serviceObject={selectedServiceObject!}
+            close={() => setVisible(false)}
+          />   */}
+        </View>
+      )}
+      {/* <View
         style={{
-          height: '100%',
+          height: "100%",
           opacity: 1,
           display: visible ? "flex" : "none",
           // borderWidth: 1,
         }}
-      >
-         {/* <Recorder /> */}
-         {/* {selectedService && <CB1 service={selectedService} close={() => setVisible(false)} />} */}
-         {selectedService && <ChatbotBooking service={selectedService} close={() => setVisible(false)} />}
-        {/* {selectedService && (
+      > */}
+      {/* <Recorder /> */}
+      {/* {selectedService && <CB1 service={selectedService} close={() => setVisible(false)} />} */}
+      {/* {selectedService && <ChatbotBooking service={selectedService} close={() => setVisible(false)} />} */}
+      {/* {selectedService && (
+          <ChatbotBooking_NewFlow
+            service={selectedService}
+            close={() => setVisible(false)}
+          />
+        )} */}
+      {/* {selectedService && (
           <BookingBottomSheet
             close={() => setVisible(false)}
             service={selectedService}
@@ -420,7 +487,7 @@ const HomeScreen = () => {
 
          
         )} */}
-      </View>
+      {/* </View> */}
       {/* </BottomSheet> */}
       <BottomSheet visible={pinVisible} onClose={() => setPinVisible(false)}>
         <ChangePinCode />
@@ -432,7 +499,7 @@ const HomeScreen = () => {
 export default HomeScreen;
 
 const styles = StyleSheet.create({
-  container:{
+  container: {
     padding: scale(9),
   },
   pinContainer: {

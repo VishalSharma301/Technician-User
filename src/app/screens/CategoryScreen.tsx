@@ -19,6 +19,7 @@ import CustomNavBar from "../components/CustomNavBar";
 import BottomSheet from "../components/BottomSheet";
 import BookingBottomSheet from "../components/BookingLogic";
 import { ServiceData } from "../../constants/types";
+import BadgeCard from "../components/BadgeCard";
 
 export default function CategoryScreen() {
   const { services } = useServices();
@@ -150,6 +151,7 @@ export default function CategoryScreen() {
           </TouchableOpacity>
         )} */}
       </View>
+      <BadgeCard />
       </ScrollView>
       <CustomNavBar isLocal={'Category'} />
       <BottomSheet visible={visible} onClose={() => setVisible(false)}>
