@@ -1,45 +1,56 @@
 import { useState, useRef } from "react";
 
-export function useChatGPTTyping() {
+export function useChatGPTTyping(disableTyping: boolean = false) {
   const [isTypingIndicator, setIsTypingIndicator] = useState(false);
   const typingTimeouts = useRef<number[]>([]);
 
+  /* ---------------------------------------
+     CLEAR ALL TIMERS
+  --------------------------------------- */
   const clearAllTimers = () => {
     typingTimeouts.current.forEach((id) => clearTimeout(id));
     typingTimeouts.current = [];
   };
 
-  // ---------------------------------------
-  // HUMAN-LIKE TYPING SPEED
-  // ---------------------------------------
+  /* ---------------------------------------
+     HUMAN-LIKE TYPING SPEED
+     (Used only when typing is enabled)
+  --------------------------------------- */
   const getTypingDelay = (char: string) => {
-    if (/[.!?]/.test(char)) return 350 * Math.random() * 0;
-    if (/[,:;]/.test(char)) return 180 * Math.random() * 0;
-    if (char === " ") return 40 * Math.random() * 0;
-    if (/[A-Z]/.test(char)) return 70 * Math.random() * 0;
-    return 30 * Math.random() * 0;
+    if (/[.!?]/.test(char)) return 350 + Math.random() * 100;
+    if (/[,:;]/.test(char)) return 180 + Math.random() * 80;
+    if (char === " ") return 40 + Math.random() * 60;
+    if (/[A-Z]/.test(char)) return 70 + Math.random() * 20;
+    return 30 + Math.random() * 10;
   };
-  // const getTypingDelay = (char: string) => {
-  //   if (/[.!?]/.test(char)) return 350 + Math.random() * 100;
-  //   if (/[,:;]/.test(char)) return 180 + Math.random() * 80;
-  //   if (char === " ") return 40 + Math.random() * 60;
-  //   if (/[A-Z]/.test(char)) return 70 + Math.random() * 20;
-  //   return 30 + Math.random() * 10;
-  // };
 
-  // ---------------------------------------
-  // SHOW DOT TYPING INDICATOR FIRST
-  // ---------------------------------------
-  const showTypingIndicator = (pushDotMessage : ()=>void) => {
+  /* ---------------------------------------
+     SHOW TYPING DOTS
+  --------------------------------------- */
+  const showTypingIndicator = (pushDotMessage: () => void) => {
+    if (disableTyping) return; // ⛔ skip dots completely
+
     setIsTypingIndicator(true);
-    return pushDotMessage();
+    pushDotMessage();
   };
 
-  // ---------------------------------------
-  // TYPE THE TEXT NATURALLY
-  // ---------------------------------------
-  const typeText = (fullText: string, updateMessage : (text : string)=>void, onFinish : ()=>void) => {
+  /* ---------------------------------------
+     TYPE TEXT (OR INSTANT MODE)
+  --------------------------------------- */
+  const typeText = (
+    fullText: string,
+    updateMessage: (text: string) => void,
+    onFinish: () => void
+  ) => {
     clearAllTimers();
+
+    // 🚀 INSTANT MODE (typing disabled)
+    if (disableTyping) {
+      updateMessage(fullText);
+      setIsTypingIndicator(false);
+      onFinish && onFinish();
+      return;
+    }
 
     let index = 0;
 
@@ -54,7 +65,7 @@ export function useChatGPTTyping() {
       index++;
 
       const delay = getTypingDelay(fullText[index - 1]);
-      const timeoutId : any = setTimeout(typeNextChar, delay);
+      const timeoutId: any = setTimeout(typeNextChar, delay);
       typingTimeouts.current.push(timeoutId);
     };
 
@@ -65,5 +76,6 @@ export function useChatGPTTyping() {
     isTypingIndicator,
     showTypingIndicator,
     typeText,
+    clearAllTimers, // optional but useful
   };
 }

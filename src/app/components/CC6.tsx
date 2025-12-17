@@ -17,6 +17,8 @@ import AddressComponent from "./AddressForm";
 import TypingDots from "./TypingDots";
 import BadgeCard from "./BadgeCard";
 import { ServiceData } from "../../constants/types";
+import { ConversationBookingResponse, createConversationBooking, CreateConversationBookingPayload } from "../../utils/bookingApi";
+import { useProfile } from "../../hooks/useProfile";
 
 /* ---------------- TYPES ---------------- */
 
@@ -61,7 +63,8 @@ export default function Chatbot6({
 
   const { addresses, setSelectedAddress, selectedAddress, setAddresses } =
     useAddress();
-  const { showTypingIndicator, typeText } = useChatGPTTyping();
+  const { userId } = useProfile();
+  const { showTypingIndicator, typeText } = useChatGPTTyping(true);
   const scrollRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -75,6 +78,7 @@ export default function Chatbot6({
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
   const [notesSubmitted, setNotesSubmitted] = useState(false);
+  const [response, setResponse] = useState<ConversationBookingResponse>();
 
   /* ---------------- HELPERS ---------------- */
 
@@ -136,6 +140,70 @@ export default function Chatbot6({
     ]);
     scrollToBottom();
   };
+
+const handleCreateBooking = async () => {
+  if (!selectedOption || !quantity || !selectedAddress) {
+    console.warn("Missing booking data");
+    return;
+  }
+
+  const payload: CreateConversationBookingPayload = {
+    userId,
+    zipcode: serviceObject.zipcode,
+
+    selectedOption: {
+      optionId: selectedOption._id,
+      name: selectedOption.name,
+      price: selectedOption.singlePrice,
+    },
+
+ 
+
+    selectedBrand: selectedBrand
+      ? {
+          brandId: selectedBrand._id,
+          name: selectedBrand.name,
+        }
+      : undefined,
+
+    quantity, // ✅ number now
+
+    address: {
+      street: selectedAddress.address.street,
+      city: selectedAddress.address.city,
+      state: selectedAddress.address.state,
+      zipcode: selectedAddress.address.zipcode,
+    },
+
+    notes,
+    preferredDate: (() => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().split("T")[0];
+})(),
+    preferredTime : '10:00 AM',
+    paymentMethod: "cash",
+  };
+
+  console.log(
+    "📦 Booking Payload (NEW):",
+    JSON.stringify(payload, null, 2)
+  );
+
+  try {
+    const res = await createConversationBooking(service._id, payload);
+    
+      res && setResponse(res)
+    
+
+    console.log("✅ Booking created:", res.data);
+    setShowBadge(true);
+  } catch (err: any) {
+    console.error("❌ Booking failed:", err.message);
+  }
+};
+
 
   /* ---------------- OPTIONS ---------------- */
 
@@ -233,7 +301,7 @@ export default function Chatbot6({
         setSelectedAddress(opt.value);
         break;
       case "FINAL_CONFIRMATION":
-        setShowBadge(true);
+        handleCreateBooking();
         break;
     }
   };
@@ -480,7 +548,7 @@ export default function Chatbot6({
           );
         })}
 
-        {showBadge && <BadgeCard />}
+        {showBadge && response && <BadgeCard response={response} />}
       </ScrollView>
     </KeyboardAvoidingView>
   );

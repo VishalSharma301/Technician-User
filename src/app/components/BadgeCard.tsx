@@ -1,8 +1,12 @@
 import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 import {Ionicons} from "@expo/vector-icons"
+import { ConversationBookingResponse } from "../../utils/bookingApi";
 
-const BadgeCard = () => {
+const BadgeCard = ( {response} : {response : ConversationBookingResponse} ) => {
+  const data = response.data
+  const provider = data.provider
+
   return (
     <View style={{backgroundColor : '#DAF1FF', padding : 16, paddingTop : 50}}>
     <View style={styles.cardContainer}>
@@ -15,25 +19,25 @@ const BadgeCard = () => {
       />
 
       {/* Business Name */}
-      <Text style={styles.title}>Malik Enterprises</Text>
-      <Text style={styles.rating}>⭐⭐ 4.9/5 (240 reviews)</Text>
+      <Text style={styles.title}>{provider?.name}</Text>
+      <Text style={styles.rating}>⭐⭐ {provider?.rating}/5 (240 reviews)</Text>
 
       {/* Expertise Tags */}
       <View style={styles.row}>
         <View style={styles.tag}>
-          <Text style={styles.tagText}>Voltas Windows AC</Text>
+          <Text style={styles.tagText}>{data.service.name}</Text>
           <Text style={styles.tagSubText}>Expert (4 years)</Text>
         </View>
         <View style={styles.tag}>
           <Text style={styles.tagText}>200+</Text>
-          <Text style={styles.tagSubText}>Window ACs serviced</Text>
+          <Text style={styles.tagSubText}>{data.selectedOption.name}s serviced</Text>
         </View>
       </View>
 
       {/* Description */}
       <Text style={styles.subtitle}>
-        Specializes in Window AC cooling issues{"\n"}
-        Carries Window AC specific parts
+        Specializes in {data.selectedOption.name} issues{"\n"}
+        Carries {data.selectedOption.name} specific parts
       </Text>
 
       {/* Booking Detail */}
@@ -43,13 +47,13 @@ const BadgeCard = () => {
       {/* Booking Info Boxes */}
       <View style={styles.infoGrid}>
         <View style={styles.infoBox}>
-          <Text style={styles.infoLabel}>AC Type</Text>
-          <Text style={styles.infoValue}>Window AC (2 units)</Text>
+          <Text style={styles.infoLabel}>{data.service.name} Type</Text>
+          <Text style={styles.infoValue}>{data.selectedOption.name} (2 units)</Text>
         </View>
 
         <View style={styles.infoBox}>
           <Text style={styles.infoLabel}>Brand</Text>
-          <Text style={styles.infoValue}>Voltas Window ACs</Text>
+          <Text style={styles.infoValue}>{data.selectedBrand?.name}</Text>
         </View>
 
         <View style={styles.infoBox}>
@@ -59,7 +63,7 @@ const BadgeCard = () => {
 
         <View style={styles.infoBox}>
           <Text style={styles.infoLabel}>Address</Text>
-          <Text style={styles.infoValue}>Sector 70, Mohali (Home)</Text>
+          <Text style={styles.infoValue}>{data.address.street}, {}{data.address.city} (Home)</Text>
         </View>
 
         <View style={styles.infoBox}>
@@ -69,13 +73,13 @@ const BadgeCard = () => {
 
         <View style={styles.infoBox}>
           <Text style={styles.infoLabel}>Total</Text>
-          <Text style={styles.infoValue}>₹900 (You saved ₹100!)</Text>
+          <Text style={styles.infoValue}>₹{data.finalPrice} (You saved ₹100!)</Text>
         </View>
       </View>
 
       {/* Items Rajesh Will Bring */}
       <View style={styles.sectionBox}>
-        <Text style={styles.sectionTitle}>Rajesh will bring:</Text>
+        <Text style={styles.sectionTitle}>{provider?.name} will bring:</Text>
 
         {[
           "Window AC gas refill kit",

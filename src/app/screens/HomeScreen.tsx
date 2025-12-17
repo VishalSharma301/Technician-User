@@ -43,6 +43,7 @@ import ChatbotEngine from "../components/cbbcc/CB5";
 import ChatbotBooking4 from "../components/CC4";
 import ChatbotBookingSimpleRewind from "../components/CC5";
 import ChatbotBookingManualUI from "../components/CC5";
+import Chatbot6 from "../components/CC6";
 
 const categories = ["Popular", "Emergency", "Seasonal", "Daily Use"];
 
@@ -447,8 +448,12 @@ const HomeScreen = () => {
             serviceObject={selectedServiceObject!}
             close={() => setVisible(false)}
           /> */}
-          <ChatbotBookingManualUI serviceObject={selectedServiceObject!}
-            close={() => setVisible(false)} />
+
+          {/* <ChatbotBookingManualUI serviceObject={selectedServiceObject!}
+            onClose={() => setVisible(false)} /> */}
+          
+          <Chatbot6 serviceObject={selectedServiceObject!}
+            onClose={() => setVisible(false)} />
           {/* <ChatbotEngine
         serviceData={selectedServiceObject?.data!}
         userAddresses={userAddresses}

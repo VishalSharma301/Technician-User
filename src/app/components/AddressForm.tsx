@@ -39,10 +39,10 @@ function handleConfirm() {
   onAddressSaved(newAddress);
 
   // 🟢 SECOND: defer global state updates
-  setTimeout(() => {
-    setAddresses((prev) => [...prev, newAddress]);
-    setSelectedAddress(newAddress);
-  }, 0);
+  // setTimeout(() => {
+  //   setAddresses((prev) => [...prev, newAddress]);
+  //   setSelectedAddress(newAddress);
+  // }, 0);
 
   // Reset fields
   setStreetAddress("");
