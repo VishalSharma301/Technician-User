@@ -17,11 +17,11 @@ export function useChatGPTTyping(disableTyping: boolean = false) {
      (Used only when typing is enabled)
   --------------------------------------- */
   const getTypingDelay = (char: string) => {
-    if (/[.!?]/.test(char)) return 350 + Math.random() * 100;
-    if (/[,:;]/.test(char)) return 180 + Math.random() * 80;
-    if (char === " ") return 40 + Math.random() * 60;
-    if (/[A-Z]/.test(char)) return 70 + Math.random() * 20;
-    return 30 + Math.random() * 10;
+    if (/[.!?]/.test(char)) return 350 + Math.random() * 50;
+    if (/[,:;]/.test(char)) return 180 + Math.random() * 40;
+    if (char === " ") return 40 + Math.random() * 30;
+    if (/[A-Z]/.test(char)) return 70 + Math.random() * 10;
+    return 30 + Math.random() * 5;
   };
 
   /* ---------------------------------------

@@ -151,7 +151,6 @@ export default function CategoryScreen() {
           </TouchableOpacity>
         )} */}
       </View>
-      <BadgeCard />
       </ScrollView>
       <CustomNavBar isLocal={'Category'} />
       <BottomSheet visible={visible} onClose={() => setVisible(false)}>
