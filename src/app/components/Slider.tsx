@@ -14,6 +14,7 @@ import { scale, moderateScale, verticalScale } from "../../utils/scaling";
 import { useServices } from "../../hooks/useServices";
 import { ServiceData } from "../../constants/types";
 import { iconMap, IconName } from "../../utils/iconMap";
+import CustomView from "./CustomView";
 
 const { width } = Dimensions.get("window");
 
@@ -31,7 +32,7 @@ const ServiceCard = memo(
     onPressService: (service: ServiceData) => void;
   }) => {
     return (
-      <View style={styles.techCard}>
+      <CustomView style={styles.techCard}>
         <View style={styles.techInfo}>
           <View style={styles.iconWrapper}>
             <Image
@@ -50,16 +51,10 @@ const ServiceCard = memo(
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.cartButton}
-          onPress={() => onPressService(service)}
-        >
-          <Image
-            source={require("../../../assets/cart.png")}
-            style={styles.cartIcon}
-          />
-        </TouchableOpacity>
-      </View>
+       <TouchableOpacity style={styles.bookBtn}>
+                 <Text style={styles.bookText}>Book</Text>
+               </TouchableOpacity>
+      </CustomView>
     );
   }
 );
@@ -117,18 +112,7 @@ const ServiceOfTheWeek: React.FC<BannerSliderProps> = ({ onPressService }) => {
         ))}
       </ScrollView>
 
-      {/* DOTS */}
-      {/* <View style={styles.dotsContainer}>
-        {mostBookedServices.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              index === currentIndex && styles.activeDot,
-            ]}
-          />
-        ))}
-      </View> */}
+     
     </View>
   );
 };
@@ -140,6 +124,13 @@ export default ServiceOfTheWeek;
 const styles = StyleSheet.create({
   sliderContainer: {
     // borderWidth : 1
+   borderRadius: moderateScale(16),
+    height: verticalScale(74),
+    // marginBottom: verticalScale(20),
+    width: scale(375),
+    // borderWidth : 1,
+    elevation: 5
+    
   },
 
   dotsContainer: {
@@ -162,17 +153,16 @@ const styles = StyleSheet.create({
   },
 
   techCard: {
-    backgroundColor: "#D4D4D440",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: scale(12),
     borderRadius: moderateScale(16),
-    borderWidth: 2,
-    borderColor: "#fff",
     height: verticalScale(74),
-    marginBottom: verticalScale(20),
+    // marginBottom: verticalScale(20),
     width: scale(375),
+    // borderWidth : 1,
+    // elevation: 5
     // alignSelf: "center",
   },
 
@@ -184,7 +174,7 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: scale(45),
     height: scale(45),
-    borderWidth: 1,
+    borderWidth: scale(1),
     borderColor: "#fff",
     borderRadius: moderateScale(10),
     alignItems: "center",
@@ -220,4 +210,22 @@ const styles = StyleSheet.create({
     height: scale(22),
     resizeMode: "cover",
   },
+  bookBtn: {
+  backgroundColor: "#027CC7",
+  paddingVertical: verticalScale(6),
+  // paddingHorizontal: scale(16),
+  borderRadius: scale(20),
+  borderWidth : 1,
+  borderColor : "#fff",
+  width : scale(87),
+  alignItems : "center",
+  justifyContent : "center",
+
+},
+
+bookText: {
+  color: "#fff",
+  fontSize: moderateScale(14),
+  fontWeight: "600",
+},
 });

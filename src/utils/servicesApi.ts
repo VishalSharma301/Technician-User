@@ -209,8 +209,52 @@ export async function fetchBrandsByZip(zipcode: string) {
 
 export async function fetchServiceDetails(serviceId: string, zipcode: string) {
   try {
+    console.log("API : ", `${BASE}/api/users/services/${serviceId}?zipcode=${zipcode}`);
+    
     const response = await axios.get(
       `${BASE}/api/users/services/${serviceId}`,
+      {
+        params: { zipcode },
+        timeout: 10000,
+      }
+    );
+    // console.log('details fetched : ', response.data);
+
+    return response.data;
+  } catch (error) {
+    // ✅ 5. Handle different error types
+    if (axios.isAxiosError(error)) {
+      const axiosErr = error as AxiosError;
+
+      if (axiosErr.response) {
+        // server responded with error
+        console.error("❌ Server Error:", axiosErr.response.data);
+        throw new Error(
+          `Server error (${axiosErr.response.status}): ${JSON.stringify(
+            axiosErr.response.data
+          )}`
+        );
+      } else if (axiosErr.request) {
+        // no response from server
+        console.error("❌ No response received:", axiosErr.request);
+        throw new Error("No response received from server");
+      } else {
+        // something went wrong in setup
+        console.error("❌ Request setup error:", axiosErr.message);
+        throw new Error(axiosErr.message);
+      }
+    } else {
+      // non-axios error
+      console.error("❌ Unexpected Error:", error);
+      throw new Error("An unexpected error occurred");
+    }
+  }
+}
+export async function newServiceDetails(serviceId: string, zipcode: string) {
+  try {
+     console.log("API : ", `${BASE}/api/test/services/${serviceId}/get-details/conversation?zipcode=${zipcode}`);
+    const response = await axios.get(
+      `${BASE}/api/test/services/${serviceId}/get-details/conversation`,
       {
         params: { zipcode },
         timeout: 10000,

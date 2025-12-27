@@ -11,12 +11,13 @@ import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { useCart } from "../../hooks/useCart";
+import CustomView from "./CustomView";
 
 type Props = Partial<BottomTabBarProps> & {
   isLocal?: "Home" | "Category";
 };
 
-export default function CustomNavBar1({ state, navigation, isLocal }: Props) {
+export default function CustomNavBar({ state, navigation, isLocal }: Props) {
   const nav = navigation ?? useNavigation();
   const {cartItems} = useCart()
 
@@ -29,20 +30,14 @@ export default function CustomNavBar1({ state, navigation, isLocal }: Props) {
   }
 
   return (
-    // <View style={{borderWidth : 0, paddingBottom : verticalScale(10), backgroundColor : 'transparent'}}>
-    <View style={styles.bottomNav}>
-      <ImageBackground
-        source={require("../../../assets/Navbg.png")}
+      <CustomView
         style={styles.bottomNav2}
       >
-      {/* <ImageBackground
-        source={require("../../../assets/bg0.png")}
-        style={styles.bottomNav2}
-      > */}
+     
         {/* Home */}
         <TouchableOpacity
           onPress={() => nav?.navigate("HomeStack")}
-          style={[styles.navItem, { marginRight: scale(21) }]}
+          style={[styles.navItem, { marginRight: scale(0) }]}
         >
           <Icon
             name="home-outline"
@@ -62,7 +57,7 @@ export default function CustomNavBar1({ state, navigation, isLocal }: Props) {
         {/* Jobs */}
         <TouchableOpacity
           onPress={() => nav?.navigate("JobsScreen")}
-          style={[styles.navItem, { marginRight: scale(30) }]}
+          style={[styles.navItem, { marginRight: scale(0) }]}
         >
           <Icon
             name="briefcase-outline"
@@ -79,31 +74,12 @@ export default function CustomNavBar1({ state, navigation, isLocal }: Props) {
           </Text>
         </TouchableOpacity>
 
-        {/* Cart */}
-        <TouchableOpacity
-          onPress={() => nav?.navigate("CartScreen")}
-          style={styles.cartCenter}
-        >
-          <Image
-            source={require("../../../assets/CartNav.png")}
-            style={{
-              height: scale(55),
-              width: scale(55),
-              resizeMode: "cover",
-              position: "relative",
-              left: scale(1),
-              top: verticalScale(3),
-            }}
-          />
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{cartItems.length}</Text>
-          </View>
-        </TouchableOpacity>
+      
 
         {/* Category */}
         <TouchableOpacity
           onPress={() => nav?.navigate("CategoryScreen")}
-          style={[styles.navItem, { marginLeft: scale(21) }]}
+          style={[styles.navItem, { marginLeft: scale(0) }]}
         >
           <Icon
             name="grid-outline"
@@ -125,7 +101,7 @@ export default function CustomNavBar1({ state, navigation, isLocal }: Props) {
         {/* Orders */}
         <TouchableOpacity
           onPress={() => nav?.navigate("OrderStack")}
-          style={[styles.navItem, { marginLeft: scale(21) }]}
+          style={[styles.navItem, { marginLeft: scale(0) }]}
         >
           <Icon
             name="document-text-outline"
@@ -141,45 +117,56 @@ export default function CustomNavBar1({ state, navigation, isLocal }: Props) {
             Order
           </Text>
         </TouchableOpacity>
-      {/* </ImageBackground> */}
-      </ImageBackground>
-    </View>
-    // </View>
+          {/* Cart */}
+        <TouchableOpacity
+          onPress={() => nav?.navigate("CartScreen")}
+          style={styles.navItem}
+        >
+          <Icon
+            name="person-outline"
+            size={moderateScale(20)}
+            color={state?.index === 2 ? "#0583D0" : "#707070"}
+          />
+          <Text
+            style={[
+              styles.navText,
+              { color: state?.index === 4 ? "#0583D0" : "#707070" },
+            ]}
+          >
+            Order
+          </Text>
+        </TouchableOpacity>
+      </CustomView>
   );
 }
 
 const styles = StyleSheet.create({
   bottomNav: {
-    flexDirection: "row",
-    justifyContent: "center",
-    backgroundColor: "#ffffff10",
-    borderRadius: moderateScale(30),
-    paddingVertical: verticalScale(10),
-    height: verticalScale(68),
-    width: scale(347),
-    borderWidth: 0.8,
-    borderColor: "#FFFFFF",
-    alignItems : 'center',
-    overflow : 'hidden',
+    // height: verticalScale(75),
+    // width: scale(355),
+    // borderRadius: moderateScale(16.59),
+    // alignItems : 'flex-end',
+    // overflow : 'hidden',
+    // borderWidth : 0,
     position: "absolute",
     bottom: verticalScale(10),
-    marginHorizontal: scale(23),
+    alignSelf : 'center',
+    elevation: 5,
   },
   bottomNav2: {
     flexDirection: "row",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(300),
-    paddingVertical: verticalScale(10),
-    height: verticalScale(888),
-    resizeMode : 'stretch',
-    // position: "absolute",
-    
+    gap: scale(27),
+    height: verticalScale(68),
     width: scale(347),
-    // bottom: verticalScale(30),
-    // marginHorizontal: scale(23),
-    // borderWidth: 0.8,
-    // borderColor: "#FFFFFF",
+    borderRadius: scale(16.59),
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
+    overflow : 'hidden',
+    position: "absolute",
+    bottom: verticalScale(20),
+    alignSelf : 'center',
+    elevation: 5,
   },
   navItem: { alignItems: "center", alignSelf: "center" },
   navText: {

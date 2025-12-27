@@ -251,7 +251,8 @@ export default function Chatbot6({
       };
 
       const res = await createConversationBooking(service._id, payload);
-        console.log('response :', res);
+     console.dir(res, { depth: null });
+
         
       setResponse(res);
       // setShowBadge(true);
