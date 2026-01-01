@@ -16,7 +16,7 @@ import { ServiceData } from "../../constants/types";
 import { iconMap, IconName } from "../../utils/iconMap";
 import CustomView from "./CustomView";
 
-const { width } = Dimensions.get("window");
+const width = scale(351);
 
 interface BannerSliderProps {
   onPressService: (service: ServiceData) => void;
@@ -32,28 +32,31 @@ const ServiceCard = memo(
     onPressService: (service: ServiceData) => void;
   }) => {
     return (
-      <CustomView style={styles.techCard}>
+      <CustomView
+        height={verticalScale(68.9)}
+        width={scale(351)}
+        radius={moderateScale(12)}
+        boxStyle={styles.techCard}
+      >
         <View style={styles.techInfo}>
           <View style={styles.iconWrapper}>
             <Image
-              source={
-                iconMap[service?.icon as IconName] ?? iconMap["default"]
-              }
+              source={iconMap[service?.icon as IconName] ?? iconMap["default"]}
               style={styles.techImage}
             />
           </View>
 
-          <View>
-            <Text style={styles.techName}>{service?.name} 🛡️</Text>
+          <View style={{ width: scale(190), borderWidth: 0 }}>
+            <Text style={styles.techName}>{service?.name}</Text>
             <Text style={styles.techDesc}>
               {service?.category?.name} • 4.5 ⭐
             </Text>
           </View>
         </View>
 
-       <TouchableOpacity style={styles.bookBtn}>
-                 <Text style={styles.bookText}>Book</Text>
-               </TouchableOpacity>
+        <TouchableOpacity style={styles.bookBtn}>
+          <Text style={styles.bookText}>Book</Text>
+        </TouchableOpacity>
       </CustomView>
     );
   }
@@ -89,14 +92,12 @@ const ServiceOfTheWeek: React.FC<BannerSliderProps> = ({ onPressService }) => {
 
   /* --------------------------- ON SCROLL --------------------------- */
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const slide = Math.round(
-      event.nativeEvent.contentOffset.x / width
-    );
+    const slide = Math.round(event.nativeEvent.contentOffset.x / width);
     setCurrentIndex(slide);
   };
 
   return (
-    <View style={styles.sliderContainer}>
+    <View style={[styles.sliderContainer]}>
       <ScrollView
         horizontal
         pagingEnabled
@@ -106,13 +107,11 @@ const ServiceOfTheWeek: React.FC<BannerSliderProps> = ({ onPressService }) => {
         ref={scrollRef}
       >
         {mostBookedServices.map((service) => (
-          <View key={service._id} style={{ width }}>
+          <View key={service._id} style={{ width , height: verticalScale(72), borderWidth : 0, borderColor : 'red' }}>
             <ServiceCard service={service} onPressService={onPressService} />
           </View>
         ))}
       </ScrollView>
-
-     
     </View>
   );
 };
@@ -124,13 +123,13 @@ export default ServiceOfTheWeek;
 const styles = StyleSheet.create({
   sliderContainer: {
     // borderWidth : 1
-   borderRadius: moderateScale(16),
-    height: verticalScale(74),
+    // borderRadius: moderateScale(16),
+    height: verticalScale(72),
+
     // marginBottom: verticalScale(20),
-    width: scale(375),
+    width: scale(351),
     // borderWidth : 1,
-    elevation: 5
-    
+    alignSelf: "center",
   },
 
   dotsContainer: {
@@ -157,18 +156,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: scale(12),
-    borderRadius: moderateScale(16),
-    height: verticalScale(74),
-    // marginBottom: verticalScale(20),
-    width: scale(375),
-    // borderWidth : 1,
-    // elevation: 5
-    // alignSelf: "center",
+
   },
+ 
 
   techInfo: {
     flexDirection: "row",
     alignItems: "center",
+    marginRight: scale(4),
   },
 
   iconWrapper: {
@@ -179,7 +174,7 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(10),
     alignItems: "center",
     justifyContent: "center",
-    marginRight: scale(10),
+    marginRight: scale(6),
   },
 
   techImage: {
@@ -211,21 +206,21 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
   bookBtn: {
-  backgroundColor: "#027CC7",
-  paddingVertical: verticalScale(6),
-  // paddingHorizontal: scale(16),
-  borderRadius: scale(20),
-  borderWidth : 1,
-  borderColor : "#fff",
-  width : scale(87),
-  alignItems : "center",
-  justifyContent : "center",
+    backgroundColor: "#027CC7",
+    paddingVertical: verticalScale(6),
+    // paddingHorizontal: scale(16),
+    borderRadius: scale(20),
+    borderWidth: 1,
+    borderColor: "#fff",
+    width: scale(87),
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: scale(12),
+  },
 
-},
-
-bookText: {
-  color: "#fff",
-  fontSize: moderateScale(14),
-  fontWeight: "600",
-},
+  bookText: {
+    color: "#fff",
+    fontSize: moderateScale(14),
+    fontWeight: "600",
+  },
 });

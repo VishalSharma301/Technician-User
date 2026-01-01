@@ -60,6 +60,14 @@ type ServiceObject = {
   zipcode: string;
 };
 
+// hiwIcons.ts
+export const HIW_ICONS: Record<string, any> = {
+  1: require("../../../assets/HIW/1.png"),
+  2: require("../../../assets/HIW/2.png"),
+  3: require("../../../assets/HIW/3.png"),
+  4: require("../../../assets/HIW/4.png"),
+};
+
 const HomeScreen = () => {
   const { setIsLoading } = useAuth();
   const {} = useProfile();
@@ -80,6 +88,7 @@ const HomeScreen = () => {
     mostBookedServices,
     servicesByCategory,
   } = useServices();
+
   const [pinVisible, setPinVisible] = useState(false);
   const [visible, setVisible] = useState(false);
   // const [selectedService, setSelectedService] = useState<ServiceData>();
@@ -138,7 +147,7 @@ const HomeScreen = () => {
     getAllServices();
   }, [zipcode]);
 
-  console.log(categories);
+  // console.log(quickPickServices);
 
   const ChangePinCode = () => {
     const [pin, setPin] = useState("");
@@ -219,40 +228,91 @@ const HomeScreen = () => {
     <View style={{ flex: 1, backgroundColor: "#F0EFF8" }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* HEADER */}
-        <View style={styles.topBar}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Icon name="location-outline" size={moderateScale(16)} />
-            <Text style={styles.pinText}>
-              {selectedAddress.address.zipcode}
-            </Text>
-          </View>
+        <CustomView
+          width={scale(374.68)}
+          height={verticalScale(109)}
+          radius={scale(11.35)}
+          boxStyle={[
+            {
+              borderWidth: moderateScale(0.7),
+              borderColor: "#fff",
+              paddingVertical: verticalScale(7.85),
+              paddingHorizontal: scale(8.96),
+            },
+          ]}
+        >
+          <View style={styles.topBar}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Icon
+                name="location-outline"
+                size={moderateScale(18)}
+                color={"#1E1E1E"}
+              />
+              <Text style={styles.pinText}>
+                {selectedAddress.address.zipcode}
+              </Text>
+            </View>
 
-          <View style={styles.points}>
-            <Icon name="wallet-outline" size={moderateScale(16)} />
-            <Text style={styles.pointsText}>100 Point</Text>
+            <CustomView
+              height={verticalScale(28)}
+              width={scale(60)}
+              radius={scale(25)}
+              boxStyle={[styles.points]}
+            >
+              <Image
+                source={require("../../../assets/points.png")}
+                style={{
+                  width: scale(20),
+                  height: verticalScale(20),
+                  resizeMode: "contain",
+                }}
+              />
+              {/* <Icon name="trophy" size={moderateScale(16)} color={"gold"} /> */}
+              <Text style={styles.pointsText}>100</Text>
+            </CustomView>
           </View>
-        </View>
+        </CustomView>
 
         {/* TOP CATEGORIES */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.topCategoryRow}>
-            {["Plumbing", "Electronics", "Home Appliances", "Plumbing"].map(
-              (item, index) => (
-                <CustomView key={index} style={styles.topCategoryCard}>
-                  <Image
-                    source={{ uri: "https://via.placeholder.com/60" }}
-                    style={styles.topCategoryImage}
-                  />
-                  <Text style={styles.topCategoryText}>{item}</Text>
-                </CustomView>
-              )
-            )}
-          </View>
-        </ScrollView>
+
+        <CustomView
+          height={verticalScale(95.68)}
+          radius={scale(11.35)}
+          width={scale(354.33)}
+          shadowStyle={{
+            marginVertical: verticalScale(12),
+            alignSelf: "center",
+            marginTop: verticalScale(-65),
+          }}
+          boxStyle={[styles.topCategoryRow]}
+        >
+          {quickPickServices.map((item, index) => (
+            <CustomView
+              key={index}
+              height={verticalScale(79.97)}
+              width={scale(79.39)}
+              radius={scale(14.88)}
+              boxStyle={[styles.topCategoryCard]}
+            >
+              <Image
+                source={iconMap[item.icon as IconName] || iconMap["default"]}
+                style={styles.topCategoryImage}
+              />
+              <Text numberOfLines={1} style={styles.topCategoryText}>
+                {item.name}
+              </Text>
+            </CustomView>
+          ))}
+        </CustomView>
 
         {/* SERVICE FILTER CHIPS */}
         {categories.length > 0 && (
-          <CustomView style={styles.chipsRow}>
+          <CustomView
+            height={verticalScale(37.59)}
+            radius={scale(14.84)}
+            width={scale(370)}
+            boxStyle={styles.chipsRow}
+          >
             {categories.map((item, index) => (
               <TouchableOpacity
                 key={index}
@@ -277,380 +337,238 @@ const HomeScreen = () => {
         {/* SERVICES GRID */}
         {selectedCategory &&
           servicesByCategory?.[selectedCategory]?.length > 0 && (
-            <View style={styles.grid}>
+            <View
+              style={[
+                styles.grid,
+                servicesByCategory?.[selectedCategory]?.length > 3
+                  ? { marginBottom: verticalScale(39) }
+                  : { marginBottom: verticalScale(10) },
+              ]}
+            >
               {servicesByCategory[selectedCategory].map((item, index) => (
-               <View key={index} style={{
-                // width: scale(121),
-                // height: verticalScale(92.5),
-                // alignItems : 'flex-end',
-                // borderRadius : scale(14),
-                // backgroundColor : '#8092ac50',
-               }}>
-                <TouchableOpacity 
-                style={{borderWidth : 0}}
-                  onPress={() => selectBrand(item)}
-                      onLongPress={() => setActiveTooltipId(item._id)}
-                      onPressOut={() => setActiveTooltipId(null)}
-                      delayLongPress={300}
-                >
-                <CustomView key={index} style={styles.serviceCard}>
-                  <Image
-                    source={iconMap["default"]}
-                    style={styles.serviceImage}
-                  />
-                  <Text numberOfLines={1} style={styles.serviceText}>
-                    {item.name}
-                  </Text>
-                </CustomView>
-                 </TouchableOpacity>
+                <View key={index}>
+                  <TouchableOpacity
+                    style={{ borderWidth: 0 }}
+                    onPress={() => selectBrand(item)}
+                    onLongPress={() => setActiveTooltipId(item._id)}
+                    onPressOut={() => setActiveTooltipId(null)}
+                    delayLongPress={300}
+                  >
+                    <CustomView
+                      height={verticalScale(95)}
+                      width={scale(119)}
+                      radius={scale(14)}
+                      key={index}
+                      boxStyle={styles.serviceCard}
+                    >
+                      <Image
+                        source={
+                          iconMap[item.icon as IconName] || iconMap["default"]
+                        }
+                        style={styles.serviceImage}
+                      />
+                      <Text numberOfLines={1} style={styles.serviceText}>
+                        {item.name}
+                      </Text>
+                    </CustomView>
+                  </TouchableOpacity>
                 </View>
               ))}
             </View>
           )}
 
         {/* HOW IT WORKS */}
-        {/* <Text style={styles.sectionTitle}>How it Work</Text>
-        <CustomView style={styles.howItWorks}>
-          <Image
-            source={require("../../../assets/HIWicons.png")}
-            style={{
+
+        <CustomView
+          height={verticalScale(132.72)}
+          radius={scale(12)}
+          width={scale(374.68)}
+          shadowStyle={{ marginTop: verticalScale(21) }}
+          boxStyle={[
+            styles.howItWorks,
+            {
+              alignSelf: "center",
               width: scale(374.68),
-              height: verticalScale(109),
-              resizeMode: "contain",
-            }}
-          />
-        </CustomView> */}
+              height: verticalScale(132.72),
+            },
+          ]}
+        >
+          <Text style={styles.sectionTitle}>How it Work</Text>
+          <CustomView
+            height={verticalScale(91.71)}
+            width={scale(355.19)}
+            radius={scale(12)}
+            boxStyle={[
+              styles.howItWorks,
+
+              {
+                flexDirection: "row",
+                justifyContent: "space-between",
+                paddingHorizontal: scale(9.16),
+              },
+            ]}
+          >
+            {[
+              {
+                name: "Book Service",
+                color: "#6488BD",
+                secColor: "#7AA5F9",
+                iconName: "1",
+              },
+              {
+                name: "Meet Pro",
+                color: "#896DCB",
+                secColor: "#B292FF",
+                iconName: "2",
+              },
+              {
+                name: "Service",
+                color: "#9CBE76",
+                secColor: "#C3E2A2",
+                iconName: "3",
+              },
+              {
+                name: "Finished",
+                color: "#82BFEC",
+                secColor: "#B3DFFF",
+                iconName: "4",
+              },
+            ].map((item, index) => (
+              <CustomView
+                height={verticalScale(73.47)}
+                width={scale(78.75)}
+                radius={scale(9.11)}
+                key={index}
+                boxStyle={[
+                  {
+                    borderWidth: moderateScale(1),
+                    borderColor: "#fff",
+                    justifyContent: "center",
+                    paddingHorizontal: scale(2.88),
+                    paddingVertical: verticalScale(2.88),
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    borderWidth: moderateScale(0.9),
+                    borderColor: item.color,
+                    height: "100%",
+                    borderRadius: scale(9.11),
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <View
+                    style={{
+                      width: scale(20.24),
+                      height: verticalScale(12.67),
+                      backgroundColor: item.color,
+                      borderRadius: moderateScale(3.86),
+                      borderWidth: moderateScale(1),
+                      borderColor: item.secColor,
+                      position: "absolute",
+                      top: verticalScale(-7),
+                      left: scale(10.12),
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: moderateScale(7.44),
+                        fontWeight: 600,
+                        alignSelf: "center",
+                        color: "#fff",
+                        lineHeight: verticalScale(10),
+                      }}
+                    >
+                      {index + 1}
+                    </Text>
+                  </View>
+                  <Image
+                    source={HIW_ICONS[item.iconName]}
+                    style={[
+                      {
+                        width: scale(43.49),
+                        height: verticalScale(34),
+                        resizeMode: "center",
+                      },
+                    ]}
+                  />
+                  <Text
+                    style={{ fontSize: moderateScale(7.44), fontWeight: 600 }}
+                  >
+                    {item.name}
+                  </Text>
+                </View>
+              </CustomView>
+            ))}
+          </CustomView>
+        </CustomView>
         {/* SERVICE OF THE WEEK */}
-        {/* <Text style={styles.sectionTitle}>Service Of the Week</Text>
-        <View style={{ elevation: 0, borderWidth : 0, }}>
+        <CustomView
+          width={scale(375)}
+          height={verticalScale(116)}
+          radius={scale(16.59)}
+          shadowStyle={{ marginTop: verticalScale(13) }}
+          boxStyle={[
+            {
+              borderWidth: moderateScale(0.7),
+              paddingVertical: verticalScale(7.85),
+              // paddingHorizontal: scale(8.96),
+              borderColor: "#fff",
+
+              justifyContent: "center",
+            },
+          ]}
+        >
+          <Text style={styles.sectionTitle}>Service Of the Week</Text>
+
           <ServiceOfTheWeek
             onPressService={(serviceOfTheWeek) => selectBrand(serviceOfTheWeek)}
           />
-        </View> */}
+        </CustomView>
+        {/* SERVICE OF THE WEEK */}
+        {selectedCategory &&
+          servicesByCategory?.[selectedCategory]?.length < 4 && (
+            <CustomView
+              width={scale(375)}
+              height={verticalScale(116)}
+              radius={scale(16.59)}
+              shadowStyle={{ marginTop: verticalScale(13) }}
+              boxStyle={[
+                {
+                  borderWidth: moderateScale(0.7),
+                  paddingVertical: verticalScale(7.85),
+                  // paddingHorizontal: scale(8.96),
+                  borderColor: "#fff",
+
+                  justifyContent: "center",
+                },
+              ]}
+            >
+              <Text style={styles.sectionTitle}>Service Of the Week</Text>
+
+              <ServiceOfTheWeek
+                onPressService={(serviceOfTheWeek) =>
+                  selectBrand(serviceOfTheWeek)
+                }
+              />
+            </CustomView>
+          )}
       </ScrollView>
       {visible && (
-        <View style={{ height: "100%" }}>
-         <Chatbot8 serviceObject={selectedServiceObject?.data!}
-            onClose={() => setVisible(false)} />
-            </View>)}
+        <View style={{ height: "100%", zIndex: 999999 }}>
+          <Chatbot8
+            serviceObject={selectedServiceObject?.data!}
+            onClose={() => setVisible(false)}
+          />
+        </View>
+      )}
       <CustomNavBar isLocal="Home" />
     </View>
   );
-
-  // return (
-  //   <ScreenWrapper>
-  //     <ScrollView style={styles.container}>
-  //       {/* Top Bar */}
-  //       <Header />
-
-  //       {/* Pin Section */}
-  //       <TouchableOpacity
-  //         onPress={() => setPinVisible((prev) => !prev)}
-  //         style={styles.pinContainer}
-  //       >
-  //         <Text style={styles.pinText}>
-  //           Pin - {selectedAddress.address.zipcode}
-  //         </Text>
-  //         <Icon
-  //           name="pencil-outline"
-  //           size={moderateScale(16)}
-  //           color="#1E1E1E80"
-  //         />
-  //       </TouchableOpacity>
-  //       <View
-  //         style={{
-  //           borderWidth: 0.7,
-  //           borderColor: "#ffffffcd",
-  //           paddingHorizontal: scale(11),
-  //           borderRadius: moderateScale(12),
-  //           marginTop: verticalScale(9),
-  //           paddingTop: verticalScale(16),
-  //           paddingBottom: verticalScale(10),
-  //           backgroundColor: "#FFFFFF1A",
-  //           // height: verticalScale(353),
-  //         }}
-  //       >
-  //         {/* Category Tabs */}
-  //         <View style={styles.categoriesContainer}>
-  //           {categories.map((cat) => (
-  //             <GradientBorder
-  //               borderRadius={scale(23.6)}
-  //               outerWidth={0.2}
-  //               innerWidth={0.8}
-  //               innerColors={outerColors}
-  //               outerColors={innerColors}
-  //               style={[
-  //                 styles.categoryButton,
-  //                 selectedCategory === cat && styles.activeCategory,
-  //               ]}
-  //               key={cat}
-  //             >
-  //               <TouchableOpacity onPress={() => setSelectedCategory(cat)}>
-  //                 <Text
-  //                   style={[
-  //                     styles.categoryText,
-  //                     selectedCategory === cat && styles.activeCategoryText,
-  //                   ]}
-  //                 >
-  //                   {cat}
-  //                 </Text>
-  //               </TouchableOpacity>
-  //             </GradientBorder>
-  //           ))}
-  //         </View>
-
-  //         {/* Services Grid */}
-  //         {/* Services Grid */}
-  //         <View style={styles.gridContainer}>
-  //           {servicess.length === 0 ? (
-  //             <View
-  //               style={{
-  //                 alignItems: "center",
-  //                 marginTop: verticalScale(20),
-  //                 height: verticalScale(150),
-  //                 justifyContent: "center",
-  //                 // borderWidth : 1,
-  //                 alignSelf: "center",
-  //                 width: "100%",
-  //               }}
-  //             >
-  //               <Text
-  //                 style={{
-  //                   fontSize: moderateScale(14),
-  //                   fontWeight: "600",
-  //                   color: "#000",
-  //                   alignSelf: "center",
-  //                 }}
-  //               >
-  //                 No Service Provider Available in this area
-  //               </Text>
-  //             </View>
-  //           ) : (
-  //             servicess.map((service) => (
-  //               //   <View  key={service._id} style={{ borderWidth:0,  height: verticalScale(94), width : scale(85)}}>
-  //               //  {/* Tooltip */}
-  //               //     {activeTooltipId === service._id && (
-  //               //       <Tooltip text={service.name} />
-  //               //     )}
-  //               //   <ImageBackground
-  //               //     key={service._id}
-  //               //     source={require("../../../assets/vv.png")}
-  //               //     resizeMode="contain"
-  //               //     style={{
-  //               //       height: verticalScale(140),
-  //               //       width: scale(110),
-  //               //       // borderWidth: 1,
-  //               //       alignItems: "center",
-  //               //       marginHorizontal: -12,
-
-  //               //       // marginLeft : -14,
-  //               //       // marginRight : -10,
-  //               //       // marginVertical: -10,
-  //               //       // marginTop : verticalScale(2),
-
-  //               //     }}
-  //               //   >
-
-  //               //     <TouchableOpacity
-  //               //       style={styles.serviceCard}
-  //               //       onPress={() => selectBrand(service)}
-  //               //       onLongPress={() => setActiveTooltipId(service._id)}
-  //               //       onPressOut={() => setActiveTooltipId(null)}
-  //               //       delayLongPress={300}
-  //               //     >
-  //               //       <View style={styles.serviceIcon}>
-  //               //         <Image
-  //               //           source={
-  //               //             iconMap[service.icon as IconName] ??
-  //               //             iconMap["default"]
-  //               //           }
-  //               //           style={{
-  //               //             height: "100%",
-  //               //             width: "100%",
-  //               //             minHeight: verticalScale(39),
-  //               //             minWidth: scale(39),
-  //               //             resizeMode: "contain",
-  //               //           }}
-  //               //         />
-  //               //       </View>
-
-  //               //       <Text
-  //               //         numberOfLines={1}
-  //               //         ellipsizeMode="tail"
-  //               //         style={styles.serviceText}
-  //               //       >
-  //               //         {service.name}
-  //               //       </Text>
-  //               //     </TouchableOpacity>
-  //               //   </ImageBackground>
-  //               //   </View>
-  //               <View
-  //                 key={service._id}
-  //                 style={{
-  //                   shadowColor: "#000",
-  //                   shadowOpacity: 0.05,
-  //                   shadowRadius: 3,
-  //                   paddingBottom: verticalScale(10),
-  //                 }}
-  //               >
-  //                 <GradientBorder
-  //                   key={service._id}
-  //                   gradientStyle={{}}
-  //                   style={{
-  //                     width: scale(80),
-  //                     height: scale(80),
-  //                     backgroundColor: "#E8E8E8",
-  //                     alignItems: "center",
-  //                     justifyContent: "center",
-  //                     // borderWidth: 1,
-
-  //                     // elevation: 7,
-  //                     position: "relative",
-  //                     //                 shadowColor: "#000",
-  //                     // shadowOpacity: 0.05,
-  //                     // shadowRadius: 3,
-  //                     // elevation: 2,
-  //                   }}
-  //                 >
-  //                   {/* Tooltip */}
-  //                   {activeTooltipId === service._id && (
-  //                     <Tooltip text={service.name} />
-  //                   )}
-
-  //                   <TouchableOpacity
-  //                     style={styles.serviceCard}
-  //                     onPress={() => selectBrand(service)}
-  //                     // onPress={() => serviceDetails(service._id)}
-  //                     // onPress={() => setVisible(!visible)}
-  //                     onLongPress={() => setActiveTooltipId(service._id)}
-  //                     onPressOut={() => setActiveTooltipId(null)}
-  //                     delayLongPress={300}
-  //                   >
-  //                     <View style={styles.serviceIcon}>
-  //                       <Image
-  //                         source={
-  //                           iconMap[service.icon as IconName] ??
-  //                           iconMap["default"]
-  //                         }
-  //                         style={{
-  //                           height: "100%",
-  //                           width: "100%",
-  //                           minHeight: verticalScale(39),
-  //                           minWidth: scale(39),
-  //                           resizeMode: "contain",
-  //                         }}
-  //                       />
-  //                     </View>
-
-  //                     <Text
-  //                       numberOfLines={1}
-  //                       ellipsizeMode="tail"
-  //                       style={styles.serviceText}
-  //                     >
-  //                       {service.name}
-  //                     </Text>
-  //                   </TouchableOpacity>
-  //                 </GradientBorder>
-  //               </View>
-  //             ))
-  //           )}
-  //         </View>
-  //       </View>
-  //       {/* Badges Section */}
-  //       <View style={styles.badgesRow}>
-  //         <Image
-  //           source={require("../../../assets/badges/badge2.png")}
-  //           style={styles.badgeIcon}
-  //         />
-  //         <Image
-  //           source={require("../../../assets/badges/badge3.png")}
-  //           style={styles.badgeIcon}
-  //         />
-  //         <Image
-  //           source={require("../../../assets/badges/badge1.png")}
-  //           style={styles.badgeIcon}
-  //         />
-  //       </View>
-
-  //       {/* Technician of the Week */}
-  //       <Text style={styles.techHeader}>Service Of The Week</Text>
-
-  //       <ServiceOfTheWeek
-  //         onPressService={(serviceOfTheWeek) => selectBrand(serviceOfTheWeek)}
-  //       />
-  //     </ScrollView>
-  //     <CustomNavBar isLocal={"Home"} />
-  //     {/* <BottomSheet visible={visible} onClose={() => setVisible(false)}> */}
-  //     {visible && (
-  //       <View style={{ height: "100%" }}>
-  //         {/* <ChatbotBooking3
-  //           serviceObject={selectedServiceObject!}
-  //           close={() => setVisible(false)}
-  //         />   */}
-  //         {/* <ChatbotEngine  backend={{
-  //   service: selectedServiceObject?.data,
-  //   conversationSteps: selectedServiceObject?.data?.conversationSteps,
-  //   conversationSettings: selectedServiceObject?.data?.conversationSettings
-  // }}/> */}
-  //         {/* <ChatbotBooking4
-  //           serviceObject={selectedServiceObject!}
-  //           close={() => setVisible(false)}
-  //         /> */}
-
-  //         {/* <ChatbotBookingManualUI serviceObject={selectedServiceObject!}
-  //           onClose={() => setVisible(false)} /> */}
-
-  //           {/* <ChatScreen /> */}
-
-  //         {/* <Chatbot6 serviceObject={selectedServiceObject!}
-  //           onClose={() => setVisible(false)} /> */}
-
-  //         <Chatbot8 serviceObject={selectedServiceObject?.data!}
-  //           onClose={() => setVisible(false)} />
-  //         {/* <ChatbotEngine
-  //       serviceData={selectedServiceObject?.data!}
-  //       userAddresses={userAddresses}
-  //       onComplete={()=>{}}
-  //       onCancel={()=> setVisible(false)}
-  //     /> */}
-
-  //         {/* <ChatbotBooking_NewFlow
-  //           serviceObject={selectedServiceObject!}
-  //           close={() => setVisible(false)}
-  //         />   */}
-  //       </View>
-  //     )}
-  //     {/* <View
-  //       style={{
-  //         height: "100%",
-  //         opacity: 1,
-  //         display: visible ? "flex" : "none",
-  //         // borderWidth: 1,
-  //       }}
-  //     > */}
-  //     {/* <Recorder /> */}
-  //     {/* {selectedService && <CB1 service={selectedService} close={() => setVisible(false)} />} */}
-  //     {/* {selectedService && <ChatbotBooking service={selectedService} close={() => setVisible(false)} />} */}
-  //     {/* {selectedService && (
-  //         <ChatbotBooking_NewFlow
-  //           service={selectedService}
-  //           close={() => setVisible(false)}
-  //         />
-  //       )} */}
-  //     {/* {selectedService && (
-  //         <BookingBottomSheet
-  //           close={() => setVisible(false)}
-  //           service={selectedService}
-  //         />
-
-  //       )} */}
-  //     {/* </View> */}
-  //     {/* </BottomSheet> */}
-  //     <BottomSheet visible={pinVisible} onClose={() => setPinVisible(false)}>
-  //       <ChangePinCode />
-  //     </BottomSheet>
-  //   </ScreenWrapper>
-  // );
 };
 
 export default HomeScreen;
@@ -666,8 +584,8 @@ const styles = StyleSheet.create({
     marginLeft: scale(3),
   },
   pinText: {
-    color: "#1e1e1ead",
-    fontSize: moderateScale(12),
+    color: "#1E1E1E",
+    fontSize: moderateScale(14),
     fontWeight: "600",
     marginRight: scale(5),
   },
@@ -831,29 +749,38 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: scale(6),
     borderRadius: scale(12),
+    borderWidth: moderateScale(0.7),
+    borderColor: "#fff",
+    justifyContent: "center",
   },
 
   pointsText: {
-    marginLeft: scale(6),
+    // marginLeft: scale(6),
+    // alignSelf : 'center',
     fontSize: moderateScale(12),
+    // borderWidth : 1,
+    lineHeight: verticalScale(13),
   },
 
   topCategoryRow: {
     flexDirection: "row",
     gap: scale(7),
-    marginVertical: verticalScale(12),
+    paddingVertical: verticalScale(7.85),
+    paddingHorizontal: scale(8.96),
+    alignItems: "center",
+    justifyContent: "space-around",
+    borderWidth: moderateScale(0.7),
+    borderColor: "#fff",
+
+    // position : 'relative',
+    // top : verticalScale(-70)
   },
 
   topCategoryCard: {
-    width: scale(88.5),
-    height: verticalScale(89.5),
-    backgroundColor: "#fff",
-    borderRadius: scale(14),
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 0.7,
+    borderWidth: 0.6,
     borderColor: "#ffffff",
-    elevation: 5,
   },
 
   topCategoryImage: {
@@ -873,13 +800,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     // justifyContent: "space-between",
     // gap: scale(40),
-    marginVertical: verticalScale(10),
-    height: verticalScale(37.59),
-    borderRadius: scale(14.84),
+    // marginVertical: verticalScale(10),
+
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#ffffff10",
-    elevation: 3,
+    borderColor: "#ffffff",
   },
 
   chip: {
@@ -910,36 +835,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "flex-start",
-    marginTop: verticalScale(10),
+    marginTop: verticalScale(14),
     gap: scale(5),
   },
 
- serviceCard: {
-  width: scale(119),
-  height: verticalScale(91),
-  backgroundColor: "#FFFFFF",
-  borderRadius: scale(14),
-  alignItems: "center",
-  justifyContent: "center",
+  serviceCard: {
+    width: scale(119),
+    height: verticalScale(95),
+    backgroundColor: "#FFFFFF",
+    borderRadius: scale(14),
+    alignItems: "center",
+    justifyContent: "center",
 
-  /* ---------------- ANDROID ---------------- */
-  // elevation: 5,
+    /* ---------------- ANDROID ---------------- */
+    // elevation: 5,
 
-  /* ---------------- iOS OUTER SHADOW ---------------- */
-  // shadowColor: "#546072ff",
-  // shadowOffset: { width: -1, height: 1 },
-  // shadowOpacity: 0.55, // ≈ A6
-  // shadowRadius: 1.2,
+    /* ---------------- iOS OUTER SHADOW ---------------- */
 
-  /* ---------------- iOS SOFT INNER FEEL (HACK) ---------------- */
-  borderWidth: 0.7,
-  borderColor: "#fff", // #D3D3D340 feel
+    /* ---------------- iOS SOFT INNER FEEL (HACK) ---------------- */
+    borderWidth: 0.7,
+    borderColor: "#fff", // #D3D3D340 feel
 
-  /* ---------------- POLISH ---------------- */
-  overflow: "hidden",
-}
-,
-
+    /* ---------------- POLISH ---------------- */
+    overflow: "hidden",
+  },
   serviceImage: {
     width: scale(75),
     height: scale(60),
@@ -948,17 +867,21 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    fontSize: moderateScale(16),
+    fontSize: moderateScale(12),
     fontWeight: "600",
-    marginVertical: verticalScale(12),
-    marginTop : verticalScale(120),
+    // marginTop: verticalScale(7.84),
+    color: "#000000A6",
+    alignSelf: "flex-start",
+    marginLeft: scale(9.94),
+    marginBottom: verticalScale(4),
   },
 
   howItWorks: {
-    borderRadius: scale(16.59),
-    // elevation: 3,
     alignItems: "center",
     justifyContent: "center",
+    // elevation: 2,
+    borderWidth: 0.7,
+    borderColor: "#ffffff",
   },
 
   howStep: {
@@ -1004,3 +927,318 @@ const styles = StyleSheet.create({
     color: "#777",
   },
 });
+
+// return (
+//   <ScreenWrapper>
+//     <ScrollView style={styles.container}>
+//       {/* Top Bar */}
+//       <Header />
+
+//       {/* Pin Section */}
+//       <TouchableOpacity
+//         onPress={() => setPinVisible((prev) => !prev)}
+//         style={styles.pinContainer}
+//       >
+//         <Text style={styles.pinText}>
+//           Pin - {selectedAddress.address.zipcode}
+//         </Text>
+//         <Icon
+//           name="pencil-outline"
+//           size={moderateScale(16)}
+//           color="#1E1E1E80"
+//         />
+//       </TouchableOpacity>
+//       <View
+//         style={{
+//           borderWidth: 0.7,
+//           borderColor: "#ffffffcd",
+//           paddingHorizontal: scale(11),
+//           borderRadius: moderateScale(12),
+//           marginTop: verticalScale(9),
+//           paddingTop: verticalScale(16),
+//           paddingBottom: verticalScale(10),
+//           backgroundColor: "#FFFFFF1A",
+//           // height: verticalScale(353),
+//         }}
+//       >
+//         {/* Category Tabs */}
+//         <View style={styles.categoriesContainer}>
+//           {categories.map((cat) => (
+//             <GradientBorder
+//               borderRadius={scale(23.6)}
+//               outerWidth={0.2}
+//               innerWidth={0.8}
+//               innerColors={outerColors}
+//               outerColors={innerColors}
+//               style={[
+//                 styles.categoryButton,
+//                 selectedCategory === cat && styles.activeCategory,
+//               ]}
+//               key={cat}
+//             >
+//               <TouchableOpacity onPress={() => setSelectedCategory(cat)}>
+//                 <Text
+//                   style={[
+//                     styles.categoryText,
+//                     selectedCategory === cat && styles.activeCategoryText,
+//                   ]}
+//                 >
+//                   {cat}
+//                 </Text>
+//               </TouchableOpacity>
+//             </GradientBorder>
+//           ))}
+//         </View>
+
+//         {/* Services Grid */}
+//         {/* Services Grid */}
+//         <View style={styles.gridContainer}>
+//           {servicess.length === 0 ? (
+//             <View
+//               style={{
+//                 alignItems: "center",
+//                 marginTop: verticalScale(20),
+//                 height: verticalScale(150),
+//                 justifyContent: "center",
+//                 // borderWidth : 1,
+//                 alignSelf: "center",
+//                 width: "100%",
+//               }}
+//             >
+//               <Text
+//                 style={{
+//                   fontSize: moderateScale(14),
+//                   fontWeight: "600",
+//                   color: "#000",
+//                   alignSelf: "center",
+//                 }}
+//               >
+//                 No Service Provider Available in this area
+//               </Text>
+//             </View>
+//           ) : (
+//             servicess.map((service) => (
+//               //   <View  key={service._id} style={{ borderWidth:0,  height: verticalScale(94), width : scale(85)}}>
+//               //  {/* Tooltip */}
+//               //     {activeTooltipId === service._id && (
+//               //       <Tooltip text={service.name} />
+//               //     )}
+//               //   <ImageBackground
+//               //     key={service._id}
+//               //     source={require("../../../assets/vv.png")}
+//               //     resizeMode="contain"
+//               //     style={{
+//               //       height: verticalScale(140),
+//               //       width: scale(110),
+//               //       // borderWidth: 1,
+//               //       alignItems: "center",
+//               //       marginHorizontal: -12,
+
+//               //       // marginLeft : -14,
+//               //       // marginRight : -10,
+//               //       // marginVertical: -10,
+//               //       // marginTop : verticalScale(2),
+
+//               //     }}
+//               //   >
+
+//               //     <TouchableOpacity
+//               //       style={styles.serviceCard}
+//               //       onPress={() => selectBrand(service)}
+//               //       onLongPress={() => setActiveTooltipId(service._id)}
+//               //       onPressOut={() => setActiveTooltipId(null)}
+//               //       delayLongPress={300}
+//               //     >
+//               //       <View style={styles.serviceIcon}>
+//               //         <Image
+//               //           source={
+//               //             iconMap[service.icon as IconName] ??
+//               //             iconMap["default"]
+//               //           }
+//               //           style={{
+//               //             height: "100%",
+//               //             width: "100%",
+//               //             minHeight: verticalScale(39),
+//               //             minWidth: scale(39),
+//               //             resizeMode: "contain",
+//               //           }}
+//               //         />
+//               //       </View>
+
+//               //       <Text
+//               //         numberOfLines={1}
+//               //         ellipsizeMode="tail"
+//               //         style={styles.serviceText}
+//               //       >
+//               //         {service.name}
+//               //       </Text>
+//               //     </TouchableOpacity>
+//               //   </ImageBackground>
+//               //   </View>
+//               <View
+//                 key={service._id}
+//                 style={{
+//                   shadowColor: "#000",
+//                   shadowOpacity: 0.05,
+//                   shadowRadius: 3,
+//                   paddingBottom: verticalScale(10),
+//                 }}
+//               >
+//                 <GradientBorder
+//                   key={service._id}
+//                   gradientStyle={{}}
+//                   style={{
+//                     width: scale(80),
+//                     height: scale(80),
+//                     backgroundColor: "#E8E8E8",
+//                     alignItems: "center",
+//                     justifyContent: "center",
+//                     // borderWidth: 1,
+
+//                     // elevation: 7,
+//                     position: "relative",
+//                     //                 shadowColor: "#000",
+//                     // shadowOpacity: 0.05,
+//                     // shadowRadius: 3,
+//                     // elevation: 2,
+//                   }}
+//                 >
+//                   {/* Tooltip */}
+//                   {activeTooltipId === service._id && (
+//                     <Tooltip text={service.name} />
+//                   )}
+
+//                   <TouchableOpacity
+//                     style={styles.serviceCard}
+//                     onPress={() => selectBrand(service)}
+//                     // onPress={() => serviceDetails(service._id)}
+//                     // onPress={() => setVisible(!visible)}
+//                     onLongPress={() => setActiveTooltipId(service._id)}
+//                     onPressOut={() => setActiveTooltipId(null)}
+//                     delayLongPress={300}
+//                   >
+//                     <View style={styles.serviceIcon}>
+//                       <Image
+//                         source={
+//                           iconMap[service.icon as IconName] ??
+//                           iconMap["default"]
+//                         }
+//                         style={{
+//                           height: "100%",
+//                           width: "100%",
+//                           minHeight: verticalScale(39),
+//                           minWidth: scale(39),
+//                           resizeMode: "contain",
+//                         }}
+//                       />
+//                     </View>
+
+//                     <Text
+//                       numberOfLines={1}
+//                       ellipsizeMode="tail"
+//                       style={styles.serviceText}
+//                     >
+//                       {service.name}
+//                     </Text>
+//                   </TouchableOpacity>
+//                 </GradientBorder>
+//               </View>
+//             ))
+//           )}
+//         </View>
+//       </View>
+//       {/* Badges Section */}
+//       <View style={styles.badgesRow}>
+//         <Image
+//           source={require("../../../assets/badges/badge2.png")}
+//           style={styles.badgeIcon}
+//         />
+//         <Image
+//           source={require("../../../assets/badges/badge3.png")}
+//           style={styles.badgeIcon}
+//         />
+//         <Image
+//           source={require("../../../assets/badges/badge1.png")}
+//           style={styles.badgeIcon}
+//         />
+//       </View>
+
+//       {/* Technician of the Week */}
+//       <Text style={styles.techHeader}>Service Of The Week</Text>
+
+//       <ServiceOfTheWeek
+//         onPressService={(serviceOfTheWeek) => selectBrand(serviceOfTheWeek)}
+//       />
+//     </ScrollView>
+//     <CustomNavBar isLocal={"Home"} />
+//     {/* <BottomSheet visible={visible} onClose={() => setVisible(false)}> */}
+//     {visible && (
+//       <View style={{ height: "100%" }}>
+//         {/* <ChatbotBooking3
+//           serviceObject={selectedServiceObject!}
+//           close={() => setVisible(false)}
+//         />   */}
+//         {/* <ChatbotEngine  backend={{
+//   service: selectedServiceObject?.data,
+//   conversationSteps: selectedServiceObject?.data?.conversationSteps,
+//   conversationSettings: selectedServiceObject?.data?.conversationSettings
+// }}/> */}
+//         {/* <ChatbotBooking4
+//           serviceObject={selectedServiceObject!}
+//           close={() => setVisible(false)}
+//         /> */}
+
+//         {/* <ChatbotBookingManualUI serviceObject={selectedServiceObject!}
+//           onClose={() => setVisible(false)} /> */}
+
+//           {/* <ChatScreen /> */}
+
+//         {/* <Chatbot6 serviceObject={selectedServiceObject!}
+//           onClose={() => setVisible(false)} /> */}
+
+//         <Chatbot8 serviceObject={selectedServiceObject?.data!}
+//           onClose={() => setVisible(false)} />
+//         {/* <ChatbotEngine
+//       serviceData={selectedServiceObject?.data!}
+//       userAddresses={userAddresses}
+//       onComplete={()=>{}}
+//       onCancel={()=> setVisible(false)}
+//     /> */}
+
+//         {/* <ChatbotBooking_NewFlow
+//           serviceObject={selectedServiceObject!}
+//           close={() => setVisible(false)}
+//         />   */}
+//       </View>
+//     )}
+//     {/* <View
+//       style={{
+//         height: "100%",
+//         opacity: 1,
+//         display: visible ? "flex" : "none",
+//         // borderWidth: 1,
+//       }}
+//     > */}
+//     {/* <Recorder /> */}
+//     {/* {selectedService && <CB1 service={selectedService} close={() => setVisible(false)} />} */}
+//     {/* {selectedService && <ChatbotBooking service={selectedService} close={() => setVisible(false)} />} */}
+//     {/* {selectedService && (
+//         <ChatbotBooking_NewFlow
+//           service={selectedService}
+//           close={() => setVisible(false)}
+//         />
+//       )} */}
+//     {/* {selectedService && (
+//         <BookingBottomSheet
+//           close={() => setVisible(false)}
+//           service={selectedService}
+//         />
+
+//       )} */}
+//     {/* </View> */}
+//     {/* </BottomSheet> */}
+//     <BottomSheet visible={pinVisible} onClose={() => setPinVisible(false)}>
+//       <ChangePinCode />
+//     </BottomSheet>
+//   </ScreenWrapper>
+// );

@@ -121,7 +121,7 @@ export function AuthenticatedTabs() {
         component={HomeStack}
       />
       <Tabs.Screen name="JobsScreen" component={JobsScreen} />
-      <Tabs.Screen name="CartScreen" component={CartScreen} />
+      <Tabs.Screen name="CartScreen" component={ProfileScreen} />
       <Tabs.Screen name="CategoryScreen" component={CategoryScreen} />
       <Tabs.Screen name="OrderStack" component={OrderStack} />
     </Tabs.Navigator>

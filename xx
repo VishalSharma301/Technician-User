@@ -1,445 +1,167 @@
-{
-  "success": true,
-  "data":
-    {
-      "service":
-        {
-          "id": "68dc0cead0d2597c709e28b2",
-          "name": "AC Repair",
-          "description": "General servicing and repair of AC units",
-          "icon": "ac_repair",
-          "category":
-            {
-              "_id": "68d4e04986915940b7699562",
-              "name": "AC Services",
-              "description": "All types of AC repair, installation, and maintenance services",
-              "icon": "ac_icon",
-            },
-          "basePrice": 700,
-          "estimatedTime": "1-2 hours",
-          "specialty": "repair",
-        },
-      "conversation":
-        {
-          "enabled": true,
-          "agentName": "Rohan",
-          "allowSkipSteps": false,
-          "showProgressIndicator": true,
-          "totalSteps": 9,
-          "steps":
-            [
-              {
-                "stepNumber": 1,
-                "stepType": "GREETING",
-                "messageTemplate": "Hi! I'm {{agentName}}, your AC repair expert. 🎉\n\nI see you're in {{zipcode}}. We'll have your AC working perfectly!\n\nLet's diagnose the issue! 🔧",
-                "agentName": "Rohan",
-                "isSkippable": false,
-                "config":
-                  {
-                    "showOptions": false,
-                    "optionsSource": "service.options",
-                    "showBrands": false,
-                    "brandsSource": "service.supportedBrands",
-                    "showPricing": false,
-                    "pricingType": "all",
-                    "allowSavedAddress": true,
-                    "requireAddress": true,
-                    "notesRequired": false,
-                    "notesPlaceholder": "Any special instructions?",
-                    "customOptions": [],
-                    "showProblems": false,
-                    "problemsSource": "service.problems",
-                    "allowMultipleProblems": false,
-                    "showProblemPrice": true,
-                    "questionType": "text",
-                    "questionRequired": false,
-                    "questionOptions": [],
-                  },
-                "data":
-                  {
-                    "serviceName": "AC Repair",
-                    "estimatedTime": "1-2 hours",
-                    "zipcode": "140802",
-                  },
-              },
-              {
-                "stepNumber": 2,
-                "stepType": "PROBLEM_SELECTION",
-                "messageTemplate": "What problem are you facing with your AC?\n\nSelect the issue below:",
-                "agentName": "Rohan",
-                "isSkippable": false,
-                "config":
-                  {
-                    "showOptions": false,
-                    "optionsSource": "service.options",
-                    "showBrands": false,
-                    "brandsSource": "service.supportedBrands",
-                    "showPricing": false,
-                    "pricingType": "all",
-                    "allowSavedAddress": true,
-                    "requireAddress": true,
-                    "notesRequired": false,
-                    "notesPlaceholder": "Any special instructions?",
-                    "customOptions": [],
-                    "showProblems": true,
-                    "problemsSource": "service.problems",
-                    "allowMultipleProblems": false,
-                    "showProblemPrice": true,
-                    "questionType": "text",
-                    "questionRequired": false,
-                    "questionOptions": [],
-                  },
-                "data":
-                  {
-                    "problems":
-                      [
-                        {
-                          "name": "AC Not Cooling",
-                          "description": "Air conditioner is running but not cooling the room properly or blowing warm air",
-                          "icon": "thermometer-alert",
-                          "estimatedPrice": 500,
-                          "estimatedTime": "1-2 hours",
-                          "severity": "moderate",
-                          "isActive": true,
-                          "_id": "694a45b6d79ab1d1ce7edb61",
-                        },
-                        {
-                          "name": "Water Leakage",
-                          "description": "Water dripping from indoor unit or drainage issues causing water accumulation",
-                          "icon": "water-drop",
-                          "estimatedPrice": 400,
-                          "estimatedTime": "45 mins - 1 hour",
-                          "severity": "moderate",
-                          "isActive": true,
-                          "_id": "694a45b6d79ab1d1ce7edb62",
-                        },
-                        {
-                          "name": "Strange Noise",
-                          "description": "Unusual sounds like rattling, buzzing, or grinding coming from AC unit",
-                          "icon": "volume-alert",
-                          "estimatedPrice": 600,
-                          "estimatedTime": "1-1.5 hours",
-                          "severity": "moderate",
-                          "isActive": true,
-                          "_id": "694a45b6d79ab1d1ce7edb63",
-                        },
-                        {
-                          "name": "AC Not Turning On",
-                          "description": "Air conditioner not starting or responding to remote/control panel",
-                          "icon": "power-off",
-                          "estimatedPrice": 700,
-                          "estimatedTime": "1-2 hours",
-                          "severity": "moderate",
-                          "isActive": true,
-                          "_id": "694a45b6d79ab1d1ce7edb64",
-                        },
-                        {
-                          "name": "Ice Formation",
-                          "description": "Ice buildup on indoor coils or refrigerant lines causing reduced cooling",
-                          "icon": "snowflake-alert",
-                          "estimatedPrice": 553,
-                          "estimatedTime": "1.5-2 hours",
-                          "severity": "moderate",
-                          "isActive": true,
-                          "_id": "694a45b6d79ab1d1ce7edb65",
-                        },
-                      ],
-                    "allowMultiple": false,
-                    "showPrice": true,
-                  },
-              },
-              {
-                "stepNumber": 3,
-                "stepType": "OPTION_SELECTION",
-                "messageTemplate": "I understand - {{selectedProblem}}. We'll fix it! 💪\n\nWhat type of AC is it?",
-                "agentName": "Rohan",
-                "isSkippable": false,
-                "config":
-                  {
-                    "showOptions": true,
-                    "optionsSource": "service.options",
-                    "showBrands": false,
-                    "brandsSource": "service.supportedBrands",
-                    "showPricing": false,
-                    "pricingType": "all",
-                    "allowSavedAddress": true,
-                    "requireAddress": true,
-                    "notesRequired": false,
-                    "notesPlaceholder": "Any special instructions?",
-                    "customOptions": [],
-                    "showProblems": false,
-                    "problemsSource": "service.problems",
-                    "allowMultipleProblems": false,
-                    "showProblemPrice": true,
-                    "questionType": "text",
-                    "questionRequired": false,
-                    "questionOptions": [],
-                  },
-                "data":
-                  {
-                    "options":
-                      [
-                        {
-                          "id": "694a45b6d79ab1d1ce7edb57",
-                          "name": "Split AC",
-                          "description": "Split AC repair",
-                          "icon": "split_ac",
-                          "basePrice": 1000,
-                          "estimatedTime": "1-2 Hours",
-                          "minPrice": 1000,
-                          "maxPrice": 1000,
-                        },
-                        {
-                          "id": "694a45b6d79ab1d1ce7edb5c",
-                          "name": "Window AC",
-                          "description": "Window AC repair",
-                          "icon": "window_ac",
-                          "basePrice": 800,
-                          "estimatedTime": "2 Hours",
-                          "minPrice": 800,
-                          "maxPrice": 800,
-                        },
-                      ],
-                  },
-              },
-              {
-                "stepNumber": 4,
-                "stepType": "BRAND_SELECTION",
-                "messageTemplate": "{{selectedOption}} - Got it! 👍\n\nWhich brand would you like us to service?",
-                "agentName": "Rohan",
-                "isSkippable": false,
-                "config":
-                  {
-                    "showOptions": false,
-                    "optionsSource": "service.options",
-                    "showBrands": true,
-                    "brandsSource": "service.supportedBrands",
-                    "showPricing": false,
-                    "pricingType": "all",
-                    "allowSavedAddress": true,
-                    "requireAddress": true,
-                    "notesRequired": false,
-                    "notesPlaceholder": "Any special instructions?",
-                    "customOptions": [],
-                    "showProblems": false,
-                    "problemsSource": "service.problems",
-                    "allowMultipleProblems": false,
-                    "showProblemPrice": true,
-                    "questionType": "text",
-                    "questionRequired": false,
-                    "questionOptions": [],
-                  },
-                "data":
-                  {
-                    "brands":
-                      [
-                        {
-                          "id": "68da2a08aebefeb57b34097c",
-                          "name": "Daikin",
-                          "logo": "daikin_logo",
-                          "description": "Global leader in air conditioning systems for residential and commercial use.",
-                        },
-                        {
-                          "id": "68da2a8baebefeb57b3409e2",
-                          "name": "Samsung",
-                          "logo": "samsung_logo",
-                          "description": "Leading electronics brand offering TVs, washing machines, refrigerators, and ACs",
-                        },
-                        {
-                          "id": "68da2acdaebefeb57b340a45",
-                          "name": "LG",
-                          "logo": "lg_logo",
-                          "description": "Trusted brand for home appliances including washing machines, TVs, and ACs.",
-                        },
-                        {
-                          "id": "68da2affaebefeb57b340aa8",
-                          "name": "Whirlpool",
-                          "logo": "whirlpool_logo",
-                          "description": "Specializes in washing machines, refrigerators, and other household appliances.",
-                        },
-                        {
-                          "id": "68da2b21aebefeb57b340b0b",
-                          "name": "Voltas",
-                          "logo": "voltas_logo",
-                          "description": "Tata enterprise specializing in air conditioning and cooling technology.",
-                        },
-                        {
-                          "id": "68da2b49aebefeb57b340b6e",
-                          "name": "IFB",
-                          "logo": "ifb_logo",
-                          "description": "Brand known for high-efficiency washing machines and kitchen appliances.",
-                        },
-                        {
-                          "id": "69424de2564905ef61c48ca7",
-                          "name": "Hitachi",
-                          "logo": "https://example.com/logos/hitachi.png",
-                          "description": "Hitachi air conditioners combine strong cooling performance, advanced filters, and voltage-fluctuation resistance, making them a trusted premium choice in many parts of Asia.",
-                        },
-                        {
-                          "id": "69424e7a9734076f3c32e4fd",
-                          "name": "Mitsubishi",
-                          "logo": "https://example.com/logos/mitsubishi-electric.png",
-                          "description": "Mitsubishi Electric is a premium Japanese air conditioner brand known for ultra-reliable performance, whisper-quiet operation, and advanced inverter technology ideal for luxury homes and commercial spaces.",
-                        },
-                      ],
-                  },
-              },
-              {
-                "stepNumber": 5,
-                "stepType": "QUANTITY_SELECTION",
-                "messageTemplate": "Excellent choice! {{selectedBrand}} is a great brand.\n\nHow many units do you need serviced?",
-                "agentName": "Rohan",
-                "isSkippable": false,
-                "config":
-                  {
-                    "showOptions": false,
-                    "optionsSource": "service.options",
-                    "showBrands": false,
-                    "brandsSource": "service.supportedBrands",
-                    "showPricing": true,
-                    "pricingType": "all",
-                    "allowSavedAddress": true,
-                    "requireAddress": true,
-                    "notesRequired": false,
-                    "notesPlaceholder": "Any special instructions?",
-                    "customOptions": [],
-                    "showProblems": false,
-                    "problemsSource": "service.problems",
-                    "allowMultipleProblems": false,
-                    "showProblemPrice": true,
-                    "questionType": "text",
-                    "questionRequired": false,
-                    "questionOptions": [],
-                  },
-                "data":
-                  {
-                    "showPricing": true,
-                    "pricingType": "all",
-                    "availableQuantities": ["single", "double", "triple"],
-                  },
-              },
-              {
-                "stepNumber": 6,
-                "stepType": "QUANTITY_CONFIRM",
-                "messageTemplate": "Got it! {{quantity}} {{selectedOption}} from {{selectedBrand}}.\n\nTotal: ₹{{totalPrice}} 💰",
-                "agentName": "Rohan",
-                "isSkippable": false,
-                "config":
-                  {
-                    "showOptions": false,
-                    "optionsSource": "service.options",
-                    "showBrands": false,
-                    "brandsSource": "service.supportedBrands",
-                    "showPricing": false,
-                    "pricingType": "all",
-                    "allowSavedAddress": true,
-                    "requireAddress": true,
-                    "notesRequired": false,
-                    "notesPlaceholder": "Any special instructions?",
-                    "customOptions": [],
-                    "showProblems": false,
-                    "problemsSource": "service.problems",
-                    "allowMultipleProblems": false,
-                    "showProblemPrice": true,
-                    "questionType": "text",
-                    "questionRequired": false,
-                    "questionOptions": [],
-                  },
-                "data": {},
-              },
-              {
-                "stepNumber": 7,
-                "stepType": "ADDRESS_INPUT",
-                "messageTemplate": "Where should our technician come?",
-                "agentName": "Rohan",
-                "isSkippable": false,
-                "config":
-                  {
-                    "showOptions": false,
-                    "optionsSource": "service.options",
-                    "showBrands": false,
-                    "brandsSource": "service.supportedBrands",
-                    "showPricing": false,
-                    "pricingType": "all",
-                    "allowSavedAddress": true,
-                    "requireAddress": true,
-                    "notesRequired": false,
-                    "notesPlaceholder": "Any special instructions?",
-                    "customOptions": [],
-                    "showProblems": false,
-                    "problemsSource": "service.problems",
-                    "allowMultipleProblems": false,
-                    "showProblemPrice": true,
-                    "questionType": "text",
-                    "questionRequired": false,
-                    "questionOptions": [],
-                  },
-                "data": { "allowSavedAddress": true, "requireAddress": true },
-              },
-              {
-                "stepNumber": 8,
-                "stepType": "NOTES_INPUT",
-                "messageTemplate": "Any special instructions for our technician? (Optional)",
-                "agentName": "Rohan",
-                "isSkippable": true,
-                "config":
-                  {
-                    "showOptions": false,
-                    "optionsSource": "service.options",
-                    "showBrands": false,
-                    "brandsSource": "service.supportedBrands",
-                    "showPricing": false,
-                    "pricingType": "all",
-                    "allowSavedAddress": true,
-                    "requireAddress": true,
-                    "notesRequired": false,
-                    "notesPlaceholder": "e.g., Call before arriving",
-                    "customOptions": [],
-                    "showProblems": false,
-                    "problemsSource": "service.problems",
-                    "allowMultipleProblems": false,
-                    "showProblemPrice": true,
-                    "questionType": "text",
-                    "questionRequired": false,
-                    "questionOptions": [],
-                  },
-                "data":
-                  {
-                    "required": false,
-                    "placeholder": "e.g., Call before arriving",
-                  },
-              },
-              {
-                "stepNumber": 9,
-                "stepType": "FINAL_CONFIRMATION",
-                "messageTemplate": "Let me confirm your booking:\n\n📍 Location: {{zipcode}}\n🔧 Service: {{selectedOption}}\n🏷️ Brand: {{selectedBrand}}\n📦 Quantity: {{quantity}}\n💰 Total: ₹{{totalPrice}}\n📅 Time: {{estimatedTime}}\n🏠 Address: {{address}}\n\nEverything look good?",
-                "agentName": "Rohan",
-                "isSkippable": false,
-                "config":
-                  {
-                    "showOptions": false,
-                    "optionsSource": "service.options",
-                    "showBrands": false,
-                    "brandsSource": "service.supportedBrands",
-                    "showPricing": false,
-                    "pricingType": "all",
-                    "allowSavedAddress": true,
-                    "requireAddress": true,
-                    "notesRequired": false,
-                    "notesPlaceholder": "Any special instructions?",
-                    "customOptions": [],
-                    "showProblems": false,
-                    "problemsSource": "service.problems",
-                    "allowMultipleProblems": false,
-                    "showProblemPrice": true,
-                    "questionType": "text",
-                    "questionRequired": false,
-                    "questionOptions": [],
-                  },
-                "data": {},
-              },
-            ],
-        },
-      "availability": { "availableInZipcode": true, "providerCount": 1 },
+[
+  {
+    "_id": "68dfbcdf3aaaf9246b920c62",
+    "availableInZipcode": true,
+    "basePrice": 400,
+    "brands": [
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ]
+    ],
+    "category": {
+      "_id": "68dce2428b8e8257e84163f1",
+      "icon": "electric_icon",
+      "name": "Electrical Services"
     },
-}
+    "dailyNeed": false,
+    "description": "Install or replace ceiling fans with proper wiring.",
+    "estimatedTime": "30-45 mins",
+    "icon": "ceiling_fan_icon",
+    "mostBooked": true,
+    "name": "Ceiling Fan Installation",
+    "options": [],
+    "popular": true,
+    "providerCount": 1,
+    "quickPick": true,
+    "slug": "ceiling-fan-installation",
+    "specialty": "Cooling Appliances",
+    "subServices": [],
+    "subcategoryName": "Appliance Fitting"
+  },
+  {
+    "_id": "68df7624d4f37b75a3aa7ff1",
+    "availableInZipcode": true,
+    "basePrice": 400,
+    "brands": [
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ]
+    ],
+    "category": {
+      "_id": "68dcd3998b8e8257e8415fbf",
+      "icon": "plumbing_icon",
+      "name": "Plumbing Services"
+    },
+    "dailyNeed": true,
+    "description": "Repairing leaks in taps, showerheads and pipes to prevent water wastage.",
+    "estimatedTime": "30-45 mins",
+    "icon": "leak_repair-icon",
+    "mostBooked": true,
+    "name": "Tap & Shower Leak Repair",
+    "options": [
+      [Object
+      ],
+      [Object
+      ]
+    ],
+    "popular": true,
+    "providerCount": 1,
+    "quickPick": true,
+    "slug": "tap-shower-leak-repair",
+    "specialty": "Plumbing Leakage",
+    "subServices": [],
+    "subcategoryName": "Leak Repair"
+  },
+  {
+    "_id": "68df6db6d4f37b75a3aa776d",
+    "availableInZipcode": true,
+    "basePrice": 1200,
+    "brands": [
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ]
+    ],
+    "category": {
+      "_id": "68d4e04986915940b7699562",
+      "icon": "ac_icon",
+      "name": "AC Services"
+    },
+    "dailyNeed": false,
+    "description": "Installation and mounting of AC on wall including electrical & bracket work.",
+    "estimatedTime": "1 hour",
+    "icon": "ac_install_icon",
+    "mostBooked": false,
+    "name": "AC Installation",
+    "options": [
+      [Object
+      ],
+      [Object
+      ]
+    ],
+    "popular": false,
+    "providerCount": 1,
+    "quickPick": true,
+    "slug": "ac-installation",
+    "specialty": "Setup",
+    "subServices": [],
+    "subcategoryName": "AC Installation"
+  },
+  {
+    "_id": "68dc0cead0d2597c709e28b2",
+    "availableInZipcode": true,
+    "basePrice": 700,
+    "brands": [
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ],
+      [Object
+      ]
+    ],
+    "category": {
+      "_id": "68d4e04986915940b7699562",
+      "icon": "ac_icon",
+      "name": "AC Services"
+    },
+    "dailyNeed": true,
+    "description": "General servicing and repair of AC units",
+    "estimatedTime": "1-2 hours",
+    "icon": "ac_repair",
+    "mostBooked": true,
+    "name": "AC Repair",
+    "options": [
+      [Object
+      ],
+      [Object
+      ]
+    ],
+    "popular": true,
+    "providerCount": 1,
+    "quickPick": true,
+    "slug": "ac-repair",
+    "specialty": "repair",
+    "subServices": [],
+    "subcategoryName": "AC Repair"
+  }
+]

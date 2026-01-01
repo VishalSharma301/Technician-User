@@ -53,7 +53,7 @@ export default function Chatbot8({
   const { userId } = useProfile();
   const { addresses, setAddresses, setSelectedAddress, selectedAddress } =
     useAddress();
-  const { showTypingIndicator, typeText } = useChatGPTTyping();
+  const { showTypingIndicator, typeText } = useChatGPTTyping(true);
   
 
   const steps = serviceObject.conversation.steps;
@@ -63,6 +63,7 @@ export default function Chatbot8({
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+const [selectedCapacity, setSelectedCapacity] = useState<any>(null);
 
   const [selectedProblem, setSelectedProblem] = useState<any>(null);
   const [selectedOption, setSelectedOption] = useState<any>(null);
@@ -70,6 +71,9 @@ export default function Chatbot8({
   const [quantity, setQuantity] = useState<number>(0);
   const [notes, setNotes] = useState("");
   const [notesInputActive, setNotesInputActive] = useState(false);
+const [followUpQueue, setFollowUpQueue] = useState<any[]>([]);
+const [currentFollowUp, setCurrentFollowUp] = useState<any>(null);
+const [followUpAnswers, setFollowUpAnswers] = useState<any>({});
 
 
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -88,11 +92,13 @@ export default function Chatbot8({
   const scrollToBottom = () =>
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
 
-  const totalPrice =
-    quantity && (selectedProblem || selectedOption)
-      ? quantity *
-        (selectedProblem?.estimatedPrice ?? selectedOption?.basePrice ?? 0)
-      : "";
+ const unitPrice =
+  selectedCapacity?.finalPrice ??
+  selectedProblem?.estimatedPrice ??
+  selectedOption?.basePrice ??
+  0;
+
+const totalPrice = quantity ? quantity * unitPrice : "";
 
   const templateVars: any = {
     agentName: steps[currentStepIndex]?.agentName,
@@ -173,18 +179,26 @@ export default function Chatbot8({
     switch (step.stepType) {
       case "GREETING":
         return [{ id: "start", label: "Let’s get started", value: true }];
+case "CAPACITY_SELECTION":
+  return selectedOption?.capacityVariants?.map((v: any) => ({
+    id: v.id,
+    label: `${v.displayName} (₹${v.finalPrice})`,
+    value: v,
+  })) || [];
 
       case "PROBLEM_SELECTION":
         return step.data.problems.map((p: any) => ({
           id: p._id,
-          label: `${p.name} (₹${p.estimatedPrice})`,
+          // label: `${p.name} (₹${p.estimatedPrice})`,
+          label: `${p.name}`,
           value: p,
         }));
 
       case "OPTION_SELECTION":
         return step.data.options.map((o: any) => ({
           id: o.id,
-          label: `${o.name} (₹${o.basePrice})`,
+          // label: `${o.name} (₹${o.basePrice})`,
+          label: `${o.name}`,
           value: o,
         }));
 
@@ -231,8 +245,38 @@ case "QUANTITY_CONFIRM":
 
   /* ---------------- OPTION HANDLER ---------------- */
 
+
+  
   const handleOptionPress = (opt: StepOption) => {
     const step = steps[currentStepIndex];
+
+if (currentFollowUp) {
+  // This is the user's answer to the current follow-up
+  pushUserMessage(opt.label);
+
+  // Save the answer
+  setFollowUpAnswers((p: any) => ({
+    ...p,
+    [currentFollowUp.question]: opt.value,
+  }));
+
+  // Advance the follow-up queue
+  const remaining = followUpQueue.slice(1);
+
+  if (remaining.length > 0) {
+    setFollowUpQueue(remaining);
+    setCurrentFollowUp(remaining[0]);
+    // don't advance main step yet — next useEffect will push next follow-up
+  } else {
+    // follow-ups finished — clear and move to next main step
+    setFollowUpQueue([]);
+    setCurrentFollowUp(null);
+    setCurrentStepIndex((s) => s + 1);
+  }
+
+  return;
+}
+
 
     if (opt.value === "manual") {
       setManualQtyActive(true);
@@ -241,7 +285,20 @@ case "QUANTITY_CONFIRM":
 
     pushUserMessage(opt.label);
 
-    if (step.stepType === "PROBLEM_SELECTION") setSelectedProblem(opt.value);
+   if (step.stepType === "PROBLEM_SELECTION") {
+  setSelectedProblem(opt.value);
+
+  const questions = opt.value.followUpQuestions || [];
+
+  if (questions.length > 0) {
+    setFollowUpQueue(questions);
+    setCurrentFollowUp(questions[0]);
+    return; // ⛔ stop main step advance
+  }
+}
+if (step.stepType === "CAPACITY_SELECTION") {
+  setSelectedCapacity(opt.value);
+}
     if (step.stepType === "OPTION_SELECTION") setSelectedOption(opt.value);
     if (step.stepType === "BRAND_SELECTION") setSelectedBrand(opt.value);
     if (step.stepType === "QUANTITY_SELECTION") setQuantity(opt.value);
@@ -275,6 +332,23 @@ if (step.stepType === "FINAL_CONFIRMATION") {
 
     setCurrentStepIndex((s) => s + 1);
   };
+
+  const resolveFollowUpOptions = (q: any): StepOption[] => {
+  if (q.questionType === "yes_no") {
+    return q.options.map((o: any) => ({
+      id: o._id,
+      label: o.label,
+      value: o.value,
+    }));
+  }
+
+  return q.options.map((o: any) => ({
+    id: o._id,
+    label: o.label,
+    value: o.value,
+  }));
+};
+
 
   /* ---------------- BOOKING ---------------- */
 
@@ -317,28 +391,46 @@ if (step.stepType === "FINAL_CONFIRMATION") {
 
   /* ---------------- STEP FLOW ---------------- */
 
-  useEffect(() => {
+useEffect(() => {
   const step = steps[currentStepIndex];
   if (!step) return;
 
-  const alreadyRendered = messages.some(
-    (m) => m.stepIndex === currentStepIndex && m.from === "bot"
-  );
-  if (alreadyRendered) return;
-
-  // 👉 enable notes input only for NOTES_INPUT
+  // only enable notes input for NOTES_INPUT
   if (step.stepType === "NOTES_INPUT") {
     setNotesInputActive(true);
   } else {
     setNotesInputActive(false);
   }
 
+  // If there's an active follow-up question, ask it (once)
+  if (currentFollowUp) {
+    // avoid duplicate follow-up messages
+    const alreadyAsked = messages.some(
+      (m) => m.from === "bot" && m.text === currentFollowUp.question
+    );
+
+    if (!alreadyAsked) {
+      pushBotMessage(
+        currentFollowUp.question,
+        currentStepIndex,
+        resolveFollowUpOptions(currentFollowUp)
+      );
+    }
+    return;
+  }
+
+  // For normal step messages: ensure we haven't already pushed the main bot message for this step
+  const alreadyRendered = messages.some(
+    (m) => m.stepIndex === currentStepIndex && m.from === "bot"
+  );
+  if (alreadyRendered) return;
+
   pushBotMessage(
     step.messageTemplate,
     currentStepIndex,
     resolveOptionsFromStep(step)
   );
-}, [currentStepIndex]);
+}, [currentStepIndex, currentFollowUp, messages]);
 
 
   /* ---------------- RENDER ---------------- */
@@ -374,17 +466,18 @@ if (step.stepType === "FINAL_CONFIRMATION") {
               )}
             </View>
 
-            {m.options &&
-              m.stepIndex === currentStepIndex &&
-              m.options.map((o) => (
-                <TouchableOpacity
-                  key={o.id}
-                  style={styles.optionBtn}
-                  onPress={() => handleOptionPress(o)}
-                >
-                  <Text>{o.label}</Text>
-                </TouchableOpacity>
-              ))}
+           {m.options &&
+  m.id === messages[messages.length - 1]?.id &&
+  m.options.map((o) => (
+    <TouchableOpacity
+      key={o.id}
+      style={styles.optionBtn}
+      onPress={() => handleOptionPress(o)}
+    >
+      <Text>{o.label}</Text>
+    </TouchableOpacity>
+  ))}
+
           </View>
         ))}
 

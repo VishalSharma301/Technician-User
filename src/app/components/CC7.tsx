@@ -1,1127 +1,625 @@
-// screens/ChatScreen.js
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
+  StyleSheet,
+  TextInput,
   KeyboardAvoidingView,
   Platform,
-  StyleSheet,
-  Dimensions,
-  Alert,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+} from "react-native";
 
-const { width, height } = Dimensions.get('window');
+import { moderateScale, scale, verticalScale } from "../../utils/scaling";
+import { useChatGPTTyping } from "../../hooks/useChatGptTyping";
+import { useAddress } from "../../hooks/useAddress";
+import AddressComponent from "./AddressForm";
+import TypingDots from "./TypingDots";
+import BadgeCard from "./BadgeCard";
+import {
+  createConversationBooking,
+  ConversationBookingResponse,
+  CreateConversationBookingPayload,
+} from "../../utils/bookingApi";
+import { useProfile } from "../../hooks/useProfile";
+import { Feather } from "@expo/vector-icons";
 
-// utils/acServiceQuestions.js
-export const getServiceTypeLabel = (serviceType) => {
-  const labels = {
-    'repair': 'AC Repair',
-    'installation': 'AC Installation',
-    'maintenance': 'AC Maintenance',
-    'cleaning': 'AC Deep Cleaning',
-    'gas_refill': 'AC Gas Refill',
-    'emergency': 'Emergency AC Repair'
-  };
-  return labels[serviceType] || 'AC Service';
+/* ---------------- TYPES ---------------- */
+
+type StepOption = {
+  id: string;
+  label: string;
+  value: any;
 };
 
-export const questions = [
-  {
-    id: 'service_type',
-    text: "Welcome to AC Service Pro! What type of AC service do you need?",
-    type: 'options',
-    options: [
-      { value: 'repair', label: 'Repair', icon: 'fas fa-tools' },
-      { value: 'installation', label: 'Installation', icon: 'fas fa-plus-circle' },
-      { value: 'maintenance', label: 'Maintenance', icon: 'fas fa-clipboard-check' },
-      { value: 'cleaning', label: 'Deep Cleaning', icon: 'fas fa-broom' },
-      { value: 'gas_refill', label: 'Gas Refill', icon: 'fas fa-gas-pump' },
-      { value: 'emergency', label: 'Emergency Repair', icon: 'fas fa-ambulance' }
-    ],
-    validation: (val) => val.length > 0,
-    errorMsg: "Please select a service type.",
-    dynamic: true,
-    priority: 1
-  },
-  {
-    id: 'ac_type',
-    text: "What type of AC unit do you have?",
-    type: 'options',
-    options: [
-      { value: 'split', label: 'Split AC', icon: 'fas fa-cube' },
-      { value: 'window', label: 'Window AC', icon: 'fas fa-window-maximize' },
-      { value: 'cassette', label: 'Cassette AC', icon: 'fas fa-th-large' },
-      { value: 'tower', label: 'Tower AC', icon: 'fas fa-arrow-up' },
-      { value: 'central', label: 'Central AC', icon: 'fas fa-building' },
-      { value: 'portable', label: 'Portable AC', icon: 'fas fa-mobile-alt' },
-      { value: 'unknown', label: "Don't know", icon: 'fas fa-question-circle' }
-    ],
-    validation: (val) => val.length > 0,
-    errorMsg: "Please select your AC type.",
-    dynamic: true,
-    priority: 2
-  },
-  {
-    id: 'tonnage',
-    text: "What is your AC's tonnage/capacity?",
-    type: 'options',
-    options: ['0.75 Ton', '1 Ton', '1.5 Ton', '2 Ton', '2.5 Ton', '3 Ton', 'Unknown'],
-    validation: (val) => val.length > 0,
-    errorMsg: "Please select AC tonnage.",
-    dynamic: true,
-    priority: 3
-  },
-  {
-    id: 'brand',
-    text: "What brand is your AC?",
-    type: 'options',
-    options: ['Daikin', 'LG', 'Samsung', 'Voltas', 'Blue Star', 'Hitachi', 'Carrier', 'Panasonic', 'Other', 'Unknown'],
-    validation: (val) => val.length > 0,
-    errorMsg: "Please select AC brand.",
-    dynamic: true,
-    priority: 4
-  },
-  {
-    id: 'location',
-    text: "Where is the AC located?",
-    type: 'options',
-    options: ['Living Room', 'Bedroom', 'Office', 'Shop', 'Restaurant', 'Hospital', 'Other'],
-    validation: (val) => val.length > 0,
-    errorMsg: "Please select location.",
-    dynamic: true,
-    priority: 5
-  },
-  {
-    id: 'problem_description',
-    text: "Please describe the problem you're facing:",
-    type: 'textarea',
-    validation: (val) => val.length >= 10,
-    errorMsg: "Please describe the problem (at least 10 characters).",
-    dynamic: true,
-    priority: 6
-  },
-  {
-    id: 'urgency',
-    text: "How urgent is this service?",
-    type: 'options',
-    options: [
-      { value: 'emergency', label: 'Emergency (Today)', icon: 'fas fa-exclamation-triangle' },
-      { value: 'urgent', label: 'Urgent (Within 24 hours)', icon: 'fas fa-clock' },
-      { value: 'standard', label: 'Standard (2-3 days)', icon: 'fas fa-calendar' },
-      { value: 'flexible', label: 'Flexible (1 week+)', icon: 'fas fa-calendar-alt' }
-    ],
-    validation: (val) => val.length > 0,
-    errorMsg: "Please select urgency level.",
-    dynamic: true,
-    priority: 7
-  },
-  {
-    id: 'contact_name',
-    text: "What's your name?",
-    type: 'text',
-    validation: (val) => val.length >= 2,
-    errorMsg: "Please enter your name (at least 2 characters).",
-    priority: 8
-  },
-  {
-    id: 'phone',
-    text: "What's your phone number?",
-    type: 'phone',
-    validation: (val) => {
-      const digits = val.replace(/\D/g, '');
-      return digits.length >= 10;
-    },
-    errorMsg: "Please enter a valid 10-digit phone number.",
-    priority: 9
-  },
-  {
-    id: 'email',
-    text: "Email address for confirmation:",
-    type: 'email',
-    validation: (val) => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(val);
-    },
-    errorMsg: "Please enter a valid email address.",
-    dynamic: true,
-    priority: 10
-  }
-];
-
-export const getQuestionsByCount = (count) => {
-  // Sort by priority
-  const sortedQuestions = [...questions].sort((a, b) => a.priority - b.priority);
-  const selectedQuestions = sortedQuestions.slice(0, count);
-  
-  // Ensure name and phone are included if count allows
-  const hasName = selectedQuestions.some(q => q.id === 'contact_name');
-  const hasPhone = selectedQuestions.some(q => q.id === 'phone');
-  
-  if (!hasName && count >= 3) {
-    const nameQuestion = questions.find(q => q.id === 'contact_name');
-    selectedQuestions.splice(Math.min(3, selectedQuestions.length), 0, nameQuestion);
-  }
-  
-  if (!hasPhone && count >= 4) {
-    const phoneQuestion = questions.find(q => q.id === 'phone');
-    selectedQuestions.splice(Math.min(4, selectedQuestions.length), 0, phoneQuestion);
-  }
-  
-  // Trim to exact count
-  return selectedQuestions.slice(0, count);
+type Message = {
+  id: string;
+  from: "bot" | "user";
+  text: string;
+  stepIndex: number;
+  options?: StepOption[];
+  time: string;
 };
 
-const getIcon = (iconName) => {
-  const [family, name] = iconName.split(' ');
-  switch (family) {
-    case 'fas':
-      return { family: 'FontAwesome5', name: name.replace('fa-', '') };
-    case 'fab':
-      return { family: 'FontAwesome5', name: name.replace('fa-', '') };
-    case 'material':
-      return { family: 'MaterialIcons', name: name };
-    default:
-      return { family: 'Ionicons', name: 'options' };
-  }
-};
+/* ---------------- COMPONENT ---------------- */
 
-export  function OptionButton({ label, icon, isSelected, onPress, isEmergency }) {
-  const IconComponent = icon ? getIcon(icon).family : null;
-  const iconName = icon ? getIcon(icon).name : null;
+export default function Chatbot8({
+  serviceObject,
+  onClose,
+}: {
+  serviceObject: any;
+  onClose: () => void;
+}) {
+  const { userId } = useProfile();
+  const { addresses, setAddresses, setSelectedAddress, selectedAddress } =
+    useAddress();
+  const { showTypingIndicator, typeText } = useChatGPTTyping(true);
   
-  return (
-    <TouchableOpacity 
-      style={[
-        stylesOc.button,
-        isSelected && stylesOc.selectedButton,
-        isEmergency && stylesOc.emergencyButton
-      ]}
-      onPress={onPress}
-    >
-      <View style={stylesOc.buttonContent}>
-        {icon && IconComponent && (
-          <View style={stylesOc.iconContainer}>
-            {IconComponent === 'FontAwesome5' && (
-              <FontAwesome5 name={iconName} size={16} color={isSelected ? 'white' : '#1e88e5'} />
-            )}
-            {IconComponent === 'MaterialIcons' && (
-              <MaterialIcons name={iconName} size={16} color={isSelected ? 'white' : '#1e88e5'} />
-            )}
-            {IconComponent === 'Ionicons' && (
-              <Ionicons name={iconName} size={16} color={isSelected ? 'white' : '#1e88e5'} />
-            )}
-          </View>
-        )}
-        
-        <Text style={[
-          stylesOc.buttonText,
-          isSelected && stylesOc.selectedText
-        ]}>
-          {label}
-        </Text>
-        
-        {isEmergency && (
-          <View style={stylesOc.emergencyBadge}>
-            <Text style={stylesOc.emergencyText}>URGENT</Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
+
+  const steps = serviceObject.conversation.steps;
+  const service = serviceObject.service;
+
+  const scrollRef = useRef<ScrollView>(null);
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+const [selectedCapacity, setSelectedCapacity] = useState<any>(null);
+
+  const [selectedProblem, setSelectedProblem] = useState<any>(null);
+  const [selectedOption, setSelectedOption] = useState<any>(null);
+  const [selectedBrand, setSelectedBrand] = useState<any>(null);
+  const [quantity, setQuantity] = useState<number>(0);
+  const [notes, setNotes] = useState("");
+  const [notesInputActive, setNotesInputActive] = useState(false);
+const [followUpQueue, setFollowUpQueue] = useState<any[]>([]);
+const [currentFollowUp, setCurrentFollowUp] = useState<any>(null);
+const [followUpAnswers, setFollowUpAnswers] = useState<any>({});
+
+
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [manualQty, setManualQty] = useState("");
+  const [manualQtyActive, setManualQtyActive] = useState(false);
+
+  const [response, setResponse] = useState<ConversationBookingResponse | null>(
+    null
   );
-}
 
-const stylesOc = StyleSheet.create({
-  button: {
-    backgroundColor: 'white',
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    borderRadius: 10,
-    padding: 12,
-    margin: 5,
-    minWidth: 120,
-  },
-  selectedButton: {
-    backgroundColor: '#1e88e5',
-    borderColor: '#0d47a1',
-  },
-  emergencyButton: {
-    borderColor: '#ff4444',
-  },
-  buttonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconContainer: {
-    marginRight: 8,
-  },
-  buttonText: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  selectedText: {
-    color: 'white',
-  },
-  emergencyBadge: {
-    backgroundColor: '#ff4444',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginLeft: 8,
-  },
-  emergencyText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-});
+  /* ---------------- HELPERS ---------------- */
 
-export  function BookingSummary({ bookingData, isComplete, totalQuestions, currentStep }) {
-  const formatLabel = (key) => {
-    return key
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, l => l.toUpperCase());
+  const time = () =>
+    new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+  const scrollToBottom = () =>
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+
+ const unitPrice =
+  selectedCapacity?.finalPrice ??
+  selectedProblem?.estimatedPrice ??
+  selectedOption?.basePrice ??
+  0;
+
+const totalPrice = quantity ? quantity * unitPrice : "";
+
+  const templateVars: any = {
+    agentName: steps[currentStepIndex]?.agentName,
+    // zipcode: serviceObject.data?.zipcode ,
+    zipcode: selectedAddress.address.zipcode ,
+    estimatedTime: service.estimatedTime,
+    selectedProblem: selectedProblem?.name ?? "",
+    selectedOption: selectedOption?.name ?? "",
+    selectedBrand: selectedBrand?.name ?? "",
+    quantity,
+    totalPrice,
+    address: selectedAddress
+      ? `${selectedAddress.label}, ${selectedAddress.address.street}`
+      : "",
   };
 
-  const getServiceTypeLabel = (type) => {
-    const labels = {
-      'repair': 'AC Repair',
-      'installation': 'AC Installation',
-      'maintenance': 'AC Maintenance',
-      'cleaning': 'AC Deep Cleaning',
-      'gas_refill': 'AC Gas Refill',
-      'emergency': 'Emergency AC Repair',
-    };
-    return labels[type] || 'AC Service';
-  };
+  const renderTemplate = (t: string) =>
+    t.replace(/{{(.*?)}}/g, (_, k) => templateVars[k.trim()] ?? "");
 
-  return (
-    <ScrollView style={stylesBs.container}>
-      <View style={stylesBs.header}>
-        <Ionicons name="clipboard" size={24} color="white" />
-        <Text style={stylesBs.title}>Service Details</Text>
-      </View>
-      
-      <View style={stylesBs.content}>
-        <View style={stylesBs.summaryItem}>
-          <Text style={stylesBs.label}>Status:</Text>
-          <Text style={stylesBs.value}>
-            {isComplete ? 'Completed' : 'In Progress'}
-          </Text>
-        </View>
-        
-        <View style={stylesBs.summaryItem}>
-          <Text style={stylesBs.label}>Questions:</Text>
-          <Text style={stylesBs.value}>{currentStep}/{totalQuestions}</Text>
-        </View>
-        
-        {Object.entries(bookingData).map(([key, value]) => {
-          if (['bookingId', 'timestamp', 'totalCost', 'questionsAnswered'].includes(key)) {
-            return null;
-          }
-          
-          let displayValue = value;
-          if (key === 'service_type') {
-            displayValue = getServiceTypeLabel(value);
-          }
-          
-          if (displayValue.length > 20) {
-            displayValue = displayValue.substring(0, 20) + '...';
-          }
-          
-          return (
-            <View key={key} style={stylesBs.summaryItem}>
-              <Text style={stylesBs.label}>{formatLabel(key)}:</Text>
-              <Text style={stylesBs.value}>{displayValue}</Text>
-            </View>
-          );
-        })}
-        
-        {isComplete && bookingData.bookingId && (
-          <>
-            <View style={stylesBs.summaryItem}>
-              <Text style={stylesBs.label}>Booking ID:</Text>
-              <Text style={[stylesBs.value, styles.highlight]}>{bookingData.bookingId}</Text>
-            </View>
-            <View style={stylesBs.summaryItem}>
-              <Text style={stylesBs.label}>Estimated Cost:</Text>
-              <Text style={[stylesBs.value, styles.highlight]}>{bookingData.totalCost}</Text>
-            </View>
-          </>
-        )}
-      </View>
-    </ScrollView>
-  );
-}
+  /* ---------------- BOT MESSAGE ---------------- */
 
-const stylesBs = StyleSheet.create({
-  container: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 20,
-    maxHeight: 300,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-    gap: 10,
-  },
-  title: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  content: {},
-  summaryItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  label: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  value: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'right',
-    maxWidth: '60%',
-  },
-  highlight: {
-    color: '#4fc3f7',
-  },
-});
+  const pushBotMessage = async (
+    text: string,
+    stepIndex: number,
+    options?: StepOption[]
+  ) => {
+    const id = Date.now().toString();
 
-export  function ProgressBar({ currentStep, totalSteps }) {
-  const progress = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
-  
-  return (
-    <View style={stylesP.container}>
-      <View style={stylesP.header}>
-        <Text style={stylesP.title}>Booking Progress</Text>
-        <View style={stylesP.counter}>
-          <Text style={stylesP.counterText}>{currentStep}/{totalSteps}</Text>
-        </View>
-      </View>
-      
-      <View style={stylesP.progressBar}>
-        <LinearGradient
-          colors={['#4fc3f7', '#1e88e5']}
-          style={[stylesP.progressFill, { width: `${progress}%` }]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        />
-      </View>
-      
-      <View style={stylesP.stats}>
-        <Text style={stylesP.statText}>{currentStep} answered</Text>
-        <Text style={stylesP.statText}>{totalSteps - currentStep} remaining</Text>
-      </View>
-    </View>
-  );
-}
-
-const stylesP = StyleSheet.create({
-  container: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  title: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  counter: {
-    backgroundColor: '#1e88e5',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 15,
-  },
-  counterText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  stats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  statText: {
-    color: 'rgba(255,255,255,0.8)',
-    fontSize: 12,
-  },
-});
-
-export function MessageBubble({ text, isUser, timestamp }) {
-  return (
-    <View style={[
-      stylesB.messageContainer,
-      isUser ? stylesB.userMessage : stylesB.botMessage
-    ]}>
-      <View style={[
-        stylesB.avatar,
-        isUser ? stylesB.userAvatar : stylesB.botAvatar
-      ]}>
-        <Ionicons 
-          name={isUser ? "person" : "snow"} 
-          size={20} 
-          color={isUser ? "#1e88e5" : "white"} 
-        />
-      </View>
-      
-      <View style={[
-        stylesB.bubble,
-        isUser ? stylesB.userBubble : stylesB.botBubble
-      ]}>
-        <Text style={isUser ? stylesB.userText : stylesB.botText}>
-          {text}
-        </Text>
-        <Text style={stylesB.timestamp}>
-          {timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-const stylesB = StyleSheet.create({
-  messageContainer: {
-    flexDirection: 'row',
-    marginBottom: 15,
-    alignItems: 'flex-end',
-  },
-  userMessage: {
-    justifyContent: 'flex-end',
-  },
-  botMessage: {
-    justifyContent: 'flex-start',
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 10,
-  },
-  botAvatar: {
-    backgroundColor: '#1e88e5',
-  },
-  userAvatar: {
-    backgroundColor: 'white',
-    borderWidth: 2,
-    borderColor: '#1e88e5',
-  },
-  bubble: {
-    maxWidth: '75%',
-    padding: 15,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  botBubble: {
-    backgroundColor: 'white',
-    borderBottomLeftRadius: 5,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  userBubble: {
-    backgroundColor: '#1e88e5',
-    borderBottomRightRadius: 5,
-  },
-  botText: {
-    color: '#333',
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  userText: {
-    color: 'white',
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  timestamp: {
-    fontSize: 11,
-    color: '#999',
-    marginTop: 5,
-    textAlign: 'right',
-  },
-});
-
-
-
-
-export default function ChatScreen() {
-  const [messages, setMessages] = useState([]);
-  const [userInput, setUserInput] = useState('');
-  const [currentStep, setCurrentStep] = useState(0);
-  const [bookingData, setBookingData] = useState({});
-  const [isComplete, setIsComplete] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [totalQuestions, setTotalQuestions] = useState(0);
-  const [currentQuestion, setCurrentQuestion] = useState(null);
-  const [selectedOption, setSelectedOption] = useState(null);
-  
-  const scrollViewRef = useRef();
-  const questionCount = 8; // Can be random between 5-18
-
-  useEffect(() => {
-    initializeBot();
-  }, []);
-
-  useEffect(() => {
-    if (currentStep < totalQuestions) {
-      const question = questions[currentStep];
-      setCurrentQuestion(question);
-      showQuestion(question);
-    }
-  }, [currentStep, totalQuestions]);
-
-  const initializeBot = async () => {
-    setIsLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      const selectedQuestions = getQuestionsByCount(questionCount);
-      setTotalQuestions(selectedQuestions.length);
-      setMessages([
+    showTypingIndicator(() => {
+      setMessages((p) => [
+        ...p,
         {
-          id: '1',
-          text: "❄️ Welcome to AC Service Pro!\nI'll help you book professional AC service quickly and easily.",
-          isUser: false,
-          timestamp: new Date(),
-        },
-        {
-          id: '2',
-          text: `📋 Today's Booking: ${questionCount} questions to complete your service request`,
-          isUser: false,
-          timestamp: new Date(),
+          id: `${id}-dots`,
+          from: "bot",
+          text: "__DOTS__",
+          stepIndex,
+          time: time(),
         },
       ]);
-      setIsLoading(false);
-      updateProgress();
-    }, 1500);
+    });
+
+    await new Promise((r) => setTimeout(r, 400));
+
+    setMessages((p) => p.filter((m) => m.id !== `${id}-dots`));
+    setMessages((p) => [
+      ...p,
+      { id, from: "bot", text: "", stepIndex, time: time() },
+    ]);
+
+    typeText(
+      renderTemplate(text),
+      (t) =>
+        setMessages((p) => p.map((m) => (m.id === id ? { ...m, text: t } : m))),
+      () =>
+        setMessages((p) => p.map((m) => (m.id === id ? { ...m, options } : m)))
+    );
+
+    scrollToBottom();
   };
 
-  const showQuestion = (question) => {
-    if (!question) return;
-    
-    let formattedText = question.text;
-    
-    // Add dynamic text replacement
-    if (question.dynamic && bookingData.service_type) {
-      const serviceType = getServiceTypeLabel(bookingData.service_type);
-      formattedText = formattedText.replace(/\{service_type\}/g, serviceType);
-    }
-    
-    if (question.dynamic && bookingData.contact_name) {
-      formattedText = formattedText.replace(/\{contact_name\}/g, bookingData.contact_name.split(' ')[0]);
-    }
-    
-    const typeBadge = question.type.charAt(0).toUpperCase() + question.type.slice(1);
-    
-    setMessages(prev => [...prev, {
-      id: `q-${currentStep}`,
-      text: `${formattedText}\n\n[${typeBadge}]`,
-      isUser: false,
-      timestamp: new Date(),
-      isQuestion: true,
-    }]);
+  const pushUserMessage = (text: string) => {
+    setMessages((p) => [
+      ...p,
+      {
+        id: Date.now().toString(),
+        from: "user",
+        text,
+        stepIndex: currentStepIndex,
+        time: time(),
+      },
+    ]);
+    scrollToBottom();
   };
 
-  const handleSend = () => {
-    if (!userInput.trim() || isLoading || isComplete) return;
-    
-    if (currentQuestion) {
-      // Validate input
-      if (currentQuestion.validation && !currentQuestion.validation(userInput)) {
-        Alert.alert('Invalid Input', currentQuestion.errorMsg);
+  /* ---------------- OPTION RESOLUTION ---------------- */
+
+  const resolveOptionsFromStep = (step: any): StepOption[] => {
+    switch (step.stepType) {
+      case "GREETING":
+        return [{ id: "start", label: "Let’s get started", value: true }];
+case "CAPACITY_SELECTION":
+  return selectedOption?.capacityVariants?.map((v: any) => ({
+    id: v.id,
+    label: `${v.displayName} (₹${v.finalPrice})`,
+    value: v,
+  })) || [];
+
+      case "PROBLEM_SELECTION":
+        return step.data.problems.map((p: any) => ({
+          id: p._id,
+          // label: `${p.name} (₹${p.estimatedPrice})`,
+          label: `${p.name}`,
+          value: p,
+        }));
+
+      case "OPTION_SELECTION":
+        return step.data.options.map((o: any) => ({
+          id: o.id,
+          // label: `${o.name} (₹${o.basePrice})`,
+          label: `${o.name}`,
+          value: o,
+        }));
+
+      case "BRAND_SELECTION":
+        return step.data.brands.map((b: any) => ({
+          id: b.id,
+          label: b.name,
+          value: b,
+        }));
+
+      case "QUANTITY_SELECTION":
+        return [
+          ...step.data.availableQuantities.map((q: string) => ({
+            id: q,
+            label: q.toUpperCase(),
+            value: q === "single" ? 1 : q === "double" ? 2 : 3,
+          })),
+          { id: "manual", label: "Set Manual Quantity", value: "manual" },
+        ];
+
+case "QUANTITY_CONFIRM":
+  return [
+    { id: "confirm", label: "✅ Confirm", value: "confirm" },
+    { id: "cancel", label: "❌ Change Quantity", value: "cancel" },
+  ];
+
+      case "ADDRESS_INPUT":
+        return [
+          ...addresses.map((a, i) => ({
+            id: `addr-${i}`,
+            label: `${a.label} - ${a.address.street}`,
+            value: a,
+          })),
+          { id: "new", label: "📍 Add New Address", value: "new" },
+        ];
+
+      case "FINAL_CONFIRMATION":
+        return [{ id: "book", label: "Book Now", value: "book" }];
+
+      default:
+        return [];
+    }
+  };
+
+  /* ---------------- OPTION HANDLER ---------------- */
+
+
+  
+  const handleOptionPress = (opt: StepOption) => {
+    const step = steps[currentStepIndex];
+
+if (currentFollowUp) {
+  // This is the user's answer to the current follow-up
+  pushUserMessage(opt.label);
+
+  // Save the answer
+  setFollowUpAnswers((p: any) => ({
+    ...p,
+    [currentFollowUp.question]: opt.value,
+  }));
+
+  // Advance the follow-up queue
+  const remaining = followUpQueue.slice(1);
+
+  if (remaining.length > 0) {
+    setFollowUpQueue(remaining);
+    setCurrentFollowUp(remaining[0]);
+    // don't advance main step yet — next useEffect will push next follow-up
+  } else {
+    // follow-ups finished — clear and move to next main step
+    setFollowUpQueue([]);
+    setCurrentFollowUp(null);
+    setCurrentStepIndex((s) => s + 1);
+  }
+
+  return;
+}
+
+
+    if (opt.value === "manual") {
+      setManualQtyActive(true);
+      return;
+    }
+
+    pushUserMessage(opt.label);
+
+   if (step.stepType === "PROBLEM_SELECTION") {
+  setSelectedProblem(opt.value);
+
+  const questions = opt.value.followUpQuestions || [];
+
+  if (questions.length > 0) {
+    setFollowUpQueue(questions);
+    setCurrentFollowUp(questions[0]);
+    return; // ⛔ stop main step advance
+  }
+}
+if (step.stepType === "CAPACITY_SELECTION") {
+  setSelectedCapacity(opt.value);
+}
+    if (step.stepType === "OPTION_SELECTION") setSelectedOption(opt.value);
+    if (step.stepType === "BRAND_SELECTION") setSelectedBrand(opt.value);
+    if (step.stepType === "QUANTITY_SELECTION") setQuantity(opt.value);
+
+    if (step.stepType === "ADDRESS_INPUT") {
+      if (opt.value === "new") {
+        setShowAddressForm(true);
         return;
       }
-      
-      // Add user message
-      setMessages(prev => [...prev, {
-        id: `u-${Date.now()}`,
-        text: userInput,
-        isUser: true,
-        timestamp: new Date(),
-      }]);
-      
-      // Store booking data
-      setBookingData(prev => ({
-        ...prev,
-        [currentQuestion.id]: userInput,
-      }));
-      
-      // Clear input
-      setUserInput('');
-      setSelectedOption(null);
-      
-      // Move to next step or complete
-      if (currentStep + 1 >= totalQuestions) {
-        completeBooking();
-      } else {
-        setCurrentStep(prev => prev + 1);
-      }
-      
-      updateProgress();
+      setSelectedAddress(opt.value);
+    }
+
+   if (step.stepType === "QUANTITY_CONFIRM") {
+  if (opt.value === "confirm") {
+    setCurrentStepIndex((s) => s + 1); // go forward
+  }
+
+  if (opt.value === "cancel") {
+    setQuantity(0);
+    setCurrentStepIndex((s) => s - 1); // go back to quantity selection
+  }
+
+  return;
+}
+
+if (step.stepType === "FINAL_CONFIRMATION") {
+  handleBooking();
+  return;
+}
+
+
+    setCurrentStepIndex((s) => s + 1);
+  };
+
+  const resolveFollowUpOptions = (q: any): StepOption[] => {
+  if (q.questionType === "yes_no") {
+    return q.options.map((o: any) => ({
+      id: o._id,
+      label: o.label,
+      value: o.value,
+    }));
+  }
+
+  return q.options.map((o: any) => ({
+    id: o._id,
+    label: o.label,
+    value: o.value,
+  }));
+};
+
+
+  /* ---------------- BOOKING ---------------- */
+
+  const handleBooking = async () => {
+    try {
+     const payload: CreateConversationBookingPayload = {
+            userId,
+            zipcode: selectedAddress.address.zipcode,
+            selectedOption: {
+              optionId: selectedOption._id,
+              name: selectedOption.name,
+              price: selectedOption.singlePrice,
+            },
+            quantity,
+            address: selectedAddress.address,
+            notes,
+            preferredDate: new Date().toISOString().split("T")[0],
+            preferredTime: "10:00 AM",
+            paymentMethod: "cash",
+          };
+
+    const res = await createConversationBooking(service.id, payload);
+    setResponse(res);
+
+    setMessages((p) => [
+      ...p,
+      {
+        id: Date.now().toString(),
+        from: "bot",
+        text: "__BADGE__",
+        stepIndex: currentStepIndex,
+        time: time(),
+      },
+    ]);
+     } catch (err) {
+      console.error("Booking failed:", err);
+      // optional: show error toast/message here
     }
   };
 
-  const handleOptionSelect = (value) => {
-    setSelectedOption(value);
-    setUserInput(value);
-  };
+  /* ---------------- STEP FLOW ---------------- */
 
-  const completeBooking = () => {
-    setIsComplete(true);
-    
-    // Generate booking ID
-    const bookingId = 'AC' + Date.now().toString().substr(-8);
-    const totalCost = calculateEstimatedCost();
-    
-    const finalData = {
-      ...bookingData,
-      bookingId,
-      timestamp: new Date().toLocaleString(),
-      totalCost,
-      questionsAnswered: totalQuestions,
-    };
-    
-    setBookingData(finalData);
-    
-    setMessages(prev => [...prev, {
-      id: 'complete',
-      text: `🎉 Booking Confirmed Successfully!\n\nBooking ID: ${bookingId}\nService Type: ${getServiceTypeLabel(bookingData.service_type)}\nEstimated Cost: ${totalCost}\nQuestions Answered: ${totalQuestions}\n\n✅ What happens next?\n1. Our AC expert will contact you within 30 minutes\n2. Service appointment will be scheduled\n3. You'll receive SMS & email confirmation\n\nFor immediate assistance, call: 1800-AC-HELP`,
-      isUser: false,
-      timestamp: new Date(),
-    }]);
-    
-    updateProgress();
-  };
+useEffect(() => {
+  const step = steps[currentStepIndex];
+  if (!step) return;
 
-  const calculateEstimatedCost = () => {
-    const baseCosts = {
-      'repair': 800,
-      'installation': 3000,
-      'maintenance': 600,
-      'cleaning': 900,
-      'gas_refill': 1200,
-      'emergency': 1500,
-    };
-    
-    let cost = baseCosts[bookingData.service_type] || 1000;
-    
-    // Adjust based on tonnage
-    if (bookingData.tonnage) {
-      const tonnage = parseFloat(bookingData.tonnage);
-      if (tonnage > 1.5) cost *= 1.3;
-    }
-    
-    if (bookingData.service_type === 'emergency') cost *= 1.5;
-    
-    return `₹${Math.round(cost)} - ₹${Math.round(cost * 1.5)}`;
-  };
+  // only enable notes input for NOTES_INPUT
+  if (step.stepType === "NOTES_INPUT") {
+    setNotesInputActive(true);
+  } else {
+    setNotesInputActive(false);
+  }
 
-  const updateProgress = () => {
-    // Progress is updated via state
-  };
-
-  const resetBooking = () => {
-    Alert.alert(
-      'Start New Booking',
-      'Are you sure you want to start a new booking? Current progress will be lost.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'New Booking', 
-          onPress: () => {
-            setMessages([]);
-            setCurrentStep(0);
-            setBookingData({});
-            setIsComplete(false);
-            setUserInput('');
-            setSelectedOption(null);
-            initializeBot();
-          }
-        },
-      ]
+  // If there's an active follow-up question, ask it (once)
+  if (currentFollowUp) {
+    // avoid duplicate follow-up messages
+    const alreadyAsked = messages.some(
+      (m) => m.from === "bot" && m.text === currentFollowUp.question
     );
-  };
 
-  const testFlow = () => {
-    const testCounts = [5, 8, 12, 15, 18];
-    const randomCount = testCounts[Math.floor(Math.random() * testCounts.length)];
-    Alert.alert('Test Flow', `Testing ${randomCount}-question flow`);
-    // Implement test logic
-  };
-
-  const renderOptions = () => {
-    if (!currentQuestion || currentQuestion.type !== 'options' || isComplete) {
-      return null;
+    if (!alreadyAsked) {
+      pushBotMessage(
+        currentFollowUp.question,
+        currentStepIndex,
+        resolveFollowUpOptions(currentFollowUp)
+      );
     }
-    
-    return (
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.optionsContainer}
-      >
-        <View style={styles.optionsGrid}>
-          {currentQuestion.options.map((option, index) => {
-            const optionValue = typeof option === 'object' ? option.value : option;
-            const optionLabel = typeof option === 'object' ? option.label : option;
-            const icon = typeof option === 'object' ? option.icon : null;
-            
-            return (
-              <OptionButton
-                key={index}
-                label={optionLabel}
-                icon={icon}
-                isSelected={selectedOption === optionValue}
-                onPress={() => handleOptionSelect(optionValue)}
-                isEmergency={optionValue === 'emergency'}
-              />
-            );
-          })}
-        </View>
-      </ScrollView>
-    );
-  };
+    return;
+  }
+
+  // For normal step messages: ensure we haven't already pushed the main bot message for this step
+  const alreadyRendered = messages.some(
+    (m) => m.stepIndex === currentStepIndex && m.from === "bot"
+  );
+  if (alreadyRendered) return;
+
+  pushBotMessage(
+    step.messageTemplate,
+    currentStepIndex,
+    resolveOptionsFromStep(step)
+  );
+}, [currentStepIndex, currentFollowUp, messages]);
+
+
+  /* ---------------- RENDER ---------------- */
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-      {/* Header */}
-      <LinearGradient
-        colors={['#1e88e5', '#0d47a1']}
-        style={styles.header}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      >
-        <View style={styles.headerContent}>
-          <Ionicons name="snow" size={28} color="white" />
-          <Text style={styles.headerTitle}>AC Service Booking Assistant</Text>
-        </View>
-        <Text style={styles.headerSubtitle}>
-          Professional AC installation, repair, and maintenance booking
-        </Text>
-      </LinearGradient>
-
-      <View style={styles.mainContainer}>
-        {/* Left Panel - Chat */}
-        <View style={styles.chatPanel}>
-          <ScrollView 
-            ref={scrollViewRef}
-            style={styles.chatContainer}
-            contentContainerStyle={styles.chatContent}
-            onContentSizeChange={() => scrollViewRef.current?.scrollToEnd()}
-          >
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                text={message.text}
-                isUser={message.isUser}
-                timestamp={message.timestamp}
-              />
-            ))}
-            
-            {isLoading && (
-              <View style={styles.loadingContainer}>
-                <View style={styles.typingIndicator}>
-                  <View style={styles.dot} />
-                  <View style={styles.dot} />
-                  <View style={styles.dot} />
-                </View>
-                <Text style={styles.loadingText}>Initializing AC Service Bot...</Text>
-              </View>
-            )}
-          </ScrollView>
-
-          {/* Options */}
-          {renderOptions()}
-
-          {/* Input Area */}
-          {!isComplete && !isLoading && currentQuestion && (
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Type your answer here..."
-                value={userInput}
-                onChangeText={setUserInput}
-                multiline={currentQuestion.type === 'textarea'}
-                numberOfLines={currentQuestion.type === 'textarea' ? 3 : 1}
-                keyboardType={
-                  currentQuestion.type === 'phone' ? 'phone-pad' :
-                  currentQuestion.type === 'email' ? 'email-address' :
-                  'default'
-                }
-              />
-              <TouchableOpacity 
-                style={styles.sendButton}
-                onPress={handleSend}
-                disabled={!userInput.trim()}
-              >
-                <LinearGradient
-                  colors={['#1e88e5', '#0d47a1']}
-                  style={styles.sendButtonGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  <Ionicons name="send" size={20} color="white" />
-                  <Text style={styles.sendButtonText}>Send</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {/* Right Panel - Info */}
-        {/* <View style={styles.infoPanel}>
-          <LinearGradient
-            colors={['#0f3460', '#1a1a2e']}
-            style={styles.infoContent}
-          >
-            <ProgressBar
-              currentStep={currentStep}
-              totalSteps={totalQuestions}
-            />
-            
-            <BookingSummary
-              bookingData={bookingData}
-              isComplete={isComplete}
-              totalQuestions={totalQuestions}
-              currentStep={currentStep}
-            />
-            
-            <View style={styles.controlButtons}>
-              <TouchableOpacity 
-                style={[styles.controlButton, styles.resetButton]}
-                onPress={resetBooking}
-              >
-                <Ionicons name="refresh" size={20} color="white" />
-                <Text style={styles.controlButtonText}>New Booking</Text>
-              </TouchableOpacity>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+      <View style={styles.header}>
+              <View style={styles.headerRow}>
               
-              <TouchableOpacity 
-                style={[styles.controlButton, styles.testButton]}
-                onPress={testFlow}
-              >
-                <MaterialIcons name="science" size={20} color="white" />
-                <Text style={styles.controlButtonText}>Test Flow</Text>
-              </TouchableOpacity>
+      
+                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                  <Text style={{ fontSize: moderateScale(20), color: "#fff" }}>
+                    ✕
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            
-            <View style={styles.noteContainer}>
-              <Ionicons name="information-circle" size={16} color="rgba(255,255,255,0.7)" />
-              <Text style={styles.noteText}>
-                Questions adapt based on service type. 5-18 questions total.
-              </Text>
+      <ScrollView ref={scrollRef} style={styles.wrapper} contentContainerStyle={{ paddingBottom: verticalScale(80) }}>
+        {messages.map((m) => (
+          <View key={m.id} style={{ marginBottom: verticalScale(16) }}>
+            <View
+              style={[
+                styles.bubble,
+                m.from === "user" ? styles.userBubble : styles.botBubble,
+              ]}
+            >
+              {m.text === "__DOTS__" ? (
+                <TypingDots />
+              ) : m.text === "__BADGE__" ? (
+                response && <BadgeCard response={response} />
+              ) : (
+                <Text style={[{ fontSize: moderateScale(15) }, m.from === "user" && {color : '#fff'}]}>{m.text}</Text>
+              )}
             </View>
-          </LinearGradient>
-        </View> */}
-      </View>
+
+           {m.options &&
+  m.id === messages[messages.length - 1]?.id &&
+  m.options.map((o) => (
+    <TouchableOpacity
+      key={o.id}
+      style={styles.optionBtn}
+      onPress={() => handleOptionPress(o)}
+    >
+      <Text>{o.label}</Text>
+    </TouchableOpacity>
+  ))}
+
+          </View>
+        ))}
+
+        {manualQtyActive && (
+          <View style={styles.notesBox}>
+            <TextInput
+              placeholder="Enter quantity"
+              keyboardType="number-pad"
+              value={manualQty}
+              onChangeText={setManualQty}
+              style={styles.input}
+            />
+            <TouchableOpacity
+              style={styles.sendBtn}
+              onPress={() => {
+                setQuantity(Number(manualQty));
+                setManualQty("");
+                setManualQtyActive(false);
+                setCurrentStepIndex((s) => s + 1);
+              }}
+            >
+              <Feather name="send" color="#fff" size={18} />
+            </TouchableOpacity>
+          </View>
+        )}
+{notesInputActive && (
+  <View style={styles.notesBox}>
+    <TextInput
+      placeholder={
+        steps[currentStepIndex]?.data?.placeholder ||
+        "Any special instructions?"
+      }
+      value={notes}
+      onChangeText={setNotes}
+      style={styles.input}
+      multiline
+    />
+    <TouchableOpacity
+      style={styles.sendBtn}
+      onPress={() => {
+        pushUserMessage(notes || "No special instructions");
+        setNotesInputActive(false);
+        setCurrentStepIndex((s) => s + 1);
+      }}
+    >
+      <Feather name="send" color="#fff" size={18} />
+    </TouchableOpacity>
+  </View>
+)}
+        {showAddressForm && (
+          <AddressComponent
+            onAddressSaved={(addr: any) => {
+              setAddresses((p) => [...p, addr]);
+              setSelectedAddress(addr);
+              setShowAddressForm(false);
+              setCurrentStepIndex((s) => s + 1);
+            }}
+          />
+        )}
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+/* ---------------- STYLES ---------------- */
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1e3c72',
+   header: {
+    // height: verticalScale(55),
+    width: "100%",
+    backgroundColor: "#516377ff",
+    paddingHorizontal: scale(8),
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: verticalScale(8),
+    borderRadius : scale(12)
+    // marginBottom: verticalScale(23),
   },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    justifyContent: 'center',
+  headerLeft: { flexDirection: "row", alignItems: "center", flex: 1 },
+  headerIcon: {
+    width: scale(39),
+    height: scale(39),
+    borderRadius: scale(21),
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: scale(8),
   },
   headerTitle: {
-    color: 'white',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginLeft: 10,
+    color: "#FFFFFF",
+    fontSize: moderateScale(14),
+    fontWeight: "700",
   },
   headerSubtitle: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 14,
-    textAlign: 'center',
+    color: "#fff",
+    fontSize: moderateScale(12),
+    marginRight: scale(30),
   },
-  mainContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    padding: 10,
+  closeBtn: {
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
+    backgroundColor: "rgba(255,255,255,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  chatPanel: {
-    flex: 3,
-    backgroundColor: '#f8fafc',
-    borderRadius: 15,
-    marginRight: 10,
-    overflow: 'hidden',
+  wrapper: { flex: 1, padding: scale(10), backgroundColor: "#F2F7FF", paddingBottom : 150, borderWidth : 1 },
+  bubble: { padding: scale(12), borderRadius: scale(10), maxWidth: "90%" },
+  botBubble: { backgroundColor: "#DAF1FF" },
+  userBubble: {
+    backgroundColor: "#027CC7",
+    alignSelf: "flex-end",
   },
-  infoPanel: {
-    flex: 1,
-    borderRadius: 15,
-    overflow: 'hidden',
+  optionBtn: {
+    padding: scale(10),
+    marginTop: verticalScale(6),
+    borderRadius: scale(8),
+    borderWidth: 1,
+    borderColor: "#C8E6FF80",
+    backgroundColor: "#C8E6FF1A",
   },
-  infoContent: {
-    flex: 1,
-    padding: 20,
-  },
-  chatContainer: {
-    flex: 1,
-  },
-  chatContent: {
-    padding: 20,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  typingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#1e88e5',
-    marginHorizontal: 4,
-  },
-  loadingText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  optionsContainer: {
-    maxHeight: 150,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    backgroundColor: 'white',
-  },
-  optionsGrid: {
-    flexDirection: 'row',
-    padding: 15,
-    flexWrap: 'wrap',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    padding: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    backgroundColor: 'white',
+  notesBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: verticalScale(10),
   },
   input: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
-    marginRight: 10,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderRadius: scale(8),
+    padding: scale(10),
+    backgroundColor: "#fff",
   },
-  sendButton: {
-    borderRadius: 10,
-    overflow: 'hidden',
-    width: 100,
-  },
-  sendButtonGradient: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 15,
-  },
-  sendButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    marginLeft: 5,
-  },
-  controlButtons: {
-    flexDirection: 'row',
-    marginTop: 20,
-    gap: 10,
-  },
-  controlButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 10,
-    gap: 8,
-  },
-  resetButton: {
-    backgroundColor: '#ff7043',
-  },
-  testButton: {
-    backgroundColor: '#4db6ac',
-  },
-  controlButtonText: {
-    color: 'white',
-    fontWeight: '600',
-  },
-  noteContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    gap: 8,
-  },
-  noteText: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
-    flex: 1,
+  sendBtn: {
+    marginLeft: scale(8),
+    backgroundColor: "#027CC7",
+    padding: scale(12),
+    borderRadius: scale(8),
   },
 });
