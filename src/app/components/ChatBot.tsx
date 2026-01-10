@@ -38,8 +38,10 @@ type Message = {
   text: string;
   stepIndex: number;
   options?: StepOption[];
+  renderType?: "MANUAL_QTY" | "ADDRESS_FORM";
   time: string;
 };
+
 
 /* ---------------- COMPONENT ---------------- */
 
@@ -224,12 +226,33 @@ export default function Chatbot8({
   /* ---------------- OPTION HANDLER ---------------- */
 
   const handleOptionPress = (opt: StepOption) => {
-    const step = steps[currentStepIndex];
+     setMessages((prev) => {
+    const updated = [...prev];
+    for (let i = updated.length - 1; i >= 0; i--) {
+      if (updated[i].from === "bot" && updated[i].options) {
+        updated[i] = { ...updated[i], options: undefined };
+        break;
+      }
+    }
+    return updated;
+  });
 
-    pushUserMessage(opt.label);
+  const step = steps[currentStepIndex];
+
+  pushUserMessage(opt.label);
 
     if (opt.value === "manual") {
-      setManualQtyActive(true);
+      setMessages((p) => [
+  ...p,
+  {
+    id: Date.now().toString(),
+    from: "bot",
+    text: "",
+    stepIndex: currentStepIndex,
+    renderType: "MANUAL_QTY",
+    time: time(),
+  },
+]);
       return;
     }
 
@@ -241,7 +264,17 @@ export default function Chatbot8({
 
     if (step.stepType === "ADDRESS_INPUT") {
       if (opt.value === "new") {
-        setShowAddressForm(true);
+       setMessages((p) => [
+  ...p,
+  {
+    id: Date.now().toString(),
+    from: "bot",
+    text: "",
+    stepIndex: currentStepIndex,
+    renderType: "ADDRESS_FORM",
+    time: time(),
+  },
+]);
         return;
       }
       setSelectedAddress(opt.value);
@@ -355,13 +388,44 @@ export default function Chatbot8({
                       </Text>
                     </View>
 
-                    {m.text === "__DOTS__" ? (
-                      <TypingDots />
-                    ) : m.text === "__BADGE__" ? (
-                      response && <BadgeCard response={response} />
-                    ) : (
-                      <Text style={styles.botText}>{m.text}</Text>
-                    )}
+                   {m.renderType === "MANUAL_QTY" ? (
+  <View style={styles.notesBox}>
+    <TextInput
+      placeholder="Enter quantity"
+      keyboardType="number-pad"
+      value={manualQty}
+      onChangeText={setManualQty}
+      style={styles.input}
+    />
+    <TouchableOpacity
+      style={styles.sendBtn}
+      onPress={() => {
+        setQuantity(Number(manualQty));
+        setManualQty("");
+        setMessages((p) => p.filter((x) => x.id !== m.id));
+        setCurrentStepIndex((s) => s + 1);
+      }}
+    >
+      <Feather name="send" color="#fff" size={18} />
+    </TouchableOpacity>
+  </View>
+) : m.renderType === "ADDRESS_FORM" ? (
+  <AddressComponent
+    onAddressSaved={(addr: any) => {
+      setAddresses((p) => [...p, addr]);
+      setSelectedAddress(addr);
+      setMessages((p) => p.filter((x) => x.id !== m.id));
+      setCurrentStepIndex((s) => s + 1);
+    }}
+  />
+) : m.text === "__DOTS__" ? (
+  <TypingDots />
+) : m.text === "__BADGE__" ? (
+  response && <BadgeCard response={response} />
+) : (
+  <Text style={styles.botText}>{m.text}</Text>
+)}
+
                   </View>
                 </View>
 
@@ -383,43 +447,15 @@ export default function Chatbot8({
                   <Text style={styles.userText}>{m.text}</Text>
                 </View>
               </View>
-            )}
+            )
+            
+            
+            
+            }
           </View>
         ))}
 
-        {manualQtyActive && (
-          <View style={styles.notesBox}>
-            <TextInput
-              placeholder="Enter quantity"
-              keyboardType="number-pad"
-              value={manualQty}
-              onChangeText={setManualQty}
-              style={styles.input}
-            />
-            <TouchableOpacity
-              style={styles.sendBtn}
-              onPress={() => {
-                setQuantity(Number(manualQty));
-                setManualQty("");
-                setManualQtyActive(false);
-                setCurrentStepIndex((s) => s + 1);
-              }}
-            >
-              <Feather name="send" color="#fff" size={18} />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {showAddressForm && (
-          <AddressComponent
-            onAddressSaved={(addr: any) => {
-              setAddresses((p) => [...p, addr]);
-              setSelectedAddress(addr);
-              setShowAddressForm(false);
-              setCurrentStepIndex((s) => s + 1);
-            }}
-          />
-        )}
+       
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -449,12 +485,12 @@ const styles = StyleSheet.create({
 
   wrapper: { flex: 1, padding: scale(10), backgroundColor: "#F4F6FA" },
 
-  botCard: {
-    backgroundColor: "#fff",
-    borderRadius: scale(14),
-    padding: scale(12),
-    marginBottom: verticalScale(10),
-  },
+  // botCard: {
+  //   backgroundColor: "#fff",
+  //   borderRadius: scale(14),
+  //   padding: scale(12),
+  //   marginBottom: verticalScale(10),
+  // },
   botRow: { flexDirection: "row" },
   botAvatarPlaceholder: {
     width: scale(36),
@@ -484,7 +520,7 @@ const styles = StyleSheet.create({
     width: "48%",
     padding: scale(10),
     borderRadius: scale(20),
-    backgroundColor: "#F4F6FA",
+    backgroundColor: "#EDEBF4",
     alignItems: "center",
   },
   optionText: { fontSize: 13 },

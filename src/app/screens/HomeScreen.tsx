@@ -47,6 +47,7 @@ import ChatbotBookingManualUI from "../components/CC5";
 import Chatbot6 from "../components/CC6";
 import ChatScreen from "../components/CC7";
 import Chatbot8 from "../components/CC8";
+// import Chatbot8 from "../components/ChatBot";
 import CustomView from "../components/CustomView";
 
 const categories = ["Popular", "Emergency", "Seasonal", "Daily Use"];
@@ -313,24 +314,31 @@ const HomeScreen = () => {
             width={scale(370)}
             boxStyle={styles.chipsRow}
           >
-            {categories.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => setSelectedCategory(item)}
-              >
-                <View
+            {categories.map((item, index) => {
+              const chipLabels = ["Installation", "Service", "Repair", "Maintenance"];
+
+              return (
+                
+                  <View
                   key={index}
-                  style={[
-                    styles.chip,
-                    selectedCategory === item && { backgroundColor: "#DCECFE" },
-                  ]}
+                    style={[
+                      styles.chip,
+                      selectedCategory === item && {
+                        backgroundColor: "#DCECFE",
+                      },
+                    ]}
+                  >
+                    <TouchableOpacity
+                  
+                  onPress={() => setSelectedCategory(item)}
                 >
-                  <Text numberOfLines={1} style={styles.chipText}>
-                    {item}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
+                    <Text numberOfLines={1} style={styles.chipText}>
+                        {chipLabels[index] ?? item}
+                    </Text>
+                </TouchableOpacity>
+                  </View>
+              );
+            })}
           </CustomView>
         )}
 
@@ -341,7 +349,7 @@ const HomeScreen = () => {
               style={[
                 styles.grid,
                 servicesByCategory?.[selectedCategory]?.length > 3
-                  ? { marginBottom: verticalScale(39) }
+                  ? { marginBottom: verticalScale(10) }
                   : { marginBottom: verticalScale(10) },
               ]}
             >
@@ -808,14 +816,17 @@ const styles = StyleSheet.create({
   },
 
   chip: {
+    flex : 1,
+// borderWidth : 1,
     // backgroundColor: "#ea1313ff",
-    paddingVertical: verticalScale(6),
+    // paddingVertical: verticalScale(6),
     // paddingHorizontal: scale(14),
     // borderRadius: scale(20),
-    minWidth: scale(80),
-    maxWidth: scale(98),
+    // minWidth: scale(80),
+    // maxWidth: scale(98),
     height: "100%",
-    alignItems: "center",
+    // width : '100%',
+    // alignItems: "center",
     justifyContent: "center",
     borderRightWidth: 1,
     borderColor: "#BCBBC580",

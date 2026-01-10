@@ -1,51 +1,34 @@
-import React from "react";
-import { View } from "react-native";
-import Svg, { Rect, Defs, Filter, FeOffset, FeGaussianBlur, FeComposite, FeFlood } from "react-native-svg";
+import { View, StyleSheet } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { scale } from "../../utils/scaling";
 
-interface InsetShadowProps {
-  width: number;
-  height: number;
-  radius?: number;
-}
-
-export default function InsetShadow({
-  width,
-  height,
-  radius = 12,
-}: InsetShadowProps) {
+export function InsetShadowBox({ children }: { children: React.ReactNode }) {
   return (
-    <View style={{ position: "absolute" }}>
-      <Svg width={width} height={height}>
-        <Defs>
-          <Filter id="inset-shadow">
-            {/* Offset */}
-            <FeOffset dx="0" dy="1" />
+    <View style={styles.container}>
+      {/* Inner shadow overlay */}
+      <LinearGradient
+        colors={[
+          // "rgba(0,0,0,0.15)",
+          // "rgba(0,0,0,0.15)",
+          "#db5b006f",
+          "#db5b0056",
+          // "rgba(241, 128, 7, 0.24)",
+          // "rgba(0,0,0,0)",
+        ]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
 
-            {/* Blur */}
-            <FeGaussianBlur stdDeviation="1" result="blur" />
-
-            {/* Shadow color */}
-            <FeFlood floodColor="rgb(211,211,211)" floodOpacity="0.25" />
-
-            {/* Mask inside */}
-            <FeComposite in2="blur" operator="in" />
-
-            {/* Inset */}
-            <FeComposite in2="SourceGraphic" operator="over" />
-          </Filter>
-        </Defs>
-
-        <Rect
-          x="0"
-          y="0"
-          width={width}
-          height={height}
-          rx={radius}
-          ry={radius}
-          fill="transparent"
-          filter="url(#inset-shadow)"
-        />
-      </Svg>
+      {children}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: "#FFF6EF",
+    borderRadius: scale(24),
+    padding: scale(4),
+    overflow: "hidden", // VERY IMPORTANT
+  },
+});
