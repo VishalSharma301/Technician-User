@@ -12,6 +12,8 @@ import ScreenWrapper from "../../components/ScreenWrapper";
 import { useAuth } from "../../../hooks/useAuth";
 import { useProfile } from "../../../hooks/useProfile";
 import { loginDirect, verifyOtp } from "../../../utils/authApi";
+import CustomView from "../../components/CustomView";
+import { LinearGradient } from "expo-linear-gradient";
 
 const VerificationScreen = () => {
   const { setIsAuthenticated, setToken } = useAuth();
@@ -53,8 +55,13 @@ const VerificationScreen = () => {
     }
   };
   return (
-    <ScreenWrapper>
-      <View style={styles.container}>
+    // <ScreenWrapper>
+    //   </ScreenWrapper>
+    <View style={styles.container}>
+      <CustomView
+        radius={moderateScale(12)}
+        shadowStyle={{ marginVertical: verticalScale(65) }}
+      >
         <View style={styles.box}>
           <Text style={styles.title}>Enter verification</Text>
           <Text style={styles.subText}>
@@ -63,42 +70,44 @@ const VerificationScreen = () => {
 
           <View style={styles.codeContainer}>
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <TextInput
-                key={i}
-                ref={(ref) => {
-                  inputRefs.current[i] = ref;
-                }}
-                style={styles.codeBox}
-                maxLength={1}
-                keyboardType="number-pad"
-                value={otp[i]}
-                autoFocus={i === 0}
-                onChangeText={(val) => {
-                  const updated = [...otp];
-                  updated[i] = val;
-                  setOtp(updated);
+              <CustomView radius={moderateScale(8)}>
+                <TextInput
+                  key={i}
+                  ref={(ref) => {
+                    inputRefs.current[i] = ref;
+                  }}
+                  style={styles.codeBox}
+                  maxLength={1}
+                  keyboardType="number-pad"
+                  value={otp[i]}
+                  autoFocus={i === 0}
+                  onChangeText={(val) => {
+                    const updated = [...otp];
+                    updated[i] = val;
+                    setOtp(updated);
 
-                  // Auto-jump forward
-                  if (val && i < 5) {
-                    inputRefs.current[i + 1]?.focus();
-                  }
+                    // Auto-jump forward
+                    if (val && i < 5) {
+                      inputRefs.current[i + 1]?.focus();
+                    }
 
-                  // On last box, blur
-                  if (i === 5 && val) {
-                    inputRefs.current[i]?.blur();
-                  }
-                }}
-                onKeyPress={({ nativeEvent }) => {
-                  // Auto-jump backward
-                  if (
-                    nativeEvent.key === "Backspace" &&
-                    otp[i] === "" &&
-                    i > 0
-                  ) {
-                    inputRefs.current[i - 1]?.focus();
-                  }
-                }}
-              />
+                    // On last box, blur
+                    if (i === 5 && val) {
+                      inputRefs.current[i]?.blur();
+                    }
+                  }}
+                  onKeyPress={({ nativeEvent }) => {
+                    // Auto-jump backward
+                    if (
+                      nativeEvent.key === "Backspace" &&
+                      otp[i] === "" &&
+                      i > 0
+                    ) {
+                      inputRefs.current[i - 1]?.focus();
+                    }
+                  }}
+                />
+              </CustomView>
             ))}
           </View>
 
@@ -108,25 +117,40 @@ const VerificationScreen = () => {
           </Text>
 
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.cancelButton}>
-              <Text>Cancel</Text>
+            <TouchableOpacity onPress={() => {}}>
+              <CustomView
+                radius={moderateScale(50)}
+                boxStyle={{
+                  width: scale(96),
+                  height: verticalScale(36),
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text>Cancel</Text>
+              </CustomView>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.verifyButton}
-              onPress={() => verifyOtpCode(otp.join(""))}
-            >
-              <Text style={{ color: "#fff" }}>Verify</Text>
-            </TouchableOpacity>
+           
+              
+             <TouchableOpacity onPress={() => verifyOtpCode(otp.join(""))}>
+                          <LinearGradient
+                            style={styles.verifyButton}
+                            colors={["#027CC7", "#004DBD"]}
+                          >
+                            <Text style={{ color: "#fff" }}>Verify</Text>
+                          </LinearGradient>
+                        </TouchableOpacity>
           </View>
         </View>
-      </View>
-    </ScreenWrapper>
+      </CustomView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
+    backgroundColor: "#F0EFF8",
   },
   box: {
     width: scale(375),
@@ -134,16 +158,12 @@ const styles = StyleSheet.create({
     // marginHorizontal : scale(9),
     padding: moderateScale(20),
     //  backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(12),
     paddingHorizontal: moderateScale(17),
     paddingVertical: verticalScale(18),
-    borderWidth: 0.9,
-    borderColor: "#FFFFFF",
     // shadowColor: "#000",
     // shadowOpacity: 0.1,
     // shadowRadius: 5,
     // elevation: 100,
-    marginTop: verticalScale(65),
   },
   title: {
     fontSize: moderateScale(22),
@@ -167,12 +187,12 @@ const styles = StyleSheet.create({
   codeBox: {
     width: scale(48),
     height: scale(48),
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(8),
+    // backgroundColor: "#FFFFFF1A",
+    // borderRadius: moderateScale(8),
     textAlign: "center",
     fontSize: moderateScale(18),
-    borderWidth: 0.9,
-    borderColor: "#ffffff",
+    // borderWidth: 0.9,
+    // borderColor: "#ffffff",
   },
   resendText: {
     textAlign: "center",
@@ -188,26 +208,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     marginTop: verticalScale(15),
+    gap: scale(12),
   },
   cancelButton: {
     // flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+
     // paddingVertical: verticalScale(10),
     backgroundColor: "#D4D4D440",
     borderRadius: moderateScale(8),
     borderWidth: 1,
     borderColor: "#ffffffd8",
-    marginRight: scale(12),
-    width: scale(96),
-    height: verticalScale(36),
   },
   verifyButton: {
     alignItems: "center",
     justifyContent: "center",
     // paddingVertical: verticalScale(10),
     backgroundColor: "#027CC7",
-    borderRadius: moderateScale(8),
+    borderRadius: moderateScale(50),
     borderWidth: 1,
     borderColor: "#027CC7",
     // marginRight: scale(8),

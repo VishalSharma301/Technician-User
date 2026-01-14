@@ -11,13 +11,33 @@ import { Feather } from "@expo/vector-icons";
 import { scale, verticalScale, moderateScale } from "../../utils/scaling";
 import { LinearGradient } from "expo-linear-gradient";
 import CustomView from "./CustomView";
+import { useAddress } from "../../hooks/useAddress";
 
 type Props = {
   onBookNow?: () => void;
+  problemTitle?: string;
+  brand: string;
+  problemDuration: string;
+  acType: string;
+  qty: string | number;
+  price: number;
+  visitCharges: number;
+  additionalCharges: number;
 };
 
-export default function ReviewDetailCard({ onBookNow }: Props) {
+export default function ReviewDetailCard({
+  onBookNow,
+  problemTitle,
+  brand,
+  problemDuration,
+  acType,
+  qty,
+  price,
+  visitCharges,
+  additionalCharges,
+}: Props) {
   const [activeTab, setActiveTab] = useState<"basic" | "problem">("basic");
+  const { selectedAddress } = useAddress();
 
   return (
     <ImageBackground
@@ -27,7 +47,8 @@ export default function ReviewDetailCard({ onBookNow }: Props) {
           : require("../../../assets/ReviewBG2.png")
       }
       style={{
-        height: activeTab == "basic" ? verticalScale(360+34) : verticalScale(645),
+        height:
+          activeTab == "basic" ? verticalScale(360 + 34) : verticalScale(645),
         width: scale(350),
         marginLeft: scale(5),
         // alignItems: "center",
@@ -37,18 +58,21 @@ export default function ReviewDetailCard({ onBookNow }: Props) {
       }}
       resizeMode="stretch"
     >
-            <LinearGradient colors={["#006E7B", "#006E7B"]} style={styles.header}>
-          <Text style={styles.headerText}>🧾 Review Detail</Text>
-        </LinearGradient>
+      <LinearGradient colors={["#006E7B", "#006E7B"]} style={styles.header}>
+        <Text style={styles.headerText}>🧾 Review Detail</Text>
+      </LinearGradient>
 
       <View style={styles.outer}>
         {/* HEADER */}
-        
 
         {/* TAB SWITCH */}
         <CustomView
           height={verticalScale(38)}
-          shadowStyle={{width : scale(287), marginBottom: verticalScale(12), alignSelf : 'center' }}
+          shadowStyle={{
+            width: scale(287),
+            marginBottom: verticalScale(12),
+            alignSelf: "center",
+          }}
           radius={scale(16)}
           boxStyle={styles.tabWrap}
           width={scale(286)}
@@ -90,11 +114,16 @@ export default function ReviewDetailCard({ onBookNow }: Props) {
                 <Text style={styles.sectionTitle}>🔧 Basic Info</Text>
               </LinearGradient>
 
-              <InfoRow label="Zip code" value="250401" />
+              <InfoRow
+                label="Zip code"
+                value={selectedAddress.address.zipcode}
+              />
               <InfoRow label="Service Time" value="Service within 24 hour" />
-              <InfoRow label="Address" value="Sector 70, Mohali" />
+              <InfoRow
+                label="Address"
+                value={`${selectedAddress.address.street} ${selectedAddress.address.city}`}
+              />
             </View>
-            
           )}
 
           {/* PROBLEM INFO */}
@@ -108,12 +137,12 @@ export default function ReviewDetailCard({ onBookNow }: Props) {
                   //   end={{ x: 0, y: 1 }}
                   style={styles.sectionHeader}
                 >
-                  <Text style={styles.sectionTitle}>🔧 AC Not Cooling</Text>
+                  <Text style={styles.sectionTitle}>🔧 {problemTitle}</Text>
                 </LinearGradient>
 
-                <InfoRow label="Brand" value="Samsung | Split | 1.5Ton" />
-                <InfoRow label="Problem Duration" value="2–3 Days" />
-                <InfoRow label="AC Type" value="Window" />
+                <InfoRow label="Brand" value={brand} />
+                <InfoRow label="Problem Duration" value={problemDuration} />
+                <InfoRow label="AC Type" value={acType} />
               </View>
 
               <View style={styles.card}>
@@ -126,20 +155,18 @@ export default function ReviewDetailCard({ onBookNow }: Props) {
                 >
                   <Text style={styles.sectionTitle}>💰 Price</Text>
                 </LinearGradient>
-                <InfoRow label="Qty" value="02" />
-                <InfoRow label="Price" value="₹5025" />
-                <InfoRow label="Visit Charges" value="₹150" />
-                <InfoRow label="Additional Charges" value="₹200" />
+                <InfoRow label="Qty" value={qty} />
+                <InfoRow label="Price" value={`₹${price}`} />
+                <InfoRow label="Visit Charges" value={`₹${visitCharges}`} />
+                <InfoRow label="Additional Charges" value={`₹${additionalCharges}`} />
               </View>
-
-              
             </>
           )}
         </ScrollView>
-<View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Total Price</Text>
-                <Text style={styles.totalValue}>₹5475</Text>
-              </View>
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Total Price</Text>
+          <Text style={styles.totalValue}>₹{price + visitCharges + additionalCharges}</Text>
+        </View>
         {/* BOOK NOW */}
         <TouchableOpacity style={styles.bookBtn} onPress={onBookNow}>
           <Text style={styles.bookText}>Book Now</Text>
@@ -151,14 +178,14 @@ export default function ReviewDetailCard({ onBookNow }: Props) {
 
 /* ---------- SMALL REUSABLE ROW ---------- */
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value }: { label: string ; value: string | number }) {
   return (
     <CustomView
       radius={scale(25)}
       height={verticalScale(36)}
       boxStyle={styles.row}
       shadowStyle={{ marginBottom: verticalScale(6) }}
-      gradientColors={['#E2FAFD','#E2FAFD']}
+      gradientColors={["#E2FAFD", "#E2FAFD"]}
     >
       <Text style={styles.rowLabel}>{label}</Text>
       <Text style={styles.rowValue}>{value}</Text>
@@ -187,8 +214,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: verticalScale(-19),
     left: "31%",
-    height : verticalScale(40),
-    justifyContent : 'center'
+    height: verticalScale(40),
+    justifyContent: "center",
   },
   headerText: {
     color: "#fff",
@@ -201,7 +228,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderWidth: moderateScale(0.7),
     borderColor: "#fff",
-    overflow : 'hidden'
+    overflow: "hidden",
     // backgroundColor: "#fff",
     // borderRadius: scale(25),
     // padding: scale(4),
@@ -257,7 +284,7 @@ const styles = StyleSheet.create({
     // backgroundColor: "#EFFFFF",
     // borderRadius: scale(20),
     paddingLeft: scale(15),
-    paddingRight : scale(30),
+    paddingRight: scale(30),
     // paddingVertical: verticalScale(8),
     // marginBottom: verticalScale(6),
     flexDirection: "row",
@@ -301,7 +328,7 @@ const styles = StyleSheet.create({
     fontSize: moderateScale(18),
   },
   totalValue: {
-       color: "#fff",
+    color: "#fff",
     fontWeight: "700",
     fontSize: moderateScale(18),
   },
@@ -312,8 +339,8 @@ const styles = StyleSheet.create({
     borderRadius: scale(30),
     // paddingVertical: verticalScale(12),
     alignItems: "center",
-    height : verticalScale(36),
-    justifyContent : 'center'
+    height: verticalScale(36),
+    justifyContent: "center",
   },
   bookText: {
     color: "#fff",

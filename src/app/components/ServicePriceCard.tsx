@@ -31,8 +31,13 @@ export default function ServicePriceCard({
 }: Props) {
   const [qty, setQty] = useState(initialQty);
 
-  const totalPrice = qty * unitPrice;
-  const savedAmount = originalPrice - totalPrice;
+const discountedUnitPrice =
+  unitPrice * (1 - discountPercent / 100);
+
+const totalPrice = qty * discountedUnitPrice;
+
+const savedAmount =
+  qty * unitPrice - totalPrice;
 
   const increase = () => setQty((q) => q + 1);
   const decrease = () => setQty((q) => (q > 1 ? q - 1 : q));
@@ -103,7 +108,7 @@ export default function ServicePriceCard({
 
         <View style={styles.saveRow}>
           <Text style={styles.saveText}>You save ₹{savedAmount}</Text>
-          <Text style={styles.oldPrice}>₹{originalPrice}</Text>
+          <Text style={styles.oldPrice}>₹{originalPrice * qty}</Text>
         </View>
 
         {/* Feature List */}

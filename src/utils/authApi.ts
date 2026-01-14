@@ -83,9 +83,11 @@ export async function verifyOtp(phoneNumber: string, otp: string) {
 }
 
 export async function loginDirect() {
+  console.log(`${URL}/auth/user/login-without-otp?+919463786657`)
   try {
     const response = await axios.post(`${URL}/auth/user/login-without-otp`, {phoneNumber : "+919463786657"});
-
+    
+    
     if (response.status === 200) {
       console.log("✅ OTP verification successful:", response.data);
       const token = response.data.token.token;

@@ -56,7 +56,8 @@ const JobsScreen = () => {
   }
 
   return (
-    <ScreenWrapper>
+  
+      <View style={{ flex: 1 , backgroundColor : '#F0EFF8'}}>
       <JobForm
         visible={visible}
         jobId={selectedJobId}
@@ -90,7 +91,8 @@ const JobsScreen = () => {
           />
         )}
       </View>
-    </ScreenWrapper>
+    </View>
+   
   );
 };
 

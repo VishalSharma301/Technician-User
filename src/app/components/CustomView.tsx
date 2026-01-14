@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { ReactNode } from "react";
 import { ColorValue, StyleProp, View, ViewStyle } from "react-native";
-import { scale, verticalScale } from "../../utils/scaling";
+import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 
 interface CustomViewProps {
   shadowStyle?: StyleProp<ViewStyle>;
@@ -32,7 +32,8 @@ export default function CustomView({
   gradientStart = { x: 0, y: 0 },
   gradientEnd = { x: 1, y: 1 },
 }: CustomViewProps) {
-  const resolvedColors = isGradient
+  const resolvedColors: readonly [ColorValue, ColorValue, ...ColorValue[]] =
+  isGradient
     ? gradientColors ?? ["#F7F6FA", "#EDEBF4"]
     : ["#FFFFFF", "#FFFFFF"];
 
@@ -67,6 +68,8 @@ export default function CustomView({
               height,
               width,
               borderRadius: radius,
+              borderWidth : moderateScale(0.7),
+              borderColor : '#ffffff'
             },
             boxStyle,
           ]}

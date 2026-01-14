@@ -12,6 +12,7 @@ import {
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
+import CustomView from "./CustomView";
 
 interface AuthInputProps extends TextInputProps {
   iconName: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -33,19 +34,21 @@ const AuthInput: React.FC<AuthInputProps> = ({ iconName, title, ...props }) => {
         {" "}
         {title}
       </Text>}
+      <CustomView radius={moderateScale(12)}>
       <View style={styles.container}>
         <Icon
           name={iconName}
           size={moderateScale(18)}
-          color="#888"
+          color="#8D8D8D"
           style={styles.icon}
         />
         <TextInput
-          placeholderTextColor="#888"
+          placeholderTextColor="#00000080"
           style={styles.input}
           {...props}
         />
       </View>
+      </CustomView>
     </View>
   );
 };
@@ -54,16 +57,15 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF1A",
+    // backgroundColor: "#FFFFFF1A",
     // borderRadius: moderateScale(8),
     paddingHorizontal: moderateScale(10),
     // marginVertical: verticalScale(6),
 
     // paddingHorizontal: scale(12),
     height: verticalScale(47),
-    borderWidth: 0.9,
-    borderColor: "#ffffff",
-    borderRadius: moderateScale(12),
+    // borderWidth: 0.9,
+    // borderColor: "#ffffff",
   },
   icon: {
     marginRight: scale(8),

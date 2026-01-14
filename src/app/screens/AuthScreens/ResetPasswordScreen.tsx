@@ -14,6 +14,8 @@ import ScreenWrapper from "../../components/ScreenWrapper";
 import { moderateScale, scale, verticalScale } from "../../../utils/scaling";
 import AuthInput from "../../components/AuthInput";
 import {Ionicons} from "@expo/vector-icons";
+import CustomView from "../../components/CustomView";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function ResetPasswordScreen() {
   const [email, setEmail] = useState("");
@@ -30,7 +32,7 @@ export default function ResetPasswordScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <ScreenWrapper>
+     <View style={{ flex: 1, backgroundColor: "#F0EFF8" }}>
         {/* ---- BACK ICON ---- */}
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -50,6 +52,7 @@ export default function ResetPasswordScreen() {
           {!sent ? (
             <>
               {/* Forgot Password Card */}
+              <CustomView shadowStyle={{marginTop: verticalScale(70)}} radius={moderateScale(12)}>
               <View style={styles.card}>
                 <Text style={styles.title}>Forgot Password</Text>
                 <Text style={styles.subtitle}>
@@ -67,31 +70,41 @@ export default function ResetPasswordScreen() {
                   autoCapitalize="none"
                 />
 
-                <TouchableOpacity style={styles.button} onPress={handleSendLink}>
-                  <Text style={styles.buttonText}>Send Link</Text>
-                </TouchableOpacity>
+                <TouchableOpacity onPress={handleSendLink}>
+                                         <LinearGradient
+                                           style={styles.button}
+                                           colors={["#027CC7", "#004DBD"]}
+                                         >
+                                           <Text style={styles.buttonText}>Send Link</Text>
+                                         </LinearGradient>
+                                       </TouchableOpacity>
               </View>
+              </CustomView>
             </>
           ) : (
             <>
               {/* Reset Email Sent Card */}
+              <CustomView shadowStyle={{marginTop: verticalScale(70)}} radius={moderateScale(12)}>
               <View style={styles.card}>
                 <Text style={styles.title}>Reset email sent</Text>
                 <Text style={styles.subtitle}>
                   We have sent all required instructions details to your mail.
                 </Text>
 
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() => navigation.goBack()}
-                >
-                  <Text style={styles.buttonText}>Go to Login page</Text>
-                </TouchableOpacity>
+                 <TouchableOpacity onPress={() => navigation.goBack()}>
+                                         <LinearGradient
+                                           style={styles.button}
+                                           colors={["#027CC7", "#004DBD"]}
+                                         >
+                                            <Text style={styles.buttonText}>Go to Login page</Text>
+                                         </LinearGradient>
+                                       </TouchableOpacity>
               </View>
+              </CustomView>
             </>
           )}
         </ScrollView>
-      </ScreenWrapper>
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -113,13 +126,10 @@ const styles = StyleSheet.create({
 
   card: {
     width: "100%",
-    backgroundColor: "#FFFFFF1A",
     borderRadius: moderateScale(12),
     paddingHorizontal: moderateScale(28),
     paddingVertical: verticalScale(27),
-    borderWidth: 0.9,
-    borderColor: "#FFFFFF",
-    marginTop: verticalScale(70),
+    
   },
 
   title: {
@@ -141,7 +151,7 @@ const styles = StyleSheet.create({
 
   button: {
     backgroundColor: "#027CC7",
-    borderRadius: moderateScale(8),
+    borderRadius: moderateScale(500),
     alignItems: "center",
     justifyContent: "center",
     marginVertical: verticalScale(10),

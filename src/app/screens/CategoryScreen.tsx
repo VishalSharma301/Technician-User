@@ -20,6 +20,7 @@ import BottomSheet from "../components/BottomSheet";
 import BookingBottomSheet from "../components/BookingLogic";
 import { ServiceData } from "../../constants/types";
 import BadgeCard from "../components/BadgeCard";
+import CustomView from "../components/CustomView";
 
 export default function CategoryScreen() {
   const { services } = useServices();
@@ -35,9 +36,9 @@ export default function CategoryScreen() {
     }
 
   return (
-    <ScreenWrapper >
+    <View style={{ flex: 1, backgroundColor: "#F0EFF8" }}>
       <ScrollView style={styles.container}>
-      <Header />
+      {/* <Header /> */}
       <Text
         style={{
           fontSize: moderateScale(16),
@@ -50,6 +51,7 @@ export default function CategoryScreen() {
       <View style={{ position: "relative" }}>
         <View style={styles.gridContainer}>
           {services.length === 0 ? (
+            
             <View
               style={{
                 alignItems: "center",
@@ -74,27 +76,29 @@ export default function CategoryScreen() {
             </View>
           ) : (
             displayedServices.map((service) => (
+              <CustomView radius={scale(16.5)} shadowStyle={{marginBottom : 8}} key={service._id}>
               <View
                 style={{
-                  width: scale(71),
-                  marginBottom: verticalScale(17),
-                  backgroundColor: "#FFFFFF1A",
+                  width: scale(119.5),
+                  // marginBottom: verticalScale(17),
+                  // backgroundColor: "#FFFFFF1A",
                 }}
                 key={service._id}
               >
                 <TouchableOpacity  onPress={() => selectBrand(service)}
                       onLongPress={() => setActiveTooltipId(service._id)}
                       onPressOut={() => setActiveTooltipId(null)}
-                      delayLongPress={300}>
+                      delayLongPress={300}
+                      style={{ alignItems: "center", justifyContent: "center" }}>
                 <View
                   key={service._id}
                   style={{
                     width: scale(71),
                     height: scale(67),
-                    backgroundColor: "#FFFFFF1A",
+                    // backgroundColor: "#FFFFFF1A",
                     borderRadius: moderateScale(9),
-                    borderWidth: 0.9,
-                    borderColor: "#ffffff",
+                    // borderWidth: 0.9,
+                    // borderColor: "#ffffff",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
@@ -119,7 +123,7 @@ export default function CategoryScreen() {
                   style={{
                     fontWeight: "400",
                     fontSize: moderateScale(14),
-                    marginHorizontal: scale(4),
+                    marginHorizontal: scale(16),
                     marginTop: verticalScale(5),
                   }}
                 >
@@ -127,6 +131,7 @@ export default function CategoryScreen() {
                 </Text>
                 </TouchableOpacity>
               </View>
+              </CustomView>
             ))
           )}
         </View>
@@ -161,7 +166,7 @@ export default function CategoryScreen() {
           />
         )}
       </BottomSheet>
-    </ScreenWrapper>
+    </View>
   );
 }
 // ˅
@@ -177,9 +182,9 @@ const styles = StyleSheet.create({
     gap: scale(3),
     height: "auto",
     width: scale(375),
-    borderWidth: 1,
+    // borderWidth: 1,
     borderColor: "#fff",
-    paddingHorizontal: scale(19),
+    // paddingHorizontal: scale(19),
     paddingTop: verticalScale(20),
     borderRadius: moderateScale(12),
     marginTop: verticalScale(14),

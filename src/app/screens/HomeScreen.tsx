@@ -68,6 +68,12 @@ export const HIW_ICONS: Record<string, any> = {
   3: require("../../../assets/HIW/3.png"),
   4: require("../../../assets/HIW/4.png"),
 };
+export const BAR_ICONS: Record<string, any> = {
+  0: require("../../../assets/BarIcons/0.png"),
+  1: require("../../../assets/BarIcons/1.png"),
+  2: require("../../../assets/BarIcons/2.png"),
+  3: require("../../../assets/BarIcons/3.png"),
+};
 
 const HomeScreen = () => {
   const { setIsLoading } = useAuth();
@@ -313,30 +319,50 @@ const HomeScreen = () => {
             radius={scale(14.84)}
             width={scale(370)}
             boxStyle={styles.chipsRow}
+            shadowStyle={{ width: scale(371) }}
           >
             {categories.map((item, index) => {
-              const chipLabels = ["Installation", "Service", "Repair", "Maintenance"];
+              const chipLabels = [
+                "Installation",
+                "Service",
+                "Repair",
+                "Maintenance",
+              ];
 
               return (
-                
-                  <View
-                  key={index}
-                    style={[
-                      styles.chip,
-                      selectedCategory === item && {
-                        backgroundColor: "#DCECFE",
-                      },
-                    ]}
+                <TouchableOpacity
+                 key={index}
+                    style={{
+                      // borderWidth: 1,
+                      // flex: 1,
+                      
+                    }}
+                    onPress={() => setSelectedCategory(item)}
                   >
-                    <TouchableOpacity
-                  
-                  onPress={() => setSelectedCategory(item)}
+                <View
+                 
+                  style={[
+                    styles.chip,
+                    selectedCategory === item && {
+                      backgroundColor: "#DCECFE",
+                    },
+                    index == 3 && { borderRightWidth: 0 },
+                  ]}
                 >
+                  
+                    <Image
+                      source={BAR_ICONS[index] || BAR_ICONS["0"]}
+                      style={{
+                        width: scale(22),
+                        height: verticalScale(22),
+                        resizeMode: "contain",
+                      }}
+                    />
                     <Text numberOfLines={1} style={styles.chipText}>
-                        {chipLabels[index] ?? item}
+                      {chipLabels[index] ?? item}
                     </Text>
-                </TouchableOpacity>
-                  </View>
+                </View>
+                  </TouchableOpacity>
               );
             })}
           </CustomView>
@@ -387,7 +413,8 @@ const HomeScreen = () => {
 
         {/* HOW IT WORKS */}
 
-        <CustomView
+      {  selectedCategory &&
+          servicesByCategory?.[selectedCategory]?.length < 7 && (<CustomView
           height={verticalScale(132.72)}
           radius={scale(12)}
           width={scale(374.68)}
@@ -406,13 +433,15 @@ const HomeScreen = () => {
             height={verticalScale(91.71)}
             width={scale(355.19)}
             radius={scale(12)}
+            shadowStyle={{ overflow: "visible" }}
             boxStyle={[
               styles.howItWorks,
 
               {
                 flexDirection: "row",
-                justifyContent: "space-between",
-                paddingHorizontal: scale(9.16),
+                // justifyContent: "space-between",
+                // paddingHorizontal: scale(9.16),
+                overflow: "visible",
               },
             ]}
           >
@@ -442,6 +471,35 @@ const HomeScreen = () => {
                 iconName: "4",
               },
             ].map((item, index) => (
+              <View key={index} style={{ borderWidth: 0, padding: scale(4) }}>
+                <View
+                  style={{
+                    width: scale(20.24),
+                    height: verticalScale(12.67),
+                    backgroundColor: item.color,
+                    borderRadius: moderateScale(3.86),
+                    borderWidth: moderateScale(1),
+                    borderColor: item.secColor,
+                    position: "absolute",
+                    top: verticalScale(3),
+                    left: scale(14.12),
+                    justifyContent: "center",
+                    alignItems: "center",
+                    zIndex: 99999,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: moderateScale(7.44),
+                      fontWeight: 600,
+                      alignSelf: "center",
+                      color: "#fff",
+                      lineHeight: verticalScale(10),
+                    }}
+                  >
+                    {index + 1}
+                  </Text>
+                </View>
               <CustomView
                 height={verticalScale(73.47)}
                 width={scale(78.75)}
@@ -453,10 +511,11 @@ const HomeScreen = () => {
                     borderColor: "#fff",
                     justifyContent: "center",
                     paddingHorizontal: scale(2.88),
-                    paddingVertical: verticalScale(2.88),
+                    paddingVertical: verticalScale(2.8),
                   },
                 ]}
               >
+                
                 <View
                   style={{
                     borderWidth: moderateScale(0.9),
@@ -467,33 +526,6 @@ const HomeScreen = () => {
                     justifyContent: "center",
                   }}
                 >
-                  <View
-                    style={{
-                      width: scale(20.24),
-                      height: verticalScale(12.67),
-                      backgroundColor: item.color,
-                      borderRadius: moderateScale(3.86),
-                      borderWidth: moderateScale(1),
-                      borderColor: item.secColor,
-                      position: "absolute",
-                      top: verticalScale(-7),
-                      left: scale(10.12),
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: moderateScale(7.44),
-                        fontWeight: 600,
-                        alignSelf: "center",
-                        color: "#fff",
-                        lineHeight: verticalScale(10),
-                      }}
-                    >
-                      {index + 1}
-                    </Text>
-                  </View>
                   <Image
                     source={HIW_ICONS[item.iconName]}
                     style={[
@@ -511,9 +543,10 @@ const HomeScreen = () => {
                   </Text>
                 </View>
               </CustomView>
+              </View>
             ))}
           </CustomView>
-        </CustomView>
+        </CustomView>)}
         {/* SERVICE OF THE WEEK */}
         <CustomView
           width={scale(375)}
@@ -772,11 +805,11 @@ const styles = StyleSheet.create({
 
   topCategoryRow: {
     flexDirection: "row",
-    gap: scale(7),
+    // gap: scale(6),
     paddingVertical: verticalScale(7.85),
-    paddingHorizontal: scale(8.96),
+    // paddingHorizontal: scale(8.96),
     alignItems: "center",
-    justifyContent: "space-around",
+    justifyContent: "space-evenly",
     borderWidth: moderateScale(0.7),
     borderColor: "#fff",
 
@@ -807,7 +840,7 @@ const styles = StyleSheet.create({
   chipsRow: {
     flexDirection: "row",
     // justifyContent: "space-between",
-    // gap: scale(40),
+    // gap: scale(1),
     // marginVertical: verticalScale(10),
 
     overflow: "hidden",
@@ -816,26 +849,24 @@ const styles = StyleSheet.create({
   },
 
   chip: {
-    flex : 1,
-// borderWidth : 1,
-    // backgroundColor: "#ea1313ff",
-    // paddingVertical: verticalScale(6),
-    // paddingHorizontal: scale(14),
-    // borderRadius: scale(20),
-    // minWidth: scale(80),
-    // maxWidth: scale(98),
+    // flex: 1,
+    
     height: "100%",
     // width : '100%',
     // alignItems: "center",
     justifyContent: "center",
     borderRightWidth: 1,
     borderColor: "#BCBBC580",
-    paddingHorizontal: scale(5),
+    // paddingHorizontal: scale(8),
+    flexDirection: "row",
+                      alignItems: "center",
+                      paddingHorizontal: scale(10),
+                      gap: scale(3),
   },
 
   chipText: {
-    fontSize: moderateScale(12),
-    paddingLeft: scale(4),
+    fontSize: moderateScale(11),
+    // paddingLeft: scale(4),
     // width: "100%",
     textAlign: "center",
     // borderWidth : 1,

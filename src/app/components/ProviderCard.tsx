@@ -12,12 +12,23 @@ import { scale, verticalScale, moderateScale } from "../../utils/scaling";
 import CustomView from "./CustomView";
 import { useServices } from "../../hooks/useServices";
 import { iconMap, IconName } from "../../utils/iconMap";
+import { ConversationBookingResponse } from "../../utils/bookingApi";
+import { useAddress } from "../../hooks/useAddress";
 
-export default function ProviderCard() {
+export default function ProviderCard({res}: {res :ConversationBookingResponse}) {
   const [activeTab, setActiveTab] = useState<"provider" | "customer">(
     "provider"
   );
   const { quickPickServices } = useServices();
+  const {selectedAddress} = useAddress()
+
+    const name = res.data.provider?.companyName || "Company Name";
+
+const initials = name
+  .split(" ")
+  .filter(Boolean)
+  .map(word => word[0].toUpperCase())
+  .join("");
 
   return (
     // <CustomView
@@ -32,14 +43,14 @@ export default function ProviderCard() {
       <View style={styles.providerCard}>
         <View style={styles.providerHeader}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>VS</Text>
+            <Text style={styles.avatarText}>{initials}</Text>
           </View>
 
           <View style={{ flex: 1 }}>
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
             >
-              <Text style={styles.providerName}>Vishal Enterprises</Text>
+              <Text style={styles.providerName}>{name}</Text>
               <Feather name="check-circle" size={14} color="#1DA1F2" />
             </View>
             <Text style={styles.location}>📍 Mohali India</Text>
@@ -81,7 +92,7 @@ export default function ProviderCard() {
         >
           <StatItem label="Team Size" value="15" />
           <StatItem label="Job Done" value="1200" />
-          <StatItem label="Rating" value="4.9/5" />
+          <StatItem label="Rating" value={`${res.data.provider?.rating}/5`} />
         </CustomView>
 
         <CustomView
@@ -138,7 +149,7 @@ export default function ProviderCard() {
       {activeTab === "customer" && (
         <>
           <Section title="Basic Detail">
-            <InfoRow icon="map-pin" label="Zip code" value="250401" />
+            <InfoRow icon="map-pin" label="Zip code" value={selectedAddress?.address.zipcode} />
             <InfoRow
               icon="clock"
               label="Service Time"
@@ -147,7 +158,7 @@ export default function ProviderCard() {
             <InfoRow
               icon="home"
               label="Service Time"
-              value="Sector 70, Mohali"
+              value={selectedAddress.address.street + " "+ selectedAddress.address.city}
             />
           </Section>
         </>
@@ -157,7 +168,7 @@ export default function ProviderCard() {
       {activeTab === "provider" && (
         <>
           <Section title="Basic Detail">
-            <InfoRow icon="map-pin" label="Zip code" value="250401" />
+            <InfoRow icon="map-pin" label="Zip code" value={selectedAddress?.address.zipcode} />
             <InfoRow
               icon="clock"
               label="Service Time"
@@ -166,7 +177,7 @@ export default function ProviderCard() {
             <InfoRow
               icon="home"
               label="Service Time"
-              value="Sector 70, Mohali"
+              value={selectedAddress.address.street + " "+ selectedAddress.address.city}
             />
           </Section>
           <Section title="Service Offered">
