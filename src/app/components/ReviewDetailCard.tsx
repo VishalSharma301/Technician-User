@@ -6,12 +6,14 @@ import {
   StyleSheet,
   ScrollView,
   ImageBackground,
+  Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { scale, verticalScale, moderateScale } from "../../utils/scaling";
 import { LinearGradient } from "expo-linear-gradient";
 import CustomView from "./CustomView";
 import { useAddress } from "../../hooks/useAddress";
+import { iconMap, IconName } from "../../utils/iconMap";
 
 type Props = {
   onBookNow?: () => void;
@@ -48,7 +50,7 @@ export default function ReviewDetailCard({
       }
       style={{
         height:
-          activeTab == "basic" ? verticalScale(360 + 34) : verticalScale(645),
+          activeTab == "basic" ? verticalScale(360 + 34) : verticalScale(645+80),
         width: scale(350),
         marginLeft: scale(5),
         // alignItems: "center",
@@ -59,7 +61,8 @@ export default function ReviewDetailCard({
       resizeMode="stretch"
     >
       <LinearGradient colors={["#006E7B", "#006E7B"]} style={styles.header}>
-        <Text style={styles.headerText}>🧾 Review Detail</Text>
+        <Image source={iconMap['review']} style={{width : scale(38), height: scale(30), resizeMode : 'center'}}/>
+        <Text style={styles.headerText}> Review Detail</Text>
       </LinearGradient>
 
       <View style={styles.outer}>
@@ -81,7 +84,7 @@ export default function ReviewDetailCard({
             style={[styles.tabBtn, activeTab === "basic" && styles.activeTab]}
             onPress={() => setActiveTab("basic")}
           >
-            <Feather name="tool" size={14} color="#0B7C86" />
+             <Image source={iconMap['setting']} style={{width : scale(19), height: scale(19), resizeMode : 'center'}}/>
             <Text style={styles.tabText}>Basic Info</Text>
           </TouchableOpacity>
 
@@ -89,7 +92,7 @@ export default function ReviewDetailCard({
             style={[styles.tabBtn, activeTab === "problem" && styles.activeTab]}
             onPress={() => setActiveTab("problem")}
           >
-            <Feather name="alert-circle" size={14} color="#0B7C86" />
+             <Image source={iconMap['drill']} style={{width : scale(19), height: scale(19), resizeMode : 'center'}}/>
             <Text style={styles.tabText}>Problem info</Text>
           </TouchableOpacity>
         </CustomView>
@@ -111,15 +114,18 @@ export default function ReviewDetailCard({
                 //   end={{ x: 0, y: 1 }}
                 style={styles.sectionHeader}
               >
-                <Text style={styles.sectionTitle}>🔧 Basic Info</Text>
+                 <Image source={iconMap['setting']} style={{width : scale(19), height: scale(19), resizeMode : 'center'}}/>
+                <Text style={styles.sectionTitle}> Basic Info</Text>
               </LinearGradient>
 
               <InfoRow
+              icon="zip"
                 label="Zip code"
                 value={selectedAddress.address.zipcode}
               />
-              <InfoRow label="Service Time" value="Service within 24 hour" />
+              <InfoRow icon="service_time" label="Service Time" value="Service within 24 hour" />
               <InfoRow
+              icon="addNew"
                 label="Address"
                 value={`${selectedAddress.address.street} ${selectedAddress.address.city}`}
               />
@@ -137,12 +143,15 @@ export default function ReviewDetailCard({
                   //   end={{ x: 0, y: 1 }}
                   style={styles.sectionHeader}
                 >
-                  <Text style={styles.sectionTitle}>🔧 {problemTitle}</Text>
+                   <Image source={iconMap['setting']} style={{width : scale(19), height: scale(19), resizeMode : 'center'}}/>
+                  <Text style={styles.sectionTitle}> {problemTitle}</Text>
                 </LinearGradient>
 
-                <InfoRow label="Brand" value={brand} />
-                <InfoRow label="Problem Duration" value={problemDuration} />
-                <InfoRow label="AC Type" value={acType} />
+                <InfoRow icon="service_time" label="Brand" value={brand} />
+                <InfoRow icon="service_time" label="Problem Duration" value={problemDuration} />
+                <InfoRow icon="service_time" label="AC Type" value={acType} />
+                <InfoRow icon="service_time" label="AC Type" value={acType} />
+                <InfoRow icon="service_time" label="AC Type" value={acType} />
               </View>
 
               <View style={styles.card}>
@@ -153,12 +162,13 @@ export default function ReviewDetailCard({
                   //   end={{ x: 0, y: 1 }}
                   style={styles.sectionHeader}
                 >
-                  <Text style={styles.sectionTitle}>💰 Price</Text>
+                   <Image source={iconMap['setting']} style={{width : scale(19), height: scale(19), resizeMode : 'center'}}/>
+                  <Text style={styles.sectionTitle}> Price</Text>
                 </LinearGradient>
-                <InfoRow label="Qty" value={qty} />
-                <InfoRow label="Price" value={`₹${price}`} />
-                <InfoRow label="Visit Charges" value={`₹${visitCharges}`} />
-                <InfoRow label="Additional Charges" value={`₹${additionalCharges}`} />
+                <InfoRow icon="other" label="Qty" value={qty} />
+                <InfoRow icon="price" label="Price" value={`₹${price}`} />
+                <InfoRow icon="visitCharge" label="Visit Charges" value={`₹${visitCharges}`} />
+                <InfoRow icon="AddCharge" label="Additional Charges" value={`₹${additionalCharges}`} />
               </View>
             </>
           )}
@@ -178,7 +188,7 @@ export default function ReviewDetailCard({
 
 /* ---------- SMALL REUSABLE ROW ---------- */
 
-function InfoRow({ label, value }: { label: string ; value: string | number }) {
+function InfoRow({ label, value , icon}: { label: string ; value: string | number, icon : IconName }) {
   return (
     <CustomView
       radius={scale(25)}
@@ -187,7 +197,10 @@ function InfoRow({ label, value }: { label: string ; value: string | number }) {
       shadowStyle={{ marginBottom: verticalScale(6) }}
       gradientColors={["#E2FAFD", "#E2FAFD"]}
     >
+      <View style={{flexDirection : 'row', alignItems : 'center', gap : scale(1)}}>
+      <Image source={iconMap[icon]} style={{width : scale(23), height: scale(18), resizeMode : 'center'}}/>
       <Text style={styles.rowLabel}>{label}</Text>
+      </View>
       <Text style={styles.rowValue}>{value}</Text>
     </CustomView>
   );
@@ -216,6 +229,8 @@ const styles = StyleSheet.create({
     left: "31%",
     height: verticalScale(40),
     justifyContent: "center",
+    alignItems : 'center',
+    flexDirection : 'row'
   },
   headerText: {
     color: "#fff",
@@ -272,6 +287,8 @@ const styles = StyleSheet.create({
     borderRadius: scale(45),
     marginBottom: verticalScale(8),
     height: verticalScale(37.5),
+    flexDirection : 'row',
+    alignItems : 'center',
   },
   sectionTitle: {
     color: "#fff",

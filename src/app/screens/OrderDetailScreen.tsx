@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,16 +11,18 @@ import {
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 import ScreenWrapper from "../components/ScreenWrapper";
 import Header from "../components/Header";
-import { RouteProp, useRoute } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { OrderStackParamList } from "../../constants/navigation";
 import { ServiceRequest } from "../../constants/serviceRequestTypes";
+import CustomView from "../components/CustomView";
+import {Ionicons as Icon} from "@expo/vector-icons"
 
 type NavigationProp = RouteProp<OrderStackParamList, "OrderDetailsScreen">;
 
 const OrderDetailsScreen: React.FC = () => {
   const route = useRoute<NavigationProp>();
   const item: ServiceRequest = route.params?.item;
-
+  const navigation = useNavigation()
   // -----------------------------
   // 🔥 Dynamic Timeline Logic
   // -----------------------------
@@ -110,12 +112,15 @@ const OrderDetailsScreen: React.FC = () => {
   ];
 
   return (
-    <ScreenWrapper>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Header />
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <TouchableOpacity onPress={()=>navigation.goBack()} style={{marginBottom : verticalScale(16)}}>
 
-        {/* Tabs */}
-        {/* <View style={styles.tabContainer}>
+      <Icon name="arrow-back" size={moderateScale(22)} color={"#717A7E"} />
+      </TouchableOpacity>
+      {/* <Header /> */}
+
+      {/* Tabs */}
+      {/* <View style={styles.tabContainer}>
           {statusTabs.map((tab, index) => (
             <TouchableOpacity
               key={index}
@@ -154,19 +159,20 @@ const OrderDetailsScreen: React.FC = () => {
           ))}
         </View> */}
 
-        {/* Order Info */}
+      {/* Order Info */}
+      <CustomView radius={scale(16.59)}>
         <View
           style={{
-            borderWidth: 1,
-            borderRadius: moderateScale(8),
-            borderColor: "#fff",
+            // borderWidth: 1,
+            // borderRadius: moderateScale(8),
+            // borderColor: "#fff",
             marginBottom: 200,
-            backgroundColor: "#FFFFFF1A",
-            marginTop: verticalScale(12),
+            // backgroundColor: "#FFFFFF1A",
+            // marginTop: verticalScale(12),
           }}
         >
           <View style={styles.card}>
-            <View style={styles.orderHeader}>
+            {/* <View style={styles.orderHeader}>
               <ImageBackground
                 source={require("../../../assets/iconBG.png")}
                 style={styles.iconCircle}
@@ -192,21 +198,57 @@ const OrderDetailsScreen: React.FC = () => {
                   <Text style={styles.price}>₹{item.finalPrice}</Text>
                 </View>
               </View>
-            </View>
+            </View> */}
 
-            <View style={styles.infoRow}>
-              <View>
-                <Text style={styles.label}>{item.service.name}</Text>
-                <Text style={styles.subLabel}>Type Of Service</Text>
+            {/* <CustomView
+            radius={scale(16.13)}
+            shadowStyle={{ marginTop: verticalScale(10) }}
+          >
+            <View>
+              <View style={styles.boxRow}>
+                <Text style={styles.label}>Brand</Text>
+                <Text style={[styles.label,]}>
+                 XXX
+                </Text>
               </View>
-              <View>
-                <Text style={styles.label}>{item.provider?.name}</Text>
-                <Text style={styles.subLabel}>Service Provider</Text>
+              <View
+                style={[
+                  styles.boxRow,
+                  {
+                    borderTopWidth: moderateScale(1),
+                    borderBottomWidth: moderateScale(1),
+                    borderColor: "#E0E0E0",
+                  },
+                ]}
+              >
+                <Text style={styles.label}>Problem Duration</Text>
+                <Text style={styles.label}>2-3 Days</Text>
+              </View>
+              <View style={styles.boxRow}>
+                <Text style={styles.label}>Ac Type</Text>
+                <Text style={styles.label}>Window</Text>
               </View>
             </View>
+          </CustomView> */}
+            <InfoCard />
 
+            <CustomView
+              radius={scale(16.59)}
+              shadowStyle={{ marginTop: verticalScale(10) }}
+            >
+              <View style={styles.infoRow}>
+                <View>
+                  <Text style={styles.label}>{item.service.name}</Text>
+                  <Text style={styles.subLabel}>Type Of Service</Text>
+                </View>
+                <View>
+                  <Text style={styles.label}>{item.provider?.name}</Text>
+                  <Text style={styles.subLabel}>Service Provider</Text>
+                </View>
+              </View>
+            </CustomView>
             {/* Progress Bar */}
-            <View
+            {/* <View
               style={{
                 borderWidth: 1,
                 borderColor: "#fff",
@@ -284,7 +326,7 @@ const OrderDetailsScreen: React.FC = () => {
                   </View>
                 ))}
               </View>
-            </View>
+            </View> */}
           </View>
 
           {/* ------------------------- */}
@@ -294,6 +336,7 @@ const OrderDetailsScreen: React.FC = () => {
             {timeline.map((step, index) => (
               <View key={index} style={styles.timelineItem}>
                 {/* LEFT TIME BOX */}
+                <CustomView radius={scale(4)} >
                 <View
                   style={[styles.timeColumn, !step.active && { opacity: 0.4 }]}
                 >
@@ -312,7 +355,7 @@ const OrderDetailsScreen: React.FC = () => {
                     {step.time}
                   </Text>
                 </View>
-
+</CustomView>
                 {/* MIDDLE ARROW */}
                 <View style={styles.arrowColumn}>
                   <View
@@ -384,32 +427,154 @@ const OrderDetailsScreen: React.FC = () => {
             ))}
           </View>
         </View>
-      </ScrollView>
-    </ScreenWrapper>
+      </CustomView>
+    </ScrollView>
   );
 };
+
+type TabType = "problem" | "basic" | "price";
+
+function InfoCard() {
+  const [tab, setTab] = useState<TabType>("problem");
+
+  const renderContent = () => {
+    switch (tab) {
+      case "problem":
+        return (
+          <>
+            <Row label="Brand" value="Samsung | Split | 1.5 Ton" icon={require('../../../assets/clock.png')} />
+            <Divider />
+            <Row icon={require('../../../assets/clock.png')} label="Problem Duration" value="2–3 Days " />
+            <Divider />
+            <Row icon={require('../../../assets/clock.png')} label="AC Type" value="Window"  />
+          </>
+        );
+
+      case "basic":
+        return (
+          <>
+            <Row icon={require('../../../assets/loc.png')} label="Zip code" value="250401"  />
+            <Divider />
+            <Row icon={require('../../../assets/clock.png')} label="Service Time" value="Service within  24 hour" />
+            <Divider />
+            <Row icon={require('../../../assets/home.png')} label="Address" value="Sector 70,  Mohali" />
+          </>
+        );
+
+      case "price":
+        return (
+          <>
+            <Row icon={require('../../../assets/clock.png')} label="Qty" value="02" /> 
+            <Divider />
+            <Row icon={require('../../../assets/clock.png')} label="Price" value="₹5025" /> 
+            <Divider />
+            <Row icon={require('../../../assets/clock.png')} label="Visit Charges" value="₹150"  />
+            <Divider />
+            <Row icon={require('../../../assets/clock.png')} label="Additional Charges" value="₹200"  />
+          </>
+        );
+    }
+  };
+
+  return (
+    <>
+      {/* Tabs */}
+      <CustomView radius={scale(24)} boxStyle={{ overflow: "hidden" }}>
+        <View style={styles.tabContainer}>
+          <TabButton
+            title="Problem info"
+            icon={require("../../../assets/drill.png")}
+            active={tab === "problem"}
+            onPress={() => setTab("problem")}
+          />
+          <TabButton
+            title="Basic Info"
+            icon={require("../../../assets/setting.png")}
+            active={tab === "basic"}
+            onPress={() => setTab("basic")}
+          />
+          <TabButton
+            title="Price"
+            icon={require("../../../assets/setting.png")}
+            active={tab === "price"}
+            onPress={() => setTab("price")}
+          />
+        </View>
+      </CustomView>
+
+      {/* Card Content */}
+      <CustomView
+        radius={scale(16)}
+        shadowStyle={{ marginTop: verticalScale(10) }}
+      >
+        <View style={styles.content}>{renderContent()}</View>
+      </CustomView>
+    </>
+  );
+}
+
+const TabButton = ({ title, icon, active, onPress }: any) => {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={[styles.tabButton, active && styles.activeTabButton]}
+    >
+      <Image source={icon} style={styles.tabIcon} />
+      <Text style={[styles.tabText, active && styles.activeTabText]}>
+        {title}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
+const Row = ({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon: any;
+}) => (
+  <View style={styles.row}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: scale(6) }}>
+      <Image source={icon} style={styles.tabIcon} />
+      <Text style={styles.label}>{label}</Text>
+    </View>
+    <Text style={styles.value}>{value}</Text>
+  </View>
+);
+
+const Divider = () => <View style={styles.divider} />;
 
 export default OrderDetailsScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF1A",
+    backgroundColor: "#F0EFF8",
     padding: scale(16),
+  },
+  boxRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: verticalScale(12),
+    paddingHorizontal: scale(12.62),
   },
   tabContainer: {
     flexDirection: "row",
     // justifyContent: "space-between",
-    marginBottom: verticalScale(12),
-    marginTop: verticalScale(16),
-    gap: scale(4),
+    // marginBottom: verticalScale(12),
+    // marginTop: verticalScale(16),
+    // gap: scale(4),
+    // borderWidth : 1
   },
   tabButton: {
-    // flex: 1,
+    flex: 1,
     flexDirection: "row",
     // marginHorizontal: scale(3),
-    borderRadius: moderateScale(30),
-    borderWidth: 1,
+    // borderRadius: moderateScale(30),
+    // borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     height: verticalScale(40.66),
@@ -426,13 +591,13 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   card: {
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(14),
+    // backgroundColor: "#FFFFFF1A",
+    // borderRadius: moderateScale(14),
     padding: scale(14),
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 4 },
+    // shadowOpacity: 0.05,
+    // shadowRadius: 6,
     // elevation: 2,
   },
   orderHeader: {
@@ -481,13 +646,13 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: verticalScale(12),
-    borderWidth: 1,
-    borderColor: "#fff",
-    backgroundColor: "#FFFFFF1A",
+    // marginTop: verticalScale(12),
+    // borderWidth: 1,
+    // borderColor: "#fff",
+    // backgroundColor: "#FFFFFF1A",
     paddingVertical: verticalScale(14),
     paddingHorizontal: scale(21),
-    borderRadius: moderateScale(12),
+    // borderRadius: moderateScale(12),
   },
   label: {
     fontSize: moderateScale(12.5),
@@ -575,13 +740,13 @@ const styles = StyleSheet.create({
   timeColumn: {
     width: scale(121),
     height: verticalScale(56),
-    borderWidth: 1,
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(12),
-    borderColor: "#fff",
+    // borderWidth: 1,
+    // backgroundColor: "#FFFFFF1A",
+    // borderRadius: moderateScale(12),
+    // borderColor: "#fff",
     justifyContent: "center",
     gap: verticalScale(4),
-    alignItems: "flex-end",
+    alignItems: "center",
     paddingRight: scale(25),
   },
   timeText: {
@@ -645,5 +810,65 @@ const styles = StyleSheet.create({
     color: "#D32F2F",
     fontWeight: "600",
     fontSize: moderateScale(10.5),
+  },
+  // tabContainer: {
+  //   flexDirection: "row",
+  //   height: verticalScale(38),
+  //   borderWidth: 1,
+  //   borderColor: "#E0E0E0",
+  //   borderRadius: scale(12),
+  //   overflow: "hidden",
+  // },
+
+  // tabButton: {
+  //   flex: 1,
+  //   flexDirection: "row",
+  //   alignItems: "center",
+  //   justifyContent: "center",
+  //   gap: scale(4),
+  // },
+
+  activeTabButton: {
+    backgroundColor: "#EAF7FF",
+    // borderWidth: 1,
+    // borderColor: "#2F80ED",
+    // borderRadius: scale(10),
+    // margin: scale(2),
+  },
+
+  tabIcon: {
+    width: scale(16),
+    height: scale(16),
+    resizeMode: "contain",
+  },
+
+  activeTabText: {
+    color: "#2F80ED",
+    fontWeight: "600",
+  },
+
+  content: {
+    // paddingVertical: verticalScale(12),
+  },
+
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: verticalScale(12),
+    paddingHorizontal: scale(14),
+  },
+
+  value: {
+    fontSize: moderateScale(13),
+    color: "#111",
+    fontWeight: "500",
+    maxWidth: "55%",
+    textAlign: "right",
+  },
+
+  divider: {
+    height: moderateScale(1),
+    backgroundColor: "#E8E6EE",
+    // marginHorizontal: scale(14),
   },
 });

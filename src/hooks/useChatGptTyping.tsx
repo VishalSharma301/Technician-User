@@ -79,3 +79,52 @@ export function useChatGPTTyping(disableTyping: boolean = false) {
     clearAllTimers, // optional but useful
   };
 }
+
+
+
+
+
+// const pushBotMessage = (
+//     text: string,
+//     stepIndex: number,
+//     options?: StepOption[]
+//   ) => {
+//     const id = Date.now().toString();
+
+//     setIsBotTyping(true);
+
+//     showTypingIndicator(() => {
+//       setMessages((p) => [
+//         ...p,
+//         {
+//           id: `${id}-dots`,
+//           from: "bot",
+//           text: "__DOTS__",
+//           stepIndex,
+//           time: time(),
+//         },
+//       ]);
+//     });
+
+//     setTimeout(() => {
+//       setMessages((p) => p.filter((m) => m.id !== `${id}-dots`));
+//       setMessages((p) => [
+//         ...p,
+//         { id, from: "bot", text: "", stepIndex, time: time() },
+//       ]);
+
+//       typeText(
+//         renderTemplate(text),
+//         (t) =>
+//           setMessages((p) =>
+//             p.map((m) => (m.id === id ? { ...m, text: t } : m))
+//           ),
+//         () => {
+//           setMessages((p) =>
+//             p.map((m) => (m.id === id ? { ...m, options } : m))
+//           );
+//           setIsBotTyping(false); // ✅ ONLY HERE
+//         }
+//       );
+//     }, 400);
+//   };

@@ -19,7 +19,7 @@ type Props = Partial<BottomTabBarProps> & {
 
 export default function CustomNavBar({ state, navigation, isLocal }: Props) {
   const nav = navigation ?? useNavigation();
-  const {cartItems} = useCart()
+  const { cartItems } = useCart();
 
   // 🔥 Hide ONLY when used as GLOBAL nav bar AND HomeScreen is active
   if (!isLocal && state) {
@@ -30,119 +30,118 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
   }
 
   return (
-      <CustomView
+    <CustomView
       height={verticalScale(68)}
       width={scale(347)}
       radius={scale(16.59)}
-        boxStyle={styles.bottomNav2}
-        shadowStyle={{position: "absolute",
-    bottom: verticalScale(20),
-    alignSelf : 'center',}}
-      >    
-     
-        {/* Home */}
-        <TouchableOpacity
-          onPress={() => nav?.navigate("HomeStack")}
-          style={[styles.navItem, { marginRight: scale(0) }]}
+      boxStyle={styles.bottomNav2}
+      shadowStyle={{
+        position: "absolute",
+        bottom: verticalScale(20),
+        alignSelf: "center",
+      }}
+    >
+      {/* Home */}
+      <TouchableOpacity
+        onPress={() => nav?.navigate("HomeStack")}
+        style={[styles.navItem, { marginRight: scale(0) }]}
+      >
+        <Icon
+          name="home-outline"
+          size={moderateScale(20)}
+          color={isLocal === "Home" ? "#0583D0" : "#707070"}
+        />
+        <Text
+          style={[
+            styles.navText,
+            { color: state?.index === 0 ? "#0583D0" : "#707070" },
+          ]}
         >
-          <Icon
-            name="home-outline"
-            size={moderateScale(20)}
-            color={isLocal === "Home" ? "#0583D0" : "#707070"}
-          />
-          <Text
-            style={[
-              styles.navText,
-              { color: state?.index === 0 ? "#0583D0" : "#707070" },
-            ]}
-          >
-            Home
-          </Text>
-        </TouchableOpacity>
+          Home
+        </Text>
+      </TouchableOpacity>
 
-        {/* Jobs */}
-        <TouchableOpacity
-          onPress={() => nav?.navigate("JobsScreen")}
-          style={[styles.navItem, { marginRight: scale(0) }]}
+      {/* Jobs */}
+      <TouchableOpacity
+        onPress={() => nav?.navigate("JobsScreen")}
+        style={[styles.navItem, { marginRight: scale(0) }]}
+      >
+        <Icon
+          name="briefcase-outline"
+          size={moderateScale(20)}
+          color={state?.index === 1 ? "#0583D0" : "#707070"}
+        />
+        <Text
+          style={[
+            styles.navText,
+            { color: state?.index === 1 ? "#0583D0" : "#707070" },
+          ]}
         >
-          <Icon
-            name="briefcase-outline"
-            size={moderateScale(20)}
-            color={state?.index === 1 ? "#0583D0" : "#707070"}
-          />
-          <Text
-            style={[
-              styles.navText,
-              { color: state?.index === 1 ? "#0583D0" : "#707070" },
-            ]}
-          >
-            Jobs
-          </Text>
-        </TouchableOpacity>
+          Jobs
+        </Text>
+      </TouchableOpacity>
 
-      
-
-        {/* Category */}
-        <TouchableOpacity
-          onPress={() => nav?.navigate("CategoryScreen")}
-          style={[styles.navItem, { marginLeft: scale(0) }]}
+      {/* Category */}
+      <TouchableOpacity
+        onPress={() => nav?.navigate("CategoryScreen")}
+        style={[styles.navItem, { marginLeft: scale(0) }]}
+      >
+        <Icon
+          name="grid-outline"
+          size={moderateScale(20)}
+          color={isLocal === "Category" ? "#0583D0" : "#707070"}
+        />
+        <Text
+          style={[
+            styles.navText,
+            { color: state?.index === 3 ? "#0583D0" : "#707070" },
+          ]}
         >
-          <Icon
-            name="grid-outline"
-            size={moderateScale(20)}
-             color={isLocal === "Category" ? "#0583D0" : "#707070"
+          Category
+        </Text>
+      </TouchableOpacity>
 
-            }
-          />
-          <Text
-            style={[
-              styles.navText,
-              { color: state?.index === 3 ? "#0583D0" : "#707070" },
-            ]}
-          >
-            Category
-          </Text>
-        </TouchableOpacity>
-
-        {/* Orders */}
-        <TouchableOpacity
-          onPress={() => nav?.navigate("OrderStack")}
-          style={[styles.navItem, { marginLeft: scale(0) }]}
+      {/* Orders */}
+      <TouchableOpacity
+        onPress={() => nav?.navigate("OrderStack")}
+        style={[styles.navItem, { marginLeft: scale(0) }]}
+      >
+        <Icon
+          name="document-text-outline"
+          size={moderateScale(20)}
+          color={state?.index === 4 ? "#0583D0" : "#707070"}
+        />
+        <Text
+          style={[
+            styles.navText,
+            { color: state?.index === 4 ? "#0583D0" : "#707070" },
+          ]}
         >
-          <Icon
-            name="document-text-outline"
-            size={moderateScale(20)}
-            color={state?.index === 4 ? "#0583D0" : "#707070"}
-          />
-          <Text
-            style={[
-              styles.navText,
-              { color: state?.index === 4 ? "#0583D0" : "#707070" },
-            ]}
-          >
-            Order
-          </Text>
-        </TouchableOpacity>
-          {/* Cart */}
-        <TouchableOpacity
-          onPress={() => nav?.navigate("CartScreen")}
-          style={styles.navItem}
+          Order
+        </Text>
+      </TouchableOpacity>
+      {/* Cart */}
+      <TouchableOpacity
+        onPress={() => {
+          nav?.navigate("CartScreen");
+        }}
+        style={styles.navItem}
+      >
+        <Icon
+          name="person-outline"
+          size={moderateScale(20)}
+          color={state?.index === 2 ? "#0583D0" : "#707070"}
+        />
+        <Text
+          style={[
+            styles.navText,
+            { color: state?.index === 2 ? "#0583D0" : "#707070" },
+          ]}
         >
-          <Icon
-            name="person-outline"
-            size={moderateScale(20)}
-            color={state?.index === 2 ? "#0583D0" : "#707070"}
-          />
-          <Text
-            style={[
-              styles.navText,
-              { color: state?.index === 4 ? "#0583D0" : "#707070" },
-            ]}
-          >
-            Order
-          </Text>
-        </TouchableOpacity>
-      </CustomView>
+          Profile
+        </Text>
+      </TouchableOpacity>
+    </CustomView>
   );
 }
 
@@ -156,8 +155,8 @@ const styles = StyleSheet.create({
     // borderWidth : 0,
     position: "absolute",
     bottom: verticalScale(10),
-    alignSelf : 'center',
-    zIndex: -10
+    alignSelf: "center",
+    zIndex: -10,
     // elevation: 5
   },
   bottomNav2: {
@@ -167,8 +166,7 @@ const styles = StyleSheet.create({
 
     borderWidth: 1,
     borderColor: "#FFFFFF",
-    overflow : 'hidden',
-    
+    overflow: "hidden",
   },
   navItem: { alignItems: "center", alignSelf: "center" },
   navText: {

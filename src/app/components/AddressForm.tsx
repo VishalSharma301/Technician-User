@@ -131,9 +131,10 @@ export default function AddressComponent({
         activeOpacity={0.8}
       >
         <CustomView
-          height={verticalScale(36)}
+          height={verticalScale(50)}
           width={scale(108)}
           radius={scale(25)}
+        
           gradientColors={isSelected ? ['#C8E6F9','#C8E6F9'] : undefined}
           boxStyle={{
             borderWidth: moderateScale(0.7),
@@ -196,7 +197,9 @@ const styles = StyleSheet.create({
   },
   input:{
     fontSize : moderateScale(12),
-    fontWeight : '400'
+    fontWeight : '400',
+    // borderWidth : 1,
+    height : verticalScale(50),
   },
   optionText: {
     color: "#fff",

@@ -65,7 +65,6 @@ export default function Chatbot8({
   const { userId, firstName } = useProfile();
   const { addresses, setAddresses, setSelectedAddress, selectedAddress } =
     useAddress();
-  const { showTypingIndicator, typeText } = useChatGPTTyping(true);
 
   const steps = serviceObject.conversation.steps;
   const service = serviceObject.service;
@@ -86,9 +85,6 @@ export default function Chatbot8({
   const [followUpQueue, setFollowUpQueue] = useState<any[]>([]);
   const [currentFollowUp, setCurrentFollowUp] = useState<any>(null);
   const [followUpAnswers, setFollowUpAnswers] = useState<any>({});
-  // const problemDuration = Object.keys(followUpAnswers)[2];
-  // const [question, problemDuration] = Object.entries(followUpAnswers)[0];
-
 
   const askedFollowUpRef = useRef<string | null>(null);
   const [showReview, setShowReview] = useState(true);
@@ -107,6 +103,8 @@ export default function Chatbot8({
   const isAddressStep = steps[currentStepIndex]?.stepType === "ADDRESS_INPUT";
   const isFinalStep =
     steps[currentStepIndex]?.stepType === "FINAL_CONFIRMATION";
+  const isCapacitySelection =
+    steps[currentStepIndex]?.stepType === "CAPACITY_SELECTION";
   /* ---------------- HELPERS ---------------- */
 
   const time = () =>
@@ -115,12 +113,10 @@ export default function Chatbot8({
   const scrollToBottom = () =>
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
 
-
-   const ORIGINAL_UNIT_PRICE = 500;
-const DISCOUNT_PERCENT = 25;
-  const unitPrice = ORIGINAL_UNIT_PRICE - (ORIGINAL_UNIT_PRICE * DISCOUNT_PERCENT / 100);
-
-    
+  const ORIGINAL_UNIT_PRICE = 500;
+  const DISCOUNT_PERCENT = 25;
+  const unitPrice =
+    ORIGINAL_UNIT_PRICE - (ORIGINAL_UNIT_PRICE * DISCOUNT_PERCENT) / 100;
 
   const totalPrice = quantity ? quantity * unitPrice : 0;
 
@@ -145,6 +141,51 @@ const DISCOUNT_PERCENT = 25;
 
   /* ---------------- BOT MESSAGE ---------------- */
 
+  // const pushBotMessage = (
+  //   text: string,
+  //   stepIndex: number,
+  //   options?: StepOption[]
+  // ) => {
+  //   const id = Date.now().toString();
+
+  //   setIsBotTyping(true);
+
+  //   showTypingIndicator(() => {
+  //     setMessages((p) => [
+  //       ...p,
+  //       {
+  //         id: `${id}-dots`,
+  //         from: "bot",
+  //         text: "__DOTS__",
+  //         stepIndex,
+  //         time: time(),
+  //       },
+  //     ]);
+  //   });
+
+  //   setTimeout(() => {
+  //     setMessages((p) => p.filter((m) => m.id !== `${id}-dots`));
+  //     setMessages((p) => [
+  //       ...p,
+  //       { id, from: "bot", text: "", stepIndex, time: time() },
+  //     ]);
+
+  //     typeText(
+  //       renderTemplate(text),
+  //       (t) =>
+  //         setMessages((p) =>
+  //           p.map((m) => (m.id === id ? { ...m, text: t } : m))
+  //         ),
+  //       () => {
+  //         setMessages((p) =>
+  //           p.map((m) => (m.id === id ? { ...m, options } : m))
+  //         );
+  //         setIsBotTyping(false); // ✅ ONLY HERE
+  //       }
+  //     );
+  //   }, 400);
+  // };
+
   const pushBotMessage = (
     text: string,
     stepIndex: number,
@@ -154,40 +195,37 @@ const DISCOUNT_PERCENT = 25;
 
     setIsBotTyping(true);
 
-    showTypingIndicator(() => {
+    // 1️⃣ Show dots
+    setMessages((p) => [
+      ...p,
+      {
+        id: `${id}-dots`,
+        from: "bot",
+        text: "__DOTS__",
+        stepIndex,
+        time: time(),
+      },
+    ]);
+
+    // 2️⃣ After 2 seconds, replace with full message
+    setTimeout(() => {
+      setMessages((p) => p.filter((m) => m.id !== `${id}-dots`));
+
       setMessages((p) => [
         ...p,
         {
-          id: `${id}-dots`,
+          id,
           from: "bot",
-          text: "__DOTS__",
+          text: renderTemplate(text), // 👈 FULL TEXT AT ONCE
           stepIndex,
+          options,
           time: time(),
         },
       ]);
-    });
 
-    setTimeout(() => {
-      setMessages((p) => p.filter((m) => m.id !== `${id}-dots`));
-      setMessages((p) => [
-        ...p,
-        { id, from: "bot", text: "", stepIndex, time: time() },
-      ]);
-
-      typeText(
-        renderTemplate(text),
-        (t) =>
-          setMessages((p) =>
-            p.map((m) => (m.id === id ? { ...m, text: t } : m))
-          ),
-        () => {
-          setMessages((p) =>
-            p.map((m) => (m.id === id ? { ...m, options } : m))
-          );
-          setIsBotTyping(false); // ✅ ONLY HERE
-        }
-      );
-    }, 400);
+      setIsBotTyping(false);
+      scrollToBottom();
+    }, 10); // 👈 EXACTLY 2 seconds
   };
 
   const pushUserMessage = (text: string) => {
@@ -247,7 +285,7 @@ const DISCOUNT_PERCENT = 25;
           selectedOption?.capacityVariants?.map((v: any) => ({
             id: v.id,
             // label: `${v.displayName} (₹${v.finalPrice})`,
-            label: `${v.displayName}` ,
+            label: `${v.displayName}`,
             value: v,
           })) || []
         );
@@ -298,7 +336,7 @@ const DISCOUNT_PERCENT = 25;
             label: `${a.label} - ${a.address.street}`,
             value: a,
           })),
-          { id: "new", label: "📍 Add New Address", value: "new" },
+          { id: "new", label: "Add New Address", value: "new" },
         ];
 
       // case "FINAL_CONFIRMATION":
@@ -309,10 +347,9 @@ const DISCOUNT_PERCENT = 25;
     }
   };
 
-
   //  useEffect(() => {
   //     console.log('follow',followUpAnswers);
-      
+
   //   });
 
   /* ---------------- OPTION HANDLER ---------------- */
@@ -325,7 +362,6 @@ const DISCOUNT_PERCENT = 25;
       setShowAddressForm(false);
     };
 
-   
     /* ---------------- FOLLOW UP ---------------- */
     if (currentFollowUp) {
       pushUserMessage(opt.label);
@@ -587,101 +623,69 @@ const DISCOUNT_PERCENT = 25;
     );
   }, [currentStepIndex, currentFollowUp, messages]);
 
-  function MessageTitle({
-    stepIndex,
-    style,
-    user = false,
-    text,
-  }: {
-    stepIndex: number;
-    style?: ViewStyle;
-    user?: boolean;
-    text?: string;
-  }) {
-    const step = steps[stepIndex];
-    // if (!step) return null;
-
-    return (
-      <LinearGradient
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={[
-          {
-            paddingVertical: verticalScale(4),
-            paddingHorizontal: scale(9),
-            borderRadius: scale(4),
-            alignSelf: "flex-start",
-          },
-          style,
-        ]}
-        colors={!user ? ["#FF0000", "#990000"] : ["#58B300", "#2E7D32"]}
-      >
-        <Text
-          style={{
-            color: "#fff",
-            fontWeight: "400",
-            fontSize: moderateScale(12),
-          }}
-        >
-          {renderTemplate(text ? text : step.label)}
-        </Text>
-      </LinearGradient>
-    );
-  }
-
   /* ---------------- RENDER ---------------- */
   const activeBotMessage = [...messages]
     .reverse()
     .find((m) => m.from === "bot");
+
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <View style={styles.topHeader}>
         <View style={styles.headerLeft}>
-          <View style={styles.appIconPlaceholder} >
-            <Image source={iconMap[service.icon as IconName] || iconMap['default']}  style={{ width: scale(32), height: scale(32), resizeMode : 'contain', alignSelf : 'center' }} />
+          <View style={styles.appIconPlaceholder}>
+            <Image
+              source={iconMap[service.icon as IconName] || iconMap["default"]}
+              style={{
+                width: scale(32),
+                height: scale(32),
+                resizeMode: "contain",
+                alignSelf: "center",
+              }}
+            />
           </View>
           <View>
             <Text style={styles.headerTitle}>{service.name} Booking</Text>
-            <Text style={styles.headerSubtitle}>
-              {service.description}
-            </Text>
+            <Text style={styles.headerSubtitle}>{service.description}</Text>
           </View>
         </View>
-        <View style={{ flexDirection: "row", marginTop : verticalScale(8), gap : scale(6) }}>
+        <View
+          style={{
+            flexDirection: "row",
+            marginTop: verticalScale(8),
+            gap: scale(6),
+          }}
+        >
           <TouchableOpacity onPress={onClose}>
-          <CustomView
-            width={scale(100)}
-            height={verticalScale(30)}
-            radius={scale(25)}
-            boxStyle={{
-              alignItems: "center",
-              justifyContent: "center",
-              borderWidth: moderateScale(0.7),
-              borderColor: "#fff",
-            }}
-          >
-            <Text>Close</Text>
-          </CustomView>
+            <CustomView
+              width={scale(100)}
+              height={verticalScale(30)}
+              radius={scale(25)}
+              boxStyle={{
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: moderateScale(0.7),
+                borderColor: "#fff",
+              }}
+            >
+              <Text>Close</Text>
+            </CustomView>
           </TouchableOpacity>
-            <TouchableOpacity onPress={restartBot}>
-          <View
-            style={{
-              width: scale(100),
-              height: verticalScale(30),
-              borderRadius: scale(25),
-               alignItems: "center",
-              justifyContent: "center",
-              borderWidth: moderateScale(0.7),
-              borderColor: "#fff",
-            }}
-          >
-            <Text style={{ color: "#fff" }}>Refresh</Text>
-          </View>
+          <TouchableOpacity onPress={restartBot}>
+            <View
+              style={{
+                width: scale(100),
+                height: verticalScale(30),
+                borderRadius: scale(25),
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: moderateScale(0.7),
+                borderColor: "#fff",
+              }}
+            >
+              <Text style={{ color: "#fff" }}>Refresh</Text>
+            </View>
           </TouchableOpacity>
         </View>
-        {/* <TouchableOpacity onPress={onClose}>
-          <Text style={styles.close}>✕</Text>
-        </TouchableOpacity> */}
       </View>
 
       <ScrollView
@@ -693,174 +697,34 @@ const DISCOUNT_PERCENT = 25;
           const isLatestBotMessage =
             m.from === "bot" && m.id === activeBotMessage?.id;
 
-          const isCurrentStep =
-            m.from === "bot" && m.stepIndex === currentStepIndex;
-
           const isCustomQuestionMessage =
             isLatestBotMessage &&
             steps[m.stepIndex]?.stepType === "CUSTOM_QUESTION";
-          /* USER MESSAGE (unchanged) */
+
+          /* USER MESSAGE  */
 
           if (m.from === "user") {
             if (m.text) {
               return (
-                <View
+                <UserMessage
+                  steps={steps}
+                  renderTemplate={renderTemplate}
                   key={m.id}
-                  style={{
-                    alignSelf: "flex-end",
-                    marginBottom: verticalScale(16),
-                  }}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: scale(8),
-                      marginBottom: verticalScale(16),
-                      alignSelf: "flex-end",
-                      marginRight: scale(6),
-                    }}
-                  >
-                    <View
-                      style={{
-                        height: scale(32),
-                        width: scale(32),
-                        borderRadius: scale(32),
-                        borderWidth: 1,
-                        borderColor: "#DFDFDF",
-                        overflow: "hidden",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Image
-                        source={require("../../../assets/user.png")}
-                        style={{ width: scale(30), height: scale(30) }}
-                        resizeMode="center"
-                      />
-                    </View>
-                    <Text
-                      style={{ fontSize: moderateScale(12), color: "#000" }}
-                    >
-                      {firstName} - Customer
-                    </Text>
-                  </View>
-                  <View
-                    style={{
-                      // marginBottom: verticalScale(16),
-                      alignItems: "flex-end",
-                      // borderWidth: 1,
-                      alignSelf: "flex-end",
-                      // height : verticalScale(100),
-                      // justifyContent : 'flex-end'
-                    }}
-                  >
-                    <MessageTitle
-                      stepIndex={m.stepIndex}
-                      user
-                      style={{
-                        position: "absolute",
-                        top: verticalScale(-15),
-                        left: scale(15),
-                        // right: scale(70),
-                        elevation: 1,
-                        zIndex: 999,
-                      }}
-                    />
-                    <CustomView
-                      radius={scale(25)}
-                      height={verticalScale(40)}
-                      gradientColors={["#B8D3E959", "#B8D3E959"]}
-                      boxStyle={{
-                        backgroundColor: "white",
-                        alignItems: "flex-start",
-                        justifyContent: "center",
-                        paddingHorizontal: scale(15),
-                        minWidth: scale(190),
-                        borderWidth: 1,
-                        borderColor: "#fff",
-                      }}
-                    >
-                      <Text
-                        style={{ fontSize: moderateScale(15), color: "#000" }}
-                      >
-                        {m.text}
-                      </Text>
-                    </CustomView>
-                  </View>
-                </View>
+                  m={m}
+                  firstName={firstName}
+                />
               );
             }
 
             if (m.component === "QTY_PRICE") {
               return (
-                <View
+                <QtyPriceCard
+                  steps={steps}
+                  renderTemplate={renderTemplate}
                   key={m.id}
-                  style={{
-                    alignSelf: "flex-end",
-                    marginBottom: verticalScale(16),
-                  }}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: scale(8),
-                      marginBottom: verticalScale(16),
-                      alignSelf: "flex-end",
-                      marginRight: scale(6),
-                    }}
-                  >
-                    <View
-                      style={{
-                        height: scale(32),
-                        width: scale(32),
-                        borderRadius: scale(32),
-                        borderWidth: 1,
-                        borderColor: "#DFDFDF",
-                        overflow: "hidden",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Image
-                        source={require("../../../assets/user.png")}
-                        style={{ width: scale(30), height: scale(30) }}
-                        resizeMode="center"
-                      />
-                    </View>
-                    <Text
-                      style={{ fontSize: moderateScale(12), color: "#000" }}
-                    >
-                      {firstName} - Customer
-                    </Text>
-                  </View>
-                  <View
-                    key={m.id}
-                    style={{
-                      alignItems: "flex-end",
-                      marginBottom: verticalScale(16),
-                    }}
-                  >
-                    <MessageTitle
-                      stepIndex={m.stepIndex}
-                      user
-                      style={{
-                        position: "absolute",
-                        top: verticalScale(-15),
-                        right: scale(70),
-                        elevation: 1,
-                        zIndex: 999,
-                      }}
-                    />
-                    <QuantityPriceCard
-                      quantity={m.payload.quantity}
-                      price={m.payload.price}
-                      originalPrice={m.payload.originalPrice}
-                      discountPercent={m.payload.discountPercent}
-                    />
-                  </View>
-                </View>
+                  m={m}
+                  firstName={firstName}
+                />
               );
             }
           }
@@ -887,6 +751,8 @@ const DISCOUNT_PERCENT = 25;
                 }}
               >
                 <MessageTitle
+                  steps={steps}
+                  renderTemplate={renderTemplate}
                   stepIndex={m.stepIndex}
                   style={{
                     position: "absolute",
@@ -920,10 +786,6 @@ const DISCOUNT_PERCENT = 25;
                     {m.text === "__DOTS__" ? (
                       <TypingDots />
                     ) : (
-                      // )
-                      // : m.text === "__BADGE__" ? (
-                      //   response && <BadgeCard response={response} />
-                      //   response && <ProviderCard />
                       <Text style={{ fontSize: moderateScale(16) }}>
                         {m.text}
                       </Text>
@@ -935,7 +797,10 @@ const DISCOUNT_PERCENT = 25;
                     flexWrap: "wrap",
                     flexDirection: "row",
                     marginTop: verticalScale(10),
-                    gap: scale(8),
+                    gap: scale(4),
+                    // borderWidth: 2,
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
                   {/* CUSTOM QUESTION CARD */}
@@ -953,13 +818,13 @@ const DISCOUNT_PERCENT = 25;
                     >
                       {/* ZIP */}
                       <CustomView
-                        height={verticalScale(37)}
-                        radius={scale(40)}
+                        height={verticalScale(45)}
+                        radius={scale(50)}
                         boxStyle={styles.infoRow}
-                        width={scale(320)}
+                        width={scale(310)}
                         shadowStyle={{ alignSelf: "flex-start" }}
                       >
-                        <Feather name="map-pin" size={16} color="#027CC7" />
+                        <Image source={iconMap["zip"]} style={styles.icon} />
                         <Text style={styles.infoLabel}>Zip code</Text>
                         <Text style={styles.infoValue}>
                           {selectedAddress?.address?.zipcode}
@@ -968,13 +833,16 @@ const DISCOUNT_PERCENT = 25;
 
                       {/* SERVICE TIME */}
                       <CustomView
-                        height={verticalScale(37)}
-                        radius={scale(40)}
+                        height={verticalScale(45)}
+                        radius={scale(50)}
                         boxStyle={styles.infoRow}
-                        width={scale(320)}
+                        width={scale(310)}
                         shadowStyle={{ alignSelf: "flex-start" }}
                       >
-                        <Feather name="clock" size={16} color="#027CC7" />
+                        <Image
+                          source={iconMap["service_time"]}
+                          style={styles.icon}
+                        />
                         <Text style={styles.infoLabel}>Service Time</Text>
                         <Text style={styles.infoValue}>
                           Service within {service.estimatedTime}
@@ -991,10 +859,10 @@ const DISCOUNT_PERCENT = 25;
                           }}
                         >
                           <CustomView
-                            height={verticalScale(36)}
+                            height={verticalScale(45)}
                             radius={scale(40)}
                             boxStyle={[styles.optionBtn]}
-                            width={scale(155)}
+                            width={scale(150)}
                             // shadowStyle={{flex : 1}}
                           >
                             <Text style={styles.cancelText}>Cancel</Text>
@@ -1008,10 +876,10 @@ const DISCOUNT_PERCENT = 25;
                           }}
                         >
                           <CustomView
-                            height={verticalScale(36)}
-                            radius={scale(40)}
+                            height={verticalScale(45)}
+                            radius={scale(50)}
                             boxStyle={[styles.optionBtn]}
-                            width={scale(155)}
+                            width={scale(150)}
                             gradientColors={["#027CC7", "#027CC7"]}
                             shadowStyle={{ flex: 1 }}
                           >
@@ -1024,7 +892,7 @@ const DISCOUNT_PERCENT = 25;
 
                   {/* OPTIONS */}
                   {isLatestBotMessage &&
-                  !isBotTyping&&
+                    !isBotTyping &&
                     !isCustomQuestionStep &&
                     !isQuantityStep &&
                     !isFinalStep &&
@@ -1035,19 +903,87 @@ const DISCOUNT_PERCENT = 25;
                         key={o.id}
                         boxStyle={[
                           styles.optionBtn,
+
+                         !isAddressStep &&  {
+                            paddingHorizontal: 0,
+                            flexGrow: 1,
+                            flexBasis: "45%", // allows 2 per row when text is small
+                            maxWidth: "100%",
+                            
+                          },
                           isAddressStep && {
-                            width: scale(335),
-                            alignItems: "flex-start",
-                            paddingLeft: scale(20),
+                           
+                         
+                            flexGrow: 1,
+                            flexBasis: "100%", // allows 2 per row when text is small
+                            maxWidth: "100%",
                           },
                         ]}
-                        // width={scale(200)}
-                        shadowStyle={{ alignSelf: "flex-start" }}
+                        width={
+                          isCapacitySelection
+                            ? scale(104)
+                            
+                              : undefined
+                        }
+                        shadowStyle={[
+                          !isAddressStep &&{
+                            alignSelf: "stretch",
+                            flexGrow: 1,
+                            flexBasis: "45%", // allows 2 per row when text is small
+                            maxWidth: "100%",
+                          },
+                          isCapacitySelection && {
+                            width: scale(104),
+                            alignSelf: "flex-start",
+                            flexGrow: 1,
+                            flexBasis: "20%", // allows 2 per row when text is small
+                            maxWidth: "30%",
+                          },
+                          isAddressStep && {
+                            width: scale(335),
+                            // alignItems: "flex-start",
+                            // flexGrow: 1,
+                            // flexBasis: "100%", // allows 2 per row when text is small
+                            // maxWidth: "100%",
+                          },
+                        ]}
                       >
-                        <TouchableOpacity onPress={() => handleOptionPress(o)}>
-                          <Text>
-                            {"🕑"} {o.label}
-                          </Text>
+                        <TouchableOpacity
+                          onPress={() => handleOptionPress(o)}
+                          style={{
+                            width: "100%",
+                            // borderWidth: 1,
+                            height: "100%",
+                            justifyContent: "center",
+                            alignItems: "flex-start",
+                          }}
+                        >
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: scale(2),
+                              width: "100%",
+                              // borderWidth: 1,
+                              height: "100%",
+                              paddingHorizontal: scale(6),
+                            }}
+                          >
+                            <Image
+                              source={iconMap["clock"]}
+                              style={styles.icon}
+                            />
+                            <Text
+                              style={{
+                                borderWidth: 1,
+                                width: "80%",
+                                marginRight: scale(0),
+                              }}
+                              numberOfLines={2}
+                            >
+                              {o.label}
+                            </Text>
+                          </View>
                         </TouchableOpacity>
                       </CustomView>
                     ))}
@@ -1064,14 +1000,14 @@ const DISCOUNT_PERCENT = 25;
                   >
                     {showReview && (
                       <ReviewDetailCard
-                      qty={quantity}
-                      price={totalPrice}
-                      visitCharges={150}
-                      additionalCharges={0}
-                      acType={selectedOption?.name || ""}
-                      brand={selectedBrand?.name || ""}
-                      problemTitle={selectedProblem?.name || ""}
-                      problemDuration={selectedProblem?.estimatedTime || ""}
+                        qty={quantity}
+                        price={totalPrice}
+                        visitCharges={150}
+                        additionalCharges={0}
+                        acType={selectedOption?.name || ""}
+                        brand={selectedBrand?.name || ""}
+                        problemTitle={selectedProblem?.name || ""}
+                        problemDuration={selectedProblem?.estimatedTime || ""}
                         onBookNow={() => {
                           if (isBotTyping) return;
                           handleBooking();
@@ -1087,47 +1023,42 @@ const DISCOUNT_PERCENT = 25;
                         borderRadius: scale(12),
                       }}
                     >
-                      {response && <ProviderCard res={response}/>}
+                      {response && <ProviderCard res={response} />}
                     </View>
                   </View>
                 )}
 
                 {/* MANUAL QUANTITY INPUT */}
-                {isLatestBotMessage && isQuantityStep && !isBotTyping &&
-                
-                (
-                  
+                {isLatestBotMessage && isQuantityStep && !isBotTyping && (
                   <View style={{ marginTop: verticalScale(50) }}>
-                   
+                    <ServicePriceCard
+                      originalPrice={ORIGINAL_UNIT_PRICE}
+                      discountPercent={DISCOUNT_PERCENT}
+                      unitPrice={ORIGINAL_UNIT_PRICE} // 👈 PASS ORIGINAL, NOT DISCOUNTED
+                      onConfirm={(qty) => {
+                        const discountedUnitPrice =
+                          ORIGINAL_UNIT_PRICE * (1 - DISCOUNT_PERCENT / 100);
 
-<ServicePriceCard
-  originalPrice={ORIGINAL_UNIT_PRICE}
-  discountPercent={DISCOUNT_PERCENT}
-  unitPrice={ORIGINAL_UNIT_PRICE} // 👈 PASS ORIGINAL, NOT DISCOUNTED
-  onConfirm={(qty) => {
-    const discountedUnitPrice =
-      ORIGINAL_UNIT_PRICE * (1 - DISCOUNT_PERCENT / 100);
+                        const finalPrice = qty * discountedUnitPrice;
 
-    const finalPrice = qty * discountedUnitPrice;
+                        setQuantity(qty);
 
-    setQuantity(qty);
+                        pushQuantityPriceMessage({
+                          quantity: qty,
+                          price: finalPrice,
+                          originalPrice: qty * ORIGINAL_UNIT_PRICE,
+                          discountPercent: DISCOUNT_PERCENT,
+                        });
 
-    pushQuantityPriceMessage({
-      quantity: qty,
-      price: finalPrice,
-      originalPrice: qty * ORIGINAL_UNIT_PRICE,
-      discountPercent: DISCOUNT_PERCENT,
-    });
-
-    setCurrentStepIndex((s) => s + 1);
-  }}
-  onCancel={() => {}}
-/>
+                        setCurrentStepIndex((s) => s + 1);
+                      }}
+                      onCancel={() => {}}
+                    />
                   </View>
                 )}
 
                 {/* NOTES INPUT */}
-                {isLatestBotMessage && notesInputActive && !isBotTyping&&(
+                {isLatestBotMessage && notesInputActive && !isBotTyping && (
                   <View style={styles.notesBox}>
                     <TextInput
                       placeholder={
@@ -1190,6 +1121,8 @@ const DISCOUNT_PERCENT = 25;
               }}
             >
               <MessageTitle
+                steps={steps}
+                renderTemplate={renderTemplate}
                 text="Problem Type"
                 stepIndex={10000}
                 style={{
@@ -1226,7 +1159,13 @@ const DISCOUNT_PERCENT = 25;
                   </Text>
                 </CustomView>
               </View>
-              <View style={{ flexDirection: "row", gap: scale(12), marginTop : verticalScale(9.3)   }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: scale(12),
+                  marginTop: verticalScale(9.3),
+                }}
+              >
                 <TouchableOpacity
                   onPress={() => {
                     restartBot();
@@ -1256,13 +1195,19 @@ const DISCOUNT_PERCENT = 25;
             </CustomView>
           </View>
         )}
-        
-{postBookingStage === true && (
 
-<View style={{ alignItems: "flex-start" }}>
-              <Text style={{marginBottom : verticalScale(7), fontSize : moderateScale(14)}}>{"AI - AC Service Assistant"}</Text>
+        {postBookingStage === true && (
+          <View style={{ alignItems: "flex-start" }}>
+            <Text
+              style={{
+                marginBottom: verticalScale(7),
+                fontSize: moderateScale(14),
+              }}
+            >
+              {"AI - AC Service Assistant"}
+            </Text>
 
-       <CustomView
+            <CustomView
               isGradient={false}
               radius={scale(14.9)}
               width={scale(370)}
@@ -1273,7 +1218,9 @@ const DISCOUNT_PERCENT = 25;
               }}
             >
               <MessageTitle
-              text="Thank You!"
+                steps={steps}
+                renderTemplate={renderTemplate}
+                text="Thank You!"
                 stepIndex={10000}
                 style={{
                   position: "absolute",
@@ -1283,7 +1230,12 @@ const DISCOUNT_PERCENT = 25;
                   zIndex: 999,
                 }}
               />
-              <View style={{ flexDirection: "row", marginBottom : verticalScale(11) }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  marginBottom: verticalScale(11),
+                }}
+              >
                 {
                   <Image
                     source={require("../../../assets/bot.png")}
@@ -1304,35 +1256,263 @@ const DISCOUNT_PERCENT = 25;
                   radius={scale(12.4)}
                   boxStyle={[styles.botBubble]}
                 >
-
-                    <Text style={{ fontSize: moderateScale(15) }}>
+                  <Text style={{ fontSize: moderateScale(15) }}>
                     Thank you for using our app 🙏
-                    </Text>
-
+                  </Text>
                 </CustomView>
-
               </View>
               <TouchableOpacity onPress={onClose}>
-      <CustomView
-        height={verticalScale(40)}
-        radius={scale(40)}
-        gradientColors={["#077DC6", "#077DC6"]}
-        boxStyle={{ alignItems: "center", justifyContent: "center"  }}
-      >
-        <Text style={{ color: "#fff", fontWeight: "600", fontSize : moderateScale(16), borderWidth : 0 }}>
-          Exit
-        </Text>
-      </CustomView>
-    </TouchableOpacity>
-              </CustomView>
-</View>
-)}
-      
+                <CustomView
+                  height={verticalScale(40)}
+                  radius={scale(40)}
+                  gradientColors={["#077DC6", "#077DC6"]}
+                  boxStyle={{ alignItems: "center", justifyContent: "center" }}
+                >
+                  <Text
+                    style={{
+                      color: "#fff",
+                      fontWeight: "600",
+                      fontSize: moderateScale(16),
+                      borderWidth: 0,
+                    }}
+                  >
+                    Exit
+                  </Text>
+                </CustomView>
+              </TouchableOpacity>
+            </CustomView>
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+function MessageTitle({
+  stepIndex,
+  style,
+  user = false,
+  text,
+  steps,
+  renderTemplate,
+}: {
+  stepIndex: number;
+  style?: ViewStyle;
+  user?: boolean;
+  text?: string;
+  steps: any;
+  renderTemplate: (text: string) => string;
+}) {
+  const step = steps[stepIndex];
+  // if (!step) return null;
+
+  return (
+    <LinearGradient
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      style={[
+        {
+          paddingVertical: verticalScale(4),
+          paddingHorizontal: scale(9),
+          borderRadius: scale(4),
+          alignSelf: "flex-start",
+        },
+        style,
+      ]}
+      colors={!user ? ["#FF0000", "#990000"] : ["#077DC6", "#055d94"]}
+    >
+      <Text
+        style={{
+          color: "#fff",
+          fontWeight: "400",
+          fontSize: moderateScale(12),
+        }}
+      >
+        {renderTemplate(text ? text : step.label)}
+      </Text>
+    </LinearGradient>
+  );
+}
+
+const UserMessage = ({
+  m,
+  firstName,
+  steps,
+  renderTemplate,
+}: {
+  m: any;
+  firstName: string;
+  steps: any;
+  renderTemplate: (text: string) => string;
+}) => {
+  return (
+    <View
+      key={m.id}
+      style={{
+        alignSelf: "flex-end",
+        marginBottom: verticalScale(16),
+      }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: scale(8),
+          marginBottom: verticalScale(16),
+          alignSelf: "flex-end",
+          marginRight: scale(6),
+        }}
+      >
+        <View
+          style={{
+            height: scale(32),
+            width: scale(32),
+            borderRadius: scale(32),
+            borderWidth: 1,
+            borderColor: "#DFDFDF",
+            overflow: "hidden",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Image
+            source={require("../../../assets/user.png")}
+            style={{ width: scale(30), height: scale(30) }}
+            resizeMode="center"
+          />
+        </View>
+        <Text style={{ fontSize: moderateScale(12), color: "#000" }}>
+          {firstName} - Customer
+        </Text>
+      </View>
+      <View
+        style={{
+          // marginBottom: verticalScale(16),
+          alignItems: "flex-end",
+          // borderWidth: 1,
+          alignSelf: "flex-end",
+          // height : verticalScale(100),
+          // justifyContent : 'flex-end'
+        }}
+      >
+        <MessageTitle
+          steps={steps}
+          renderTemplate={renderTemplate}
+          stepIndex={m.stepIndex}
+          user
+          style={{
+            position: "absolute",
+            top: verticalScale(-13),
+            left: scale(15),
+            // right: scale(70),
+            elevation: 1,
+            zIndex: 999,
+          }}
+        />
+        <CustomView
+          radius={scale(25)}
+          height={verticalScale(50)}
+          gradientColors={["#B8D3E959", "#B8D3E959"]}
+          boxStyle={{
+            backgroundColor: "white",
+            alignItems: "flex-start",
+            justifyContent: "center",
+            paddingHorizontal: scale(15),
+            minWidth: scale(190),
+            borderWidth: 1,
+            borderColor: "#fff",
+          }}
+        >
+          <Text style={{ fontSize: moderateScale(15), color: "#000" }}>
+            {m.text}
+          </Text>
+        </CustomView>
+      </View>
+    </View>
+  );
+};
+
+const QtyPriceCard = ({
+  m,
+  firstName,
+  steps,
+  renderTemplate,
+}: {
+  m: any;
+  firstName: string;
+  steps: any;
+  renderTemplate: (text: string) => string;
+}) => {
+  return (
+    <View
+      key={m.id}
+      style={{
+        alignSelf: "flex-end",
+        marginBottom: verticalScale(16),
+      }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: scale(8),
+          marginBottom: verticalScale(16),
+          alignSelf: "flex-end",
+          marginRight: scale(6),
+        }}
+      >
+        <View
+          style={{
+            height: scale(32),
+            width: scale(32),
+            borderRadius: scale(32),
+            borderWidth: 1,
+            borderColor: "#DFDFDF",
+            overflow: "hidden",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Image
+            source={require("../../../assets/user.png")}
+            style={{ width: scale(30), height: scale(30) }}
+            resizeMode="center"
+          />
+        </View>
+        <Text style={{ fontSize: moderateScale(12), color: "#000" }}>
+          {firstName} - Customer
+        </Text>
+      </View>
+      <View
+        key={m.id}
+        style={{
+          alignItems: "flex-end",
+          marginBottom: verticalScale(16),
+        }}
+      >
+        <MessageTitle
+          steps={steps}
+          renderTemplate={renderTemplate}
+          stepIndex={m.stepIndex}
+          user
+          style={{
+            position: "absolute",
+            top: verticalScale(-15),
+            right: scale(70),
+            elevation: 1,
+            zIndex: 999,
+          }}
+        />
+        <QuantityPriceCard
+          quantity={m.payload.quantity}
+          price={m.payload.price}
+          originalPrice={m.payload.originalPrice}
+          discountPercent={m.payload.discountPercent}
+        />
+      </View>
+    </View>
+  );
+};
 /* ---------------- STYLES ---------------- */
 
 const styles = StyleSheet.create({
@@ -1344,7 +1524,7 @@ const styles = StyleSheet.create({
     // borderWidth: 1,
     // borderColor: "#E3EAF5",
   },
-
+  icon: { width: scale(31), height: scale(24), resizeMode: "center" },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1372,7 +1552,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: verticalScale(10),
-    gap: scale(10),
+    gap: scale(6),
   },
 
   cancelBtn: {
@@ -1426,7 +1606,7 @@ const styles = StyleSheet.create({
     borderRadius: scale(19),
     backgroundColor: "#EDEBF4",
     marginRight: scale(10),
-    paddingTop : verticalScale(2),
+    paddingTop: verticalScale(2),
   },
   headerTitle: { color: "#fff", fontWeight: "700" },
   headerSubtitle: { color: "#EAF6FF", fontSize: 11 },
@@ -1461,6 +1641,8 @@ const styles = StyleSheet.create({
     // backgroundColor: "#C8E6FF1A",
     alignItems: "center",
     justifyContent: "center",
+
+    // flex : 1
   },
   notesBox: {
     flexDirection: "row",
@@ -1481,5 +1663,3 @@ const styles = StyleSheet.create({
     borderRadius: scale(8),
   },
 });
-
-

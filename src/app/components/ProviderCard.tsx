@@ -15,20 +15,24 @@ import { iconMap, IconName } from "../../utils/iconMap";
 import { ConversationBookingResponse } from "../../utils/bookingApi";
 import { useAddress } from "../../hooks/useAddress";
 
-export default function ProviderCard({res}: {res :ConversationBookingResponse}) {
+export default function ProviderCard({
+  res,
+}: {
+  res: ConversationBookingResponse;
+}) {
   const [activeTab, setActiveTab] = useState<"provider" | "customer">(
     "provider"
   );
   const { quickPickServices } = useServices();
-  const {selectedAddress} = useAddress()
+  const { selectedAddress } = useAddress();
 
-    const name = res.data.provider?.companyName || "Company Name";
+  const name = res.data.provider?.companyName || "Company Name";
 
-const initials = name
-  .split(" ")
-  .filter(Boolean)
-  .map(word => word[0].toUpperCase())
-  .join("");
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word[0].toUpperCase())
+    .join("");
 
   return (
     // <CustomView
@@ -53,7 +57,23 @@ const initials = name
               <Text style={styles.providerName}>{name}</Text>
               <Feather name="check-circle" size={14} color="#1DA1F2" />
             </View>
-            <Text style={styles.location}>📍 Mohali India</Text>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: scale(2),
+              }}
+            >
+              <Image
+                source={iconMap["location"]}
+                style={{
+                  height: verticalScale(12),
+                  width: scale(12),
+                  resizeMode: "center",
+                }}
+              />
+              <Text style={styles.location}> Mohali India</Text>
+            </View>
           </View>
         </View>
         <View
@@ -71,7 +91,14 @@ const initials = name
               alignItems: "center",
             }}
           >
-            <Feather name="gift" color={"gold"} />
+           <Image
+                source={iconMap["trophy"]}
+                style={{
+                  height: verticalScale(21),
+                  width: scale(21),
+                  resizeMode: "center",
+                }}
+              />
             <Text>96% Job Success</Text>
           </View>
           <View
@@ -132,14 +159,14 @@ const initials = name
         <ToggleButton
           active={activeTab === "provider"}
           label="Provider Detail"
-          icon="user"
+          icon="setting"
           onPress={() => setActiveTab("provider")}
           activeColor="#68467B"
         />
         <ToggleButton
           active={activeTab === "customer"}
           label="Customer Detail"
-          icon="users"
+          icon="drill"
           onPress={() => setActiveTab("customer")}
           activeColor="#F15762"
         />
@@ -149,7 +176,11 @@ const initials = name
       {activeTab === "customer" && (
         <>
           <Section title="Basic Detail">
-            <InfoRow icon="map-pin" label="Zip code" value={selectedAddress?.address.zipcode} />
+            <InfoRow
+              icon="location"
+              label="Zip code"
+              value={selectedAddress?.address.zipcode}
+            />
             <InfoRow
               icon="clock"
               label="Service Time"
@@ -158,7 +189,11 @@ const initials = name
             <InfoRow
               icon="home"
               label="Service Time"
-              value={selectedAddress.address.street + " "+ selectedAddress.address.city}
+              value={
+                selectedAddress.address.street +
+                " " +
+                selectedAddress.address.city
+              }
             />
           </Section>
         </>
@@ -168,7 +203,11 @@ const initials = name
       {activeTab === "provider" && (
         <>
           <Section title="Basic Detail">
-            <InfoRow icon="map-pin" label="Zip code" value={selectedAddress?.address.zipcode} />
+            <InfoRow
+              icon="location"
+              label="Zip code"
+              value={selectedAddress?.address.zipcode}
+            />
             <InfoRow
               icon="clock"
               label="Service Time"
@@ -177,7 +216,11 @@ const initials = name
             <InfoRow
               icon="home"
               label="Service Time"
-              value={selectedAddress.address.street + " "+ selectedAddress.address.city}
+              value={
+                selectedAddress.address.street +
+                " " +
+                selectedAddress.address.city
+              }
             />
           </Section>
           <Section title="Service Offered">
@@ -248,7 +291,7 @@ function ToggleButton({
 }: {
   active: boolean;
   label: string;
-  icon: any;
+  icon: IconName;
   onPress: () => void;
   activeColor: string;
 }) {
@@ -260,7 +303,15 @@ function ToggleButton({
         { backgroundColor: active ? activeColor : "#E6E6E6" },
       ]}
     >
-      <Feather name={icon} size={14} color={active ? "#fff" : "#555"} />
+      <Image
+                source={iconMap[icon]}
+                style={{
+                  height: verticalScale(17),
+                  width: scale(17),
+                  resizeMode: "center",
+                }}
+              />
+     
       <Text
         style={{
           color: active ? "#fff" : "#555",
@@ -304,7 +355,7 @@ function InfoRow({
   label,
   value,
 }: {
-  icon: any;
+  icon: IconName;
   label: string;
   value: string;
 }) {
@@ -324,7 +375,14 @@ function InfoRow({
           borderWidth: 0,
         }}
       >
-        <Feather name={icon} size={14} color="#f50000ff" />
+      <Image
+                source={iconMap["location"]}
+                style={{
+                  height: verticalScale(17),
+                  width: scale(17),
+                  resizeMode: "center",
+                }}
+              />
         <Text style={styles.infoLabel}>{label}</Text>
       </View>
       <Text style={styles.infoValue}>{value}</Text>

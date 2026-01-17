@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -32,6 +32,7 @@ import { InsetShadowBox } from "./InsetShadow";
 import ReviewDetailCard from "./ReviewDetailCard";
 import ProviderCard from "./ProviderCard";
 import QuantityPriceCard from "./QuantityPriceCard";
+import { iconMap, IconName } from "../../utils/iconMap";
 
 /* ---------------- TYPES ---------------- */
 
@@ -85,6 +86,9 @@ export default function Chatbot8({
   const [followUpQueue, setFollowUpQueue] = useState<any[]>([]);
   const [currentFollowUp, setCurrentFollowUp] = useState<any>(null);
   const [followUpAnswers, setFollowUpAnswers] = useState<any>({});
+  // const problemDuration = Object.keys(followUpAnswers)[2];
+  // const [question, problemDuration] = Object.entries(followUpAnswers)[0];
+
   const askedFollowUpRef = useRef<string | null>(null);
   const [showReview, setShowReview] = useState(true);
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -102,6 +106,8 @@ export default function Chatbot8({
   const isAddressStep = steps[currentStepIndex]?.stepType === "ADDRESS_INPUT";
   const isFinalStep =
     steps[currentStepIndex]?.stepType === "FINAL_CONFIRMATION";
+  const isCapacitySelection =
+    steps[currentStepIndex]?.stepType === "CAPACITY_SELECTION";
   /* ---------------- HELPERS ---------------- */
 
   const time = () =>
@@ -110,13 +116,12 @@ export default function Chatbot8({
   const scrollToBottom = () =>
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
 
+  const ORIGINAL_UNIT_PRICE = 500;
+  const DISCOUNT_PERCENT = 25;
   const unitPrice =
-    selectedCapacity?.finalPrice ??
-    selectedProblem?.estimatedPrice ??
-    selectedOption?.basePrice ??
-    0;
+    ORIGINAL_UNIT_PRICE - (ORIGINAL_UNIT_PRICE * DISCOUNT_PERCENT) / 100;
 
-  const totalPrice = quantity ? quantity * unitPrice : "";
+  const totalPrice = quantity ? quantity * unitPrice : 0;
 
   const templateVars: any = {
     customerName: firstName,
@@ -139,6 +144,51 @@ export default function Chatbot8({
 
   /* ---------------- BOT MESSAGE ---------------- */
 
+  // const pushBotMessage = (
+  //   text: string,
+  //   stepIndex: number,
+  //   options?: StepOption[]
+  // ) => {
+  //   const id = Date.now().toString();
+
+  //   setIsBotTyping(true);
+
+  //   showTypingIndicator(() => {
+  //     setMessages((p) => [
+  //       ...p,
+  //       {
+  //         id: `${id}-dots`,
+  //         from: "bot",
+  //         text: "__DOTS__",
+  //         stepIndex,
+  //         time: time(),
+  //       },
+  //     ]);
+  //   });
+
+  //   setTimeout(() => {
+  //     setMessages((p) => p.filter((m) => m.id !== `${id}-dots`));
+  //     setMessages((p) => [
+  //       ...p,
+  //       { id, from: "bot", text: "", stepIndex, time: time() },
+  //     ]);
+
+  //     typeText(
+  //       renderTemplate(text),
+  //       (t) =>
+  //         setMessages((p) =>
+  //           p.map((m) => (m.id === id ? { ...m, text: t } : m))
+  //         ),
+  //       () => {
+  //         setMessages((p) =>
+  //           p.map((m) => (m.id === id ? { ...m, options } : m))
+  //         );
+  //         setIsBotTyping(false); // ✅ ONLY HERE
+  //       }
+  //     );
+  //   }, 400);
+  // };
+
   const pushBotMessage = (
     text: string,
     stepIndex: number,
@@ -148,40 +198,37 @@ export default function Chatbot8({
 
     setIsBotTyping(true);
 
-    showTypingIndicator(() => {
+    // 1️⃣ Show dots
+    setMessages((p) => [
+      ...p,
+      {
+        id: `${id}-dots`,
+        from: "bot",
+        text: "__DOTS__",
+        stepIndex,
+        time: time(),
+      },
+    ]);
+
+    // 2️⃣ After 2 seconds, replace with full message
+    setTimeout(() => {
+      setMessages((p) => p.filter((m) => m.id !== `${id}-dots`));
+
       setMessages((p) => [
         ...p,
         {
-          id: `${id}-dots`,
+          id,
           from: "bot",
-          text: "__DOTS__",
+          text: renderTemplate(text), // 👈 FULL TEXT AT ONCE
           stepIndex,
+          options,
           time: time(),
         },
       ]);
-    });
 
-    setTimeout(() => {
-      setMessages((p) => p.filter((m) => m.id !== `${id}-dots`));
-      setMessages((p) => [
-        ...p,
-        { id, from: "bot", text: "", stepIndex, time: time() },
-      ]);
-
-      typeText(
-        renderTemplate(text),
-        (t) =>
-          setMessages((p) =>
-            p.map((m) => (m.id === id ? { ...m, text: t } : m))
-          ),
-        () => {
-          setMessages((p) =>
-            p.map((m) => (m.id === id ? { ...m, options } : m))
-          );
-          setIsBotTyping(false); // ✅ ONLY HERE
-        }
-      );
-    }, 400);
+      setIsBotTyping(false);
+      scrollToBottom();
+    }, 10); // 👈 EXACTLY 2 seconds
   };
 
   const pushUserMessage = (text: string) => {
@@ -240,7 +287,8 @@ export default function Chatbot8({
         return (
           selectedOption?.capacityVariants?.map((v: any) => ({
             id: v.id,
-            label: `${v.displayName} (₹${v.finalPrice})`,
+            // label: `${v.displayName} (₹${v.finalPrice})`,
+            label: `${v.displayName}`,
             value: v,
           })) || []
         );
@@ -291,7 +339,7 @@ export default function Chatbot8({
             label: `${a.label} - ${a.address.street}`,
             value: a,
           })),
-          { id: "new", label: "📍 Add New Address", value: "new" },
+          { id: "new", label: "Add New Address", value: "new" },
         ];
 
       // case "FINAL_CONFIRMATION":
@@ -301,6 +349,11 @@ export default function Chatbot8({
         return [];
     }
   };
+
+  //  useEffect(() => {
+  //     console.log('follow',followUpAnswers);
+
+  //   });
 
   /* ---------------- OPTION HANDLER ---------------- */
 
@@ -600,7 +653,7 @@ export default function Chatbot8({
           },
           style,
         ]}
-        colors={!user ? ["#FF0000", "#990000"] : ["#58B300", "#2E7D32"]}
+        colors={!user ? ["#FF0000", "#990000"] : ["#077DC6", "#055d94"]}
       >
         <Text
           style={{
@@ -623,44 +676,58 @@ export default function Chatbot8({
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <View style={styles.topHeader}>
         <View style={styles.headerLeft}>
-          <View style={styles.appIconPlaceholder} />
+          <View style={styles.appIconPlaceholder}>
+            <Image
+              source={iconMap[service.icon as IconName] || iconMap["default"]}
+              style={{
+                width: scale(32),
+                height: scale(32),
+                resizeMode: "contain",
+                alignSelf: "center",
+              }}
+            />
+          </View>
           <View>
-            <Text style={styles.headerTitle}>AC Service Booking</Text>
-            <Text style={styles.headerSubtitle}>
-              Quick & reliable AC service at your doorstep
-            </Text>
+            <Text style={styles.headerTitle}>{service.name} Booking</Text>
+            <Text style={styles.headerSubtitle}>{service.description}</Text>
           </View>
         </View>
-        <View style={{ flexDirection: "row", marginTop : verticalScale(8), gap : scale(6) }}>
+        <View
+          style={{
+            flexDirection: "row",
+            marginTop: verticalScale(8),
+            gap: scale(6),
+          }}
+        >
           <TouchableOpacity onPress={onClose}>
-          <CustomView
-            width={scale(100)}
-            height={verticalScale(30)}
-            radius={scale(25)}
-            boxStyle={{
-              alignItems: "center",
-              justifyContent: "center",
-              borderWidth: moderateScale(0.7),
-              borderColor: "#fff",
-            }}
-          >
-            <Text>Close</Text>
-          </CustomView>
+            <CustomView
+              width={scale(100)}
+              height={verticalScale(30)}
+              radius={scale(25)}
+              boxStyle={{
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: moderateScale(0.7),
+                borderColor: "#fff",
+              }}
+            >
+              <Text>Close</Text>
+            </CustomView>
           </TouchableOpacity>
-            <TouchableOpacity onPress={restartBot}>
-          <View
-            style={{
-              width: scale(100),
-              height: verticalScale(30),
-              borderRadius: scale(25),
-               alignItems: "center",
-              justifyContent: "center",
-              borderWidth: moderateScale(0.7),
-              borderColor: "#fff",
-            }}
-          >
-            <Text style={{ color: "#fff" }}>Refresh</Text>
-          </View>
+          <TouchableOpacity onPress={restartBot}>
+            <View
+              style={{
+                width: scale(100),
+                height: verticalScale(30),
+                borderRadius: scale(25),
+                alignItems: "center",
+                justifyContent: "center",
+                borderWidth: moderateScale(0.7),
+                borderColor: "#fff",
+              }}
+            >
+              <Text style={{ color: "#fff" }}>Refresh</Text>
+            </View>
           </TouchableOpacity>
         </View>
         {/* <TouchableOpacity onPress={onClose}>
@@ -744,7 +811,7 @@ export default function Chatbot8({
                       user
                       style={{
                         position: "absolute",
-                        top: verticalScale(-15),
+                        top: verticalScale(-13),
                         left: scale(15),
                         // right: scale(70),
                         elevation: 1,
@@ -753,7 +820,7 @@ export default function Chatbot8({
                     />
                     <CustomView
                       radius={scale(25)}
-                      height={verticalScale(40)}
+                      height={verticalScale(50)}
                       gradientColors={["#B8D3E959", "#B8D3E959"]}
                       boxStyle={{
                         backgroundColor: "white",
@@ -908,7 +975,7 @@ export default function Chatbot8({
                       // : m.text === "__BADGE__" ? (
                       //   response && <BadgeCard response={response} />
                       //   response && <ProviderCard />
-                      <Text style={{ fontSize: moderateScale(15) }}>
+                      <Text style={{ fontSize: moderateScale(16) }}>
                         {m.text}
                       </Text>
                     )}
@@ -937,13 +1004,13 @@ export default function Chatbot8({
                     >
                       {/* ZIP */}
                       <CustomView
-                        height={verticalScale(37)}
-                        radius={scale(40)}
+                        height={verticalScale(45)}
+                        radius={scale(50)}
                         boxStyle={styles.infoRow}
                         width={scale(320)}
                         shadowStyle={{ alignSelf: "flex-start" }}
                       >
-                        <Feather name="map-pin" size={16} color="#027CC7" />
+                        <Image source={iconMap['zip']} style={styles.icon}  />
                         <Text style={styles.infoLabel}>Zip code</Text>
                         <Text style={styles.infoValue}>
                           {selectedAddress?.address?.zipcode}
@@ -952,13 +1019,13 @@ export default function Chatbot8({
 
                       {/* SERVICE TIME */}
                       <CustomView
-                        height={verticalScale(37)}
-                        radius={scale(40)}
+                        height={verticalScale(45)}
+                        radius={scale(50)}
                         boxStyle={styles.infoRow}
                         width={scale(320)}
                         shadowStyle={{ alignSelf: "flex-start" }}
                       >
-                        <Feather name="clock" size={16} color="#027CC7" />
+                        <Image source={iconMap['service_time']} style={styles.icon}  />
                         <Text style={styles.infoLabel}>Service Time</Text>
                         <Text style={styles.infoValue}>
                           Service within {service.estimatedTime}
@@ -975,7 +1042,7 @@ export default function Chatbot8({
                           }}
                         >
                           <CustomView
-                            height={verticalScale(36)}
+                            height={verticalScale(45)}
                             radius={scale(40)}
                             boxStyle={[styles.optionBtn]}
                             width={scale(155)}
@@ -992,8 +1059,8 @@ export default function Chatbot8({
                           }}
                         >
                           <CustomView
-                            height={verticalScale(36)}
-                            radius={scale(40)}
+                            height={verticalScale(45)}
+                            radius={scale(50)}
                             boxStyle={[styles.optionBtn]}
                             width={scale(155)}
                             gradientColors={["#027CC7", "#027CC7"]}
@@ -1008,13 +1075,13 @@ export default function Chatbot8({
 
                   {/* OPTIONS */}
                   {isLatestBotMessage &&
-                  !isBotTyping&&
+                    !isBotTyping &&
                     !isCustomQuestionStep &&
                     !isQuantityStep &&
                     !isFinalStep &&
                     m.options?.map((o) => (
                       <CustomView
-                        height={verticalScale(36)}
+                        height={verticalScale(50)}
                         radius={scale(40)}
                         key={o.id}
                         boxStyle={[
@@ -1023,15 +1090,30 @@ export default function Chatbot8({
                             width: scale(335),
                             alignItems: "flex-start",
                             paddingLeft: scale(20),
+                            
                           },
+                          { paddingHorizontal: 0 },
+                          isCapacitySelection && { width : scale(104) },
                         ]}
                         // width={scale(200)}
                         shadowStyle={{ alignSelf: "flex-start" }}
                       >
-                        <TouchableOpacity onPress={() => handleOptionPress(o)}>
+                        <TouchableOpacity
+                          onPress={() => handleOptionPress(o)}
+                          style={{
+                            width: "100%",
+                            // borderWidth: 1,
+                            height: "100%",
+                            justifyContent: "center",
+                            paddingHorizontal: scale(15),
+                          }}
+                        >
+                          <View style={{flexDirection : 'row', alignItems : 'center', gap : scale(2)}}>
+                            <Image source={iconMap['clock']} style={styles.icon}  />
                           <Text>
-                            {"🕑"} {o.label}
+                             {o.label}
                           </Text>
+                          </View>
                         </TouchableOpacity>
                       </CustomView>
                     ))}
@@ -1048,6 +1130,14 @@ export default function Chatbot8({
                   >
                     {showReview && (
                       <ReviewDetailCard
+                        qty={quantity}
+                        price={totalPrice}
+                        visitCharges={150}
+                        additionalCharges={0}
+                        acType={selectedOption?.name || ""}
+                        brand={selectedBrand?.name || ""}
+                        problemTitle={selectedProblem?.name || ""}
+                        problemDuration={selectedProblem?.estimatedTime || ""}
                         onBookNow={() => {
                           if (isBotTyping) return;
                           handleBooking();
@@ -1063,7 +1153,7 @@ export default function Chatbot8({
                         borderRadius: scale(12),
                       }}
                     >
-                      {response && <ProviderCard />}
+                      {response && <ProviderCard res={response} />}
                     </View>
                   </View>
                 )}
@@ -1072,19 +1162,22 @@ export default function Chatbot8({
                 {isLatestBotMessage && isQuantityStep && !isBotTyping && (
                   <View style={{ marginTop: verticalScale(50) }}>
                     <ServicePriceCard
-                      discountPercent={5}
-                      originalPrice={500}
-                      unitPrice={100}
+                      originalPrice={ORIGINAL_UNIT_PRICE}
+                      discountPercent={DISCOUNT_PERCENT}
+                      unitPrice={ORIGINAL_UNIT_PRICE} // 👈 PASS ORIGINAL, NOT DISCOUNTED
                       onConfirm={(qty) => {
-                        const finalPrice = qty * unitPrice;
+                        const discountedUnitPrice =
+                          ORIGINAL_UNIT_PRICE * (1 - DISCOUNT_PERCENT / 100);
+
+                        const finalPrice = qty * discountedUnitPrice;
 
                         setQuantity(qty);
 
                         pushQuantityPriceMessage({
                           quantity: qty,
                           price: finalPrice,
-                          originalPrice: qty * 100,
-                          discountPercent: 25,
+                          originalPrice: qty * ORIGINAL_UNIT_PRICE,
+                          discountPercent: DISCOUNT_PERCENT,
                         });
 
                         setCurrentStepIndex((s) => s + 1);
@@ -1095,7 +1188,7 @@ export default function Chatbot8({
                 )}
 
                 {/* NOTES INPUT */}
-                {isLatestBotMessage && notesInputActive && !isBotTyping&&(
+                {isLatestBotMessage && notesInputActive && !isBotTyping && (
                   <View style={styles.notesBox}>
                     <TextInput
                       placeholder={
@@ -1194,7 +1287,13 @@ export default function Chatbot8({
                   </Text>
                 </CustomView>
               </View>
-              <View style={{ flexDirection: "row", gap: scale(12), marginTop : verticalScale(9.3)   }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: scale(12),
+                  marginTop: verticalScale(9.3),
+                }}
+              >
                 <TouchableOpacity
                   onPress={() => {
                     restartBot();
@@ -1224,13 +1323,19 @@ export default function Chatbot8({
             </CustomView>
           </View>
         )}
-        
-{postBookingStage === true && (
 
-<View style={{ alignItems: "flex-start" }}>
-              <Text style={{marginBottom : verticalScale(7), fontSize : moderateScale(14)}}>{"AI - AC Service Assistant"}</Text>
+        {postBookingStage === true && (
+          <View style={{ alignItems: "flex-start" }}>
+            <Text
+              style={{
+                marginBottom: verticalScale(7),
+                fontSize: moderateScale(14),
+              }}
+            >
+              {"AI - AC Service Assistant"}
+            </Text>
 
-       <CustomView
+            <CustomView
               isGradient={false}
               radius={scale(14.9)}
               width={scale(370)}
@@ -1241,7 +1346,7 @@ export default function Chatbot8({
               }}
             >
               <MessageTitle
-              text="Thank You!"
+                text="Thank You!"
                 stepIndex={10000}
                 style={{
                   position: "absolute",
@@ -1251,7 +1356,12 @@ export default function Chatbot8({
                   zIndex: 999,
                 }}
               />
-              <View style={{ flexDirection: "row", marginBottom : verticalScale(11) }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  marginBottom: verticalScale(11),
+                }}
+              >
                 {
                   <Image
                     source={require("../../../assets/bot.png")}
@@ -1272,30 +1382,33 @@ export default function Chatbot8({
                   radius={scale(12.4)}
                   boxStyle={[styles.botBubble]}
                 >
-
-                    <Text style={{ fontSize: moderateScale(15) }}>
+                  <Text style={{ fontSize: moderateScale(15) }}>
                     Thank you for using our app 🙏
-                    </Text>
-
+                  </Text>
                 </CustomView>
-
               </View>
               <TouchableOpacity onPress={onClose}>
-      <CustomView
-        height={verticalScale(40)}
-        radius={scale(40)}
-        gradientColors={["#077DC6", "#077DC6"]}
-        boxStyle={{ alignItems: "center", justifyContent: "center"  }}
-      >
-        <Text style={{ color: "#fff", fontWeight: "600", fontSize : moderateScale(16), borderWidth : 0 }}>
-          Exit
-        </Text>
-      </CustomView>
-    </TouchableOpacity>
-              </CustomView>
-</View>
-)}
-      
+                <CustomView
+                  height={verticalScale(40)}
+                  radius={scale(40)}
+                  gradientColors={["#077DC6", "#077DC6"]}
+                  boxStyle={{ alignItems: "center", justifyContent: "center" }}
+                >
+                  <Text
+                    style={{
+                      color: "#fff",
+                      fontWeight: "600",
+                      fontSize: moderateScale(16),
+                      borderWidth: 0,
+                    }}
+                  >
+                    Exit
+                  </Text>
+                </CustomView>
+              </TouchableOpacity>
+            </CustomView>
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -1312,7 +1425,7 @@ const styles = StyleSheet.create({
     // borderWidth: 1,
     // borderColor: "#E3EAF5",
   },
-
+icon : { width: scale(31), height: scale(24), resizeMode : 'center' },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1392,8 +1505,9 @@ const styles = StyleSheet.create({
     width: scale(38),
     height: scale(38),
     borderRadius: scale(19),
-    backgroundColor: "#E6F4FF",
+    backgroundColor: "#EDEBF4",
     marginRight: scale(10),
+    paddingTop: verticalScale(2),
   },
   headerTitle: { color: "#fff", fontWeight: "700" },
   headerSubtitle: { color: "#EAF6FF", fontSize: 11 },
@@ -1428,6 +1542,7 @@ const styles = StyleSheet.create({
     // backgroundColor: "#C8E6FF1A",
     alignItems: "center",
     justifyContent: "center",
+    // flex : 1
   },
   notesBox: {
     flexDirection: "row",
@@ -1448,5 +1563,3 @@ const styles = StyleSheet.create({
     borderRadius: scale(8),
   },
 });
-
-

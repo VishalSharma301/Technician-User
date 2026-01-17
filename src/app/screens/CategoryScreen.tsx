@@ -21,122 +21,143 @@ import BookingBottomSheet from "../components/BookingLogic";
 import { ServiceData } from "../../constants/types";
 import BadgeCard from "../components/BadgeCard";
 import CustomView from "../components/CustomView";
+import { newServiceDetails } from "../../utils/servicesApi";
+import Chatbot8 from "../components/CC8";
+
+type ServiceObject = {
+  data: ServiceData;
+  zipcode: string;
+};
 
 export default function CategoryScreen() {
   const { services } = useServices();
   const [showAll, setShowAll] = useState(false);
   const displayedServices = showAll ? services : services.slice(0, 12);
-    const [visible, setVisible] = useState(false);
-    const [selectedService, setSelectedService] = useState<ServiceData>();
-    const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [selectedService, setSelectedService] = useState<ServiceData>();
+  const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
+  const [selectedServiceObject, setSelectedServiceObject] =
+    useState<ServiceObject>();
+  async function selectBrand(service: ServiceData) {
+    // setVisible(true);
+    // setSelectedService(service);
+    const clickedService = await newServiceDetails(service._id, "140802");
+    if (clickedService) {
+      console.log("service : ", clickedService);
 
-   function selectBrand(service: ServiceData) {
+      setSelectedServiceObject(clickedService);
       setVisible(true);
-      setSelectedService(service);
     }
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F0EFF8" }}>
       <ScrollView style={styles.container}>
-      {/* <Header /> */}
-      <Text
-        style={{
-          fontSize: moderateScale(16),
-          fontWeight: "500",
-          marginTop: verticalScale(20),
-        }}
-      >
-        Browse All Categories
-      </Text>
-      <View style={{ position: "relative" }}>
-        <View style={styles.gridContainer}>
-          {services.length === 0 ? (
-            
-            <View
-              style={{
-                alignItems: "center",
-                marginTop: verticalScale(20),
-                height: verticalScale(150),
-                justifyContent: "center",
-                // borderWidth : 1,
-                alignSelf: "center",
-                width: "100%",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: moderateScale(14),
-                  fontWeight: "600",
-                  color: "#000",
-                  alignSelf: "center",
-                }}
-              >
-                No Service Provider Available in this area
-              </Text>
-            </View>
-          ) : (
-            displayedServices.map((service) => (
-              <CustomView radius={scale(16.5)} shadowStyle={{marginBottom : 8}} key={service._id}>
+        {/* <Header /> */}
+        <Text
+          style={{
+            fontSize: moderateScale(16),
+            fontWeight: "500",
+            marginTop: verticalScale(20),
+          }}
+        >
+          Browse All Categories
+        </Text>
+        <View style={{ position: "relative" }}>
+          <View style={styles.gridContainer}>
+            {services.length === 0 ? (
               <View
                 style={{
-                  width: scale(119.5),
-                  // marginBottom: verticalScale(17),
-                  // backgroundColor: "#FFFFFF1A",
+                  alignItems: "center",
+                  marginTop: verticalScale(20),
+                  height: verticalScale(150),
+                  justifyContent: "center",
+                  // borderWidth : 1,
+                  alignSelf: "center",
+                  width: "100%",
                 }}
-                key={service._id}
               >
-                <TouchableOpacity  onPress={() => selectBrand(service)}
+                <Text
+                  style={{
+                    fontSize: moderateScale(14),
+                    fontWeight: "600",
+                    color: "#000",
+                    alignSelf: "center",
+                  }}
+                >
+                  No Service Provider Available in this area
+                </Text>
+              </View>
+            ) : (
+              displayedServices.map((service) => (
+                <CustomView
+                  radius={scale(16.5)}
+                  shadowStyle={{ marginBottom: 8 }}
+                  key={service._id}
+                >
+                  <View
+                    style={{
+                      width: scale(119.5),
+                      // marginBottom: verticalScale(17),
+                      // backgroundColor: "#FFFFFF1A",
+                    }}
+                    key={service._id}
+                  >
+                    <TouchableOpacity
+                      onPress={() => selectBrand(service)}
                       onLongPress={() => setActiveTooltipId(service._id)}
                       onPressOut={() => setActiveTooltipId(null)}
                       delayLongPress={300}
-                      style={{ alignItems: "center", justifyContent: "center" }}>
-                <View
-                  key={service._id}
-                  style={{
-                    width: scale(71),
-                    height: scale(67),
-                    // backgroundColor: "#FFFFFF1A",
-                    borderRadius: moderateScale(9),
-                    // borderWidth: 0.9,
-                    // borderColor: "#ffffff",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <View style={styles.serviceIcon}>
-                    <Image
-                      source={
-                        iconMap[service.icon as IconName] ?? iconMap["default"]
-                      }
-                      style={{
-                        height: "100%",
-                        width: "100%",
-                        // minHeight: verticalScale(39),
-                        // minWidth: scale(39),
-                        resizeMode: "contain",
-                      }}
-                    />
+                      style={{ alignItems: "center", justifyContent: "center" }}
+                    >
+                      <View
+                        key={service._id}
+                        style={{
+                          width: scale(71),
+                          height: scale(67),
+                          // backgroundColor: "#FFFFFF1A",
+                          borderRadius: moderateScale(9),
+                          // borderWidth: 0.9,
+                          // borderColor: "#ffffff",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <View style={styles.serviceIcon}>
+                          <Image
+                            source={
+                              iconMap[service.icon as IconName] ??
+                              iconMap["default"]
+                            }
+                            style={{
+                              height: "100%",
+                              width: "100%",
+                              // minHeight: verticalScale(39),
+                              // minWidth: scale(39),
+                              resizeMode: "contain",
+                            }}
+                          />
+                        </View>
+                      </View>
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          fontWeight: "400",
+                          fontSize: moderateScale(14),
+                          marginHorizontal: scale(16),
+                          marginTop: verticalScale(5),
+                        }}
+                      >
+                        {service.name}
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                </View>
-                <Text
-                  numberOfLines={1}
-                  style={{
-                    fontWeight: "400",
-                    fontSize: moderateScale(14),
-                    marginHorizontal: scale(16),
-                    marginTop: verticalScale(5),
-                  }}
-                >
-                  {service.name}
-                </Text>
-                </TouchableOpacity>
-              </View>
-              </CustomView>
-            ))
-          )}
-        </View>
-        {/* Expand Button */}
-        {/* {services.length > 8 && (
+                </CustomView>
+              ))
+            )}
+          </View>
+          {/* Expand Button */}
+          {/* {services.length > 8 && (
           <TouchableOpacity
             style={styles.floatingButton}
             onPress={() => setShowAll((prev) => !prev)}
@@ -155,23 +176,32 @@ export default function CategoryScreen() {
             </ImageBackground>
           </TouchableOpacity>
         )} */}
-      </View>
+        </View>
       </ScrollView>
-      <CustomNavBar isLocal={'Category'} />
-      <BottomSheet visible={visible} onClose={() => setVisible(false)}>
+              {visible && (
+                    <View style={{ height: "100%", zIndex: 999999 }}>
+                      <Chatbot8
+                        serviceObject={selectedServiceObject?.data!}
+                        onClose={() => setVisible(false)}
+                      />
+                    </View>
+                  )}
+
+      <CustomNavBar isLocal={"Category"} />
+      {/* <BottomSheet visible={visible} onClose={() => setVisible(false)}>
         {selectedService && (
           <BookingBottomSheet
             close={() => setVisible(false)}
             service={selectedService}
           />
         )}
-      </BottomSheet>
+      </BottomSheet> */}
     </View>
   );
 }
 // ˅
 const styles = StyleSheet.create({
-   container: {
+  container: {
     padding: scale(9),
   },
   gridContainer: {
@@ -218,33 +248,33 @@ const styles = StyleSheet.create({
     left: -1,
     bottom: -5,
   },
-floatingButton: {
-  position: "absolute",
-  bottom: verticalScale(-30),      // scaled
-  left: "50%",
-  transform: [{ translateX: -scale(25) }], // scaled
-  width: scale(50),
-  height: scale(50),
-  zIndex: 10,
-  alignItems: "center",
-  justifyContent: "center",
-},
+  floatingButton: {
+    position: "absolute",
+    bottom: verticalScale(-30), // scaled
+    left: "50%",
+    transform: [{ translateX: -scale(25) }], // scaled
+    width: scale(50),
+    height: scale(50),
+    zIndex: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-buttonImage: {
-  width: scale(50),
-  height: scale(50),
-  justifyContent: "center",
-  alignItems: "center",
-},
+  buttonImage: {
+    width: scale(50),
+    height: scale(50),
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
-floatingButtonText: {
-  color: "#fff",
-  fontSize: moderateScale(14),
-  fontWeight: "700",
-  // marginBottom : verticalScale(-12),
-  marginTop: verticalScale(-12), // scaled
-  lineHeight: moderateScale(20),
-  bottom: verticalScale(-5),     // scaled
-  left: -1,
-},
+  floatingButtonText: {
+    color: "#fff",
+    fontSize: moderateScale(14),
+    fontWeight: "700",
+    // marginBottom : verticalScale(-12),
+    marginTop: verticalScale(-12), // scaled
+    lineHeight: moderateScale(20),
+    bottom: verticalScale(-5), // scaled
+    left: -1,
+  },
 });

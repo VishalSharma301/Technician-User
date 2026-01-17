@@ -136,7 +136,7 @@ const HomeScreen = () => {
         const brandsRes = await fetchBrandsByZip(zipcode);
 
         if (servicesRes) {
-          console.log("🔧 Services fetched:", servicesRes);
+          console.log("🔧 Services fetched:");
         } else {
           console.log("❌ Services failed");
         }
@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
     // paddingHorizontal: scale(8),
     flexDirection: "row",
                       alignItems: "center",
-                      paddingHorizontal: scale(10),
+                      paddingHorizontal: scale(8.5),
                       gap: scale(3),
   },
 

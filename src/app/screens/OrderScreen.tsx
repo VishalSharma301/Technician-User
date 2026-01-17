@@ -166,12 +166,15 @@ export default function OrderScreen() {
     <View style={styles.headerContainer}>
       {/* <Header /> */}
       <View>
-        <Icon name="arrow-back" size={moderateScale(18)} color={"#717A7E"} />
+        <TouchableOpacity onPress={()=>navigation.goBack()} >
+        
+        <Icon name="arrow-back" size={moderateScale(22)} color={"#717A7E"} />
+        </TouchableOpacity>
         <Text
           style={{
             fontSize: moderateScale(14),
             fontWeight: "600",
-            marginTop: verticalScale(6),
+            marginVertical: verticalScale(6),
             color: "#1A1A1A",
           }}
         >

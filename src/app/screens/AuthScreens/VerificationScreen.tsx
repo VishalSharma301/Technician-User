@@ -70,9 +70,9 @@ const VerificationScreen = () => {
 
           <View style={styles.codeContainer}>
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <CustomView radius={moderateScale(8)}>
+              <CustomView radius={moderateScale(8)}  key={i}>
                 <TextInput
-                  key={i}
+                 
                   ref={(ref) => {
                     inputRefs.current[i] = ref;
                   }}
