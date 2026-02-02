@@ -22,7 +22,7 @@ export default function TypingDots() {
           easing: Easing.ease,
           useNativeDriver: true,
         }),
-      ])
+      ]),
     ).start();
   };
 

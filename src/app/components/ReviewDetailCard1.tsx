@@ -1,0 +1,366 @@
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ImageBackground,
+  Image,
+} from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { scale, verticalScale, moderateScale } from "../../utils/scaling";
+import { LinearGradient } from "expo-linear-gradient";
+import CustomView from "./CustomView";
+import { useAddress } from "../../hooks/useAddress";
+import { iconMap, IconName } from "../../utils/iconMap";
+
+type Props = {
+  onBookNow?: () => void;
+  problemTitle?: string;
+  brand: string;
+  problemDuration: string;
+  acType: string;
+  qty: string | number;
+  price: number;
+  visitCharges: number;
+  additionalCharges: number;
+};
+
+export default function ReviewDetailCard({
+  onBookNow,
+  problemTitle,
+  brand,
+  problemDuration,
+  acType,
+  qty,
+  price,
+  visitCharges,
+  additionalCharges,
+}: Props) {
+  const [activeTab, setActiveTab] = useState<"basic" | "problem">("basic");
+  const { selectedAddress } = useAddress();
+
+  return (
+    <ImageBackground
+      source={
+        activeTab == "basic"
+          ? require("../../../assets/ReviewCardBG.png")
+          : require("../../../assets/ReviewCardBG2.png")
+      }
+      style={{
+        height:
+          activeTab == "basic" ? verticalScale(360 + 34) : verticalScale(645+80),
+        width: scale(350),
+        marginLeft: scale(5),
+        // alignItems: "center",
+        justifyContent: "center",
+        padding: scale(16),
+        paddingTop: scale(23),
+      }}
+      resizeMode="stretch"
+    >
+      <LinearGradient colors={["#077DC6", "#077DC6"]} style={styles.header}>
+        <Image source={iconMap['review']} style={{width : scale(38), height: scale(30), resizeMode : 'center'}}/>
+        <Text style={styles.headerText}> Review Detail</Text>
+      </LinearGradient>
+
+      <View style={styles.outer}>
+        {/* HEADER */}
+
+        {/* TAB SWITCH */}
+        <CustomView
+          height={verticalScale(38)}
+          shadowStyle={{
+            width: scale(287),
+            marginBottom: verticalScale(12),
+            alignSelf: "center",
+          }}
+          radius={scale(16)}
+          boxStyle={styles.tabWrap}
+          width={scale(286)}
+        >
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === "basic" && styles.activeTab]}
+            onPress={() => setActiveTab("basic")}
+          >
+             <Image source={iconMap['setting']} style={{width : scale(19), height: scale(19), resizeMode : 'center'}}/>
+            <Text style={styles.tabText}>Basic Info</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === "problem" && styles.activeTab]}
+            onPress={() => setActiveTab("problem")}
+          >
+             <Image source={iconMap['drill']} style={{width : scale(19), height: scale(19), resizeMode : 'center'}}/>
+            <Text style={styles.tabText}>Problem info</Text>
+          </TouchableOpacity>
+        </CustomView>
+
+        <ScrollView
+          contentContainerStyle={{
+            paddingBottom: verticalScale(0),
+            // borderWidth: 1,
+            width: "100%",
+          }}
+        >
+          {/* BASIC INFO */}
+          {activeTab === "basic" && (
+            <View style={styles.card}>
+              <LinearGradient
+                colors={["#076199", "#077DC6"]}
+                //   locations={[0, 0.2]}
+                //   start={{ x: 0, y: 0 }}
+                //   end={{ x: 0, y: 1 }}
+                style={styles.sectionHeader}
+              >
+                 <Image source={iconMap['setting']} style={{width : scale(19), height: scale(19), resizeMode : 'center'}}/>
+                <Text style={styles.sectionTitle}> Basic Info</Text>
+              </LinearGradient>
+
+              <InfoRow
+              icon="zip"
+                label="Zip code"
+                value={selectedAddress.address.zipcode}
+              />
+              <InfoRow icon="service_time" label="Service Time" value="Service within 24 hour" />
+              <InfoRow
+              icon="addNew"
+                label="Address"
+                value={`${selectedAddress.address.street} ${selectedAddress.address.city}`}
+              />
+            </View>
+          )}
+
+          {/* PROBLEM INFO */}
+          {activeTab === "problem" && (
+            <>
+              <View style={styles.card}>
+                <LinearGradient
+                   colors={["#076199", "#077DC6"]}
+                  //   locations={[0, 0.2]}
+                  //   start={{ x: 0, y: 0 }}
+                  //   end={{ x: 0, y: 1 }}
+                  style={styles.sectionHeader}
+                >
+                   <Image source={iconMap['setting']} style={{width : scale(19), height: scale(19), resizeMode : 'center'}}/>
+                  <Text style={styles.sectionTitle}> {problemTitle}</Text>
+                </LinearGradient>
+
+                <InfoRow icon="service_time" label="Brand" value={brand} />
+                <InfoRow icon="service_time" label="Problem Duration" value={problemDuration} />
+                <InfoRow icon="service_time" label="AC Type" value={acType} />
+                <InfoRow icon="service_time" label="AC Type" value={acType} />
+                <InfoRow icon="service_time" label="AC Type" value={acType} />
+              </View>
+
+              <View style={styles.card}>
+                <LinearGradient
+                  colors={["#076199", "#077DC6"]}
+                  //   locations={[0, 0.2]}
+                  //   start={{ x: 0, y: 0 }}
+                  //   end={{ x: 0, y: 1 }}
+                  style={styles.sectionHeader}
+                >
+                   <Image source={iconMap['setting']} style={{width : scale(19), height: scale(19), resizeMode : 'center'}}/>
+                  <Text style={styles.sectionTitle}> Price</Text>
+                </LinearGradient>
+                <InfoRow icon="other" label="Qty" value={qty} />
+                <InfoRow icon="price" label="Price" value={`₹${price}`} />
+                <InfoRow icon="visitCharge" label="Visit Charges" value={`₹${visitCharges}`} />
+                <InfoRow icon="AddCharge" label="Additional Charges" value={`₹${additionalCharges}`} />
+              </View>
+            </>
+          )}
+        </ScrollView>
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Total Price</Text>
+          <Text style={styles.totalValue}>₹{price + visitCharges + additionalCharges}</Text>
+        </View>
+        {/* BOOK NOW */}
+        <TouchableOpacity style={styles.bookBtn} onPress={onBookNow}>
+          <Text style={styles.bookText}>Book Now</Text>
+        </TouchableOpacity>
+      </View>
+    </ImageBackground>
+  );
+}
+
+/* ---------- SMALL REUSABLE ROW ---------- */
+
+function InfoRow({ label, value , icon}: { label: string ; value: string | number, icon : IconName }) {
+  return (
+   <View>
+      <ImageBackground resizeMode="contain" source={require('../../../assets/rowBG.png')} style={styles.row}>
+      <View style={{flexDirection : 'row', alignItems : 'center', gap : scale(1)}}>
+      <Image source={iconMap[icon]} style={{width : scale(23), height: scale(18), resizeMode : 'center'}}/>
+      <Text style={styles.rowLabel}>{label}</Text>
+      </View>
+      <Text style={styles.rowValue}>{value}</Text>
+      </ImageBackground>
+    </View>
+  );
+}
+
+/* ---------- STYLES ---------- */
+
+const styles = StyleSheet.create({
+  outer: {
+    // backgroundColor: "#E6F8FB",
+    // borderRadius: scale(24),
+    // padding: scale(12),
+    // borderWidth: 2,
+    // borderColor: "#00A4B8",
+  },
+
+  /* ---------- HEADER ---------- */
+  header: {
+    // alignSelf: "center",
+    borderRadius: scale(20),
+    paddingHorizontal: scale(18),
+    paddingVertical: verticalScale(6),
+    marginBottom: verticalScale(10),
+    position: "absolute",
+    top: verticalScale(-19),
+    left: "31%",
+    height: verticalScale(40),
+    justifyContent: "center",
+    alignItems : 'center',
+    flexDirection : 'row'
+  },
+  headerText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: moderateScale(14),
+  },
+
+  /* ---------- TABS ---------- */
+  tabWrap: {
+    flexDirection: "row",
+    borderWidth: moderateScale(0.7),
+    borderColor: "#fff",
+    overflow: "hidden",
+    // backgroundColor: "#fff",
+    // borderRadius: scale(25),
+    // padding: scale(4),
+    // marginBottom: verticalScale(12),
+  },
+  tabBtn: {
+    flex: 1,
+    flexDirection: "row",
+    gap: scale(6),
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: verticalScale(6),
+    backgroundColor: "#fff",
+    // borderRadius: scale(20),
+  },
+  activeTab: {
+    backgroundColor: "#CDE1FD",
+  },
+  tabText: {
+    fontSize: moderateScale(12),
+    fontWeight: "600",
+    color: "#077DC6",
+  },
+
+  /* ---------- INFO CARD ---------- */
+  card: {
+    backgroundColor: "#D8E8FF",
+    borderRadius: scale(12),
+    padding: scale(12),
+    marginBottom: verticalScale(10),
+    borderWidth: moderateScale(0.7),
+    borderColor: "#045BD8",
+  },
+
+  sectionHeader: {
+    alignSelf: "flex-start",
+    backgroundColor: "#00A4B8",
+    paddingHorizontal: scale(24),
+    justifyContent: "center",
+    // paddingVertical: verticalScale(8),
+    borderRadius: scale(45),
+    marginBottom: verticalScale(8),
+    height: verticalScale(37.5),
+    flexDirection : 'row',
+    alignItems : 'center',
+  },
+  sectionTitle: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: moderateScale(12),
+  },
+
+  /* ---------- ROW ---------- */
+  row: {
+    // backgroundColor: "#EFFFFF",
+    // borderRadius: scale(20),
+    paddingLeft: scale(15),
+    paddingRight: scale(30),
+    // paddingVertical: verticalScale(8),
+    // marginBottom: verticalScale(6),
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: verticalScale(36),
+    width: scale(290),
+    marginBottom : verticalScale(8),
+    resizeMode : 'center',
+    alignSelf   : 'center'
+  },
+  rowLabel: {
+    fontSize: moderateScale(12),
+    color: "#000000",
+    fontWeight: "400",
+  },
+  rowValue: {
+    fontSize: moderateScale(12),
+    color: "#000",
+    fontWeight: "400",
+  },
+
+  /* ---------- TOTAL PRICE ---------- */
+  totalRow: {
+    backgroundColor: "#077DC6",
+    // borderRadius: scale(25),
+    borderBottomLeftRadius: scale(25),
+    borderBottomRightRadius: scale(25),
+    // paddingVertical: verticalScale(8),
+    paddingHorizontal: scale(18),
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: scale(50),
+    marginBottom: verticalScale(10),
+    height: verticalScale(36),
+    width: scale(295),
+    alignSelf: "center",
+    alignItems: "center",
+    marginTop: verticalScale(-10),
+  },
+  totalLabel: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: moderateScale(18),
+  },
+  totalValue: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: moderateScale(18),
+  },
+
+  /* ---------- BOOK NOW ---------- */
+  bookBtn: {
+    backgroundColor: "#077DC6",
+    borderRadius: scale(30),
+    // paddingVertical: verticalScale(12),
+    alignItems: "center",
+    height: verticalScale(36),
+    justifyContent: "center",
+  },
+  bookText: {
+    color: "#fff",
+    fontSize: moderateScale(15),
+    fontWeight: "700",
+  },
+});

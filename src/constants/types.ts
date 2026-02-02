@@ -116,65 +116,12 @@ export type ServiceCategory = {
   icon: string;
 };
 
-export type ConversationSettings = {
-  agentNames: string[];
-  enableConversationMode: boolean;
-};
-export type ConversationStepConfig = {
-  allowSavedAddress?: boolean;
-  requireAddress?: boolean;
-
-  // brand selection
-  brandsSource?: "service.supportedBrands" | string;
-  showBrands?: boolean;
-
-  // option selection
-  optionsSource?: "service.options" | string;
-  showOptions?: boolean;
-
-  // pricing
-  showPricing?: boolean;
-  pricingType?: "all" | "single" | "double" | "triple";
-
-  // notes
-  notesRequired?: boolean;
-  notesPlaceholder?: string;
-
-  // custom options array (unused but exists)
-  customOptions?: any[];
-};
-export type ConversationStepType =
-  | "GREETING"
-  | "OPTION_SELECTION"
-  | "BRAND_SELECTION"
-  | "QUANTITY_SELECTION"
-  | "QUANTITY_CONFIRM"
-  | "ADDRESS_INPUT"
-  | "NOTES_INPUT"
-  | "FINAL_CONFIRMATION";
-export type ConversationStep = {
-  _id: string;
-
-  stepNumber: number;
-  stepType: ConversationStepType;
-
-  agentName: string;
-
-  messageTemplate: string;
-
-  isActive: boolean;
-  isSkippable: boolean;
-
-  config: ConversationStepConfig;
-};
-
 export type ServiceData = {
   _id: string;
   name: string;
   description: string;
   estimatedTime: string;
-  conversationSettings: ConversationSettings;
-  conversationSteps: ConversationStep[];
+
   icon: string;
   specialty: string;
   slug: string;

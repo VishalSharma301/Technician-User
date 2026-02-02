@@ -65,6 +65,7 @@ export default function Chatbot8({
   const { userId, firstName } = useProfile();
   const { addresses, setAddresses, setSelectedAddress, selectedAddress } =
     useAddress();
+  const { showTypingIndicator, typeText } = useChatGPTTyping();
 
   const steps = serviceObject.conversation.steps;
   const service = serviceObject.service;
@@ -85,6 +86,8 @@ export default function Chatbot8({
   const [followUpQueue, setFollowUpQueue] = useState<any[]>([]);
   const [currentFollowUp, setCurrentFollowUp] = useState<any>(null);
   const [followUpAnswers, setFollowUpAnswers] = useState<any>({});
+  // const problemDuration = Object.keys(followUpAnswers)[2];
+  // const [question, problemDuration] = Object.entries(followUpAnswers)[0];
 
   const askedFollowUpRef = useRef<string | null>(null);
   const [showReview, setShowReview] = useState(true);
@@ -623,11 +626,52 @@ export default function Chatbot8({
     );
   }, [currentStepIndex, currentFollowUp, messages]);
 
+  function MessageTitle({
+    stepIndex,
+    style,
+    user = false,
+    text,
+  }: {
+    stepIndex: number;
+    style?: ViewStyle;
+    user?: boolean;
+    text?: string;
+  }) {
+    const step = steps[stepIndex];
+    // if (!step) return null;
+
+    return (
+      <LinearGradient
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={[
+          {
+            paddingVertical: verticalScale(4),
+            paddingHorizontal: scale(9),
+            borderRadius: scale(4),
+            alignSelf: "flex-start",
+          },
+          style,
+        ]}
+        colors={!user ? ["#FF0000", "#990000"] : ["#077DC6", "#055d94"]}
+      >
+        <Text
+          style={{
+            color: "#fff",
+            fontWeight: "400",
+            fontSize: moderateScale(12),
+          }}
+        >
+          {renderTemplate(text ? text : step.label)}
+        </Text>
+      </LinearGradient>
+    );
+  }
+
   /* ---------------- RENDER ---------------- */
   const activeBotMessage = [...messages]
     .reverse()
     .find((m) => m.from === "bot");
-
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <View style={styles.topHeader}>
@@ -686,6 +730,9 @@ export default function Chatbot8({
             </View>
           </TouchableOpacity>
         </View>
+        {/* <TouchableOpacity onPress={onClose}>
+          <Text style={styles.close}>✕</Text>
+        </TouchableOpacity> */}
       </View>
 
       <ScrollView
@@ -697,34 +744,174 @@ export default function Chatbot8({
           const isLatestBotMessage =
             m.from === "bot" && m.id === activeBotMessage?.id;
 
+          const isCurrentStep =
+            m.from === "bot" && m.stepIndex === currentStepIndex;
+
           const isCustomQuestionMessage =
             isLatestBotMessage &&
             steps[m.stepIndex]?.stepType === "CUSTOM_QUESTION";
-
-          /* USER MESSAGE  */
+          /* USER MESSAGE (unchanged) */
 
           if (m.from === "user") {
             if (m.text) {
               return (
-                <UserMessage
-                  steps={steps}
-                  renderTemplate={renderTemplate}
+                <View
                   key={m.id}
-                  m={m}
-                  firstName={firstName}
-                />
+                  style={{
+                    alignSelf: "flex-end",
+                    marginBottom: verticalScale(16),
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: scale(8),
+                      marginBottom: verticalScale(16),
+                      alignSelf: "flex-end",
+                      marginRight: scale(6),
+                    }}
+                  >
+                    <View
+                      style={{
+                        height: scale(32),
+                        width: scale(32),
+                        borderRadius: scale(32),
+                        borderWidth: 1,
+                        borderColor: "#DFDFDF",
+                        overflow: "hidden",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Image
+                        source={require("../../../assets/user.png")}
+                        style={{ width: scale(30), height: scale(30) }}
+                        resizeMode="center"
+                      />
+                    </View>
+                    <Text
+                      style={{ fontSize: moderateScale(12), color: "#000" }}
+                    >
+                      {firstName} - Customer
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      // marginBottom: verticalScale(16),
+                      alignItems: "flex-end",
+                      // borderWidth: 1,
+                      alignSelf: "flex-end",
+                      // height : verticalScale(100),
+                      // justifyContent : 'flex-end'
+                    }}
+                  >
+                    <MessageTitle
+                      stepIndex={m.stepIndex}
+                      user
+                      style={{
+                        position: "absolute",
+                        top: verticalScale(-13),
+                        left: scale(15),
+                        // right: scale(70),
+                        elevation: 1,
+                        zIndex: 999,
+                      }}
+                    />
+                    <CustomView
+                      radius={scale(25)}
+                      height={verticalScale(50)}
+                      gradientColors={["#B8D3E959", "#B8D3E959"]}
+                      boxStyle={{
+                        backgroundColor: "white",
+                        alignItems: "flex-start",
+                        justifyContent: "center",
+                        paddingHorizontal: scale(15),
+                        minWidth: scale(190),
+                        borderWidth: 1,
+                        borderColor: "#fff",
+                      }}
+                    >
+                      <Text
+                        style={{ fontSize: moderateScale(15), color: "#000" }}
+                      >
+                        {m.text}
+                      </Text>
+                    </CustomView>
+                  </View>
+                </View>
               );
             }
 
             if (m.component === "QTY_PRICE") {
               return (
-                <QtyPriceCard
-                  steps={steps}
-                  renderTemplate={renderTemplate}
+                <View
                   key={m.id}
-                  m={m}
-                  firstName={firstName}
-                />
+                  style={{
+                    alignSelf: "flex-end",
+                    marginBottom: verticalScale(16),
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: scale(8),
+                      marginBottom: verticalScale(16),
+                      alignSelf: "flex-end",
+                      marginRight: scale(6),
+                    }}
+                  >
+                    <View
+                      style={{
+                        height: scale(32),
+                        width: scale(32),
+                        borderRadius: scale(32),
+                        borderWidth: 1,
+                        borderColor: "#DFDFDF",
+                        overflow: "hidden",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Image
+                        source={require("../../../assets/user.png")}
+                        style={{ width: scale(30), height: scale(30) }}
+                        resizeMode="center"
+                      />
+                    </View>
+                    <Text
+                      style={{ fontSize: moderateScale(12), color: "#000" }}
+                    >
+                      {firstName} - Customer
+                    </Text>
+                  </View>
+                  <View
+                    key={m.id}
+                    style={{
+                      alignItems: "flex-end",
+                      marginBottom: verticalScale(16),
+                    }}
+                  >
+                    <MessageTitle
+                      stepIndex={m.stepIndex}
+                      user
+                      style={{
+                        position: "absolute",
+                        top: verticalScale(-15),
+                        right: scale(70),
+                        elevation: 1,
+                        zIndex: 999,
+                      }}
+                    />
+                    <QuantityPriceCard
+                      quantity={m.payload.quantity}
+                      price={m.payload.price}
+                      originalPrice={m.payload.originalPrice}
+                      discountPercent={m.payload.discountPercent}
+                    />
+                  </View>
+                </View>
               );
             }
           }
@@ -751,8 +938,6 @@ export default function Chatbot8({
                 }}
               >
                 <MessageTitle
-                  steps={steps}
-                  renderTemplate={renderTemplate}
                   stepIndex={m.stepIndex}
                   style={{
                     position: "absolute",
@@ -786,6 +971,10 @@ export default function Chatbot8({
                     {m.text === "__DOTS__" ? (
                       <TypingDots />
                     ) : (
+                      // )
+                      // : m.text === "__BADGE__" ? (
+                      //   response && <BadgeCard response={response} />
+                      //   response && <ProviderCard />
                       <Text style={{ fontSize: moderateScale(16) }}>
                         {m.text}
                       </Text>
@@ -797,10 +986,7 @@ export default function Chatbot8({
                     flexWrap: "wrap",
                     flexDirection: "row",
                     marginTop: verticalScale(10),
-                    gap: scale(4),
-                    // borderWidth: 2,
-                    alignItems: "center",
-                    justifyContent: "center",
+                    gap: scale(8),
                   }}
                 >
                   {/* CUSTOM QUESTION CARD */}
@@ -821,10 +1007,10 @@ export default function Chatbot8({
                         height={verticalScale(45)}
                         radius={scale(50)}
                         boxStyle={styles.infoRow}
-                        width={scale(310)}
+                        width={scale(320)}
                         shadowStyle={{ alignSelf: "flex-start" }}
                       >
-                        <Image source={iconMap["zip"]} style={styles.icon} />
+                        <Image source={iconMap['zip']} style={styles.icon}  />
                         <Text style={styles.infoLabel}>Zip code</Text>
                         <Text style={styles.infoValue}>
                           {selectedAddress?.address?.zipcode}
@@ -836,13 +1022,10 @@ export default function Chatbot8({
                         height={verticalScale(45)}
                         radius={scale(50)}
                         boxStyle={styles.infoRow}
-                        width={scale(310)}
+                        width={scale(320)}
                         shadowStyle={{ alignSelf: "flex-start" }}
                       >
-                        <Image
-                          source={iconMap["service_time"]}
-                          style={styles.icon}
-                        />
+                        <Image source={iconMap['service_time']} style={styles.icon}  />
                         <Text style={styles.infoLabel}>Service Time</Text>
                         <Text style={styles.infoValue}>
                           Service within {service.estimatedTime}
@@ -862,7 +1045,7 @@ export default function Chatbot8({
                             height={verticalScale(45)}
                             radius={scale(40)}
                             boxStyle={[styles.optionBtn]}
-                            width={scale(150)}
+                            width={scale(155)}
                             // shadowStyle={{flex : 1}}
                           >
                             <Text style={styles.cancelText}>Cancel</Text>
@@ -879,7 +1062,7 @@ export default function Chatbot8({
                             height={verticalScale(45)}
                             radius={scale(50)}
                             boxStyle={[styles.optionBtn]}
-                            width={scale(150)}
+                            width={scale(155)}
                             gradientColors={["#027CC7", "#027CC7"]}
                             shadowStyle={{ flex: 1 }}
                           >
@@ -903,50 +1086,17 @@ export default function Chatbot8({
                         key={o.id}
                         boxStyle={[
                           styles.optionBtn,
-
-                         !isAddressStep &&  {
-                            paddingHorizontal: 0,
-                            flexGrow: 1,
-                            flexBasis: "45%", // allows 2 per row when text is small
-                            maxWidth: "100%",
-                            
-                          },
-                          isAddressStep && {
-                           
-                         
-                            flexGrow: 1,
-                            flexBasis: "100%", // allows 2 per row when text is small
-                            maxWidth: "100%",
-                          },
-                        ]}
-                        width={
-                          isCapacitySelection
-                            ? scale(104)
-                            
-                              : undefined
-                        }
-                        shadowStyle={[
-                          !isAddressStep &&{
-                            alignSelf: "stretch",
-                            flexGrow: 1,
-                            flexBasis: "45%", // allows 2 per row when text is small
-                            maxWidth: "100%",
-                          },
-                          isCapacitySelection && {
-                            width: scale(104),
-                            alignSelf: "flex-start",
-                            flexGrow: 1,
-                            flexBasis: "20%", // allows 2 per row when text is small
-                            maxWidth: "30%",
-                          },
                           isAddressStep && {
                             width: scale(335),
-                            // alignItems: "flex-start",
-                            // flexGrow: 1,
-                            // flexBasis: "100%", // allows 2 per row when text is small
-                            // maxWidth: "100%",
+                            alignItems: "flex-start",
+                            paddingLeft: scale(20),
+                            
                           },
+                          { paddingHorizontal: 0 },
+                          isCapacitySelection && { width : scale(104) },
                         ]}
+                        // width={scale(200)}
+                        shadowStyle={{ alignSelf: "flex-start" }}
                       >
                         <TouchableOpacity
                           onPress={() => handleOptionPress(o)}
@@ -955,34 +1105,14 @@ export default function Chatbot8({
                             // borderWidth: 1,
                             height: "100%",
                             justifyContent: "center",
-                            alignItems: "flex-start",
+                            paddingHorizontal: scale(15),
                           }}
                         >
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: scale(2),
-                              width: "100%",
-                              // borderWidth: 1,
-                              height: "100%",
-                              paddingHorizontal: scale(6),
-                            }}
-                          >
-                            <Image
-                              source={iconMap["clock"]}
-                              style={styles.icon}
-                            />
-                            <Text
-                              style={{
-                                borderWidth: 1,
-                                width: "80%",
-                                marginRight: scale(0),
-                              }}
-                              numberOfLines={2}
-                            >
-                              {o.label}
-                            </Text>
+                          <View style={{flexDirection : 'row', alignItems : 'center', gap : scale(2)}}>
+                            <Image source={iconMap['clock']} style={styles.icon}  />
+                          <Text>
+                             {o.label}
+                          </Text>
                           </View>
                         </TouchableOpacity>
                       </CustomView>
@@ -1121,8 +1251,6 @@ export default function Chatbot8({
               }}
             >
               <MessageTitle
-                steps={steps}
-                renderTemplate={renderTemplate}
                 text="Problem Type"
                 stepIndex={10000}
                 style={{
@@ -1218,8 +1346,6 @@ export default function Chatbot8({
               }}
             >
               <MessageTitle
-                steps={steps}
-                renderTemplate={renderTemplate}
                 text="Thank You!"
                 stepIndex={10000}
                 style={{
@@ -1288,231 +1414,6 @@ export default function Chatbot8({
   );
 }
 
-function MessageTitle({
-  stepIndex,
-  style,
-  user = false,
-  text,
-  steps,
-  renderTemplate,
-}: {
-  stepIndex: number;
-  style?: ViewStyle;
-  user?: boolean;
-  text?: string;
-  steps: any;
-  renderTemplate: (text: string) => string;
-}) {
-  const step = steps[stepIndex];
-  // if (!step) return null;
-
-  return (
-    <LinearGradient
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={[
-        {
-          paddingVertical: verticalScale(4),
-          paddingHorizontal: scale(9),
-          borderRadius: scale(4),
-          alignSelf: "flex-start",
-        },
-        style,
-      ]}
-      colors={!user ? ["#FF0000", "#990000"] : ["#077DC6", "#055d94"]}
-    >
-      <Text
-        style={{
-          color: "#fff",
-          fontWeight: "400",
-          fontSize: moderateScale(12),
-        }}
-      >
-        {renderTemplate(text ? text : step.label)}
-      </Text>
-    </LinearGradient>
-  );
-}
-
-const UserMessage = ({
-  m,
-  firstName,
-  steps,
-  renderTemplate,
-}: {
-  m: any;
-  firstName: string;
-  steps: any;
-  renderTemplate: (text: string) => string;
-}) => {
-  return (
-    <View
-      key={m.id}
-      style={{
-        alignSelf: "flex-end",
-        marginBottom: verticalScale(16),
-      }}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: scale(8),
-          marginBottom: verticalScale(16),
-          alignSelf: "flex-end",
-          marginRight: scale(6),
-        }}
-      >
-        <View
-          style={{
-            height: scale(32),
-            width: scale(32),
-            borderRadius: scale(32),
-            borderWidth: 1,
-            borderColor: "#DFDFDF",
-            overflow: "hidden",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Image
-            source={require("../../../assets/user.png")}
-            style={{ width: scale(30), height: scale(30) }}
-            resizeMode="center"
-          />
-        </View>
-        <Text style={{ fontSize: moderateScale(12), color: "#000" }}>
-          {firstName} - Customer
-        </Text>
-      </View>
-      <View
-        style={{
-          // marginBottom: verticalScale(16),
-          alignItems: "flex-end",
-          // borderWidth: 1,
-          alignSelf: "flex-end",
-          // height : verticalScale(100),
-          // justifyContent : 'flex-end'
-        }}
-      >
-        <MessageTitle
-          steps={steps}
-          renderTemplate={renderTemplate}
-          stepIndex={m.stepIndex}
-          user
-          style={{
-            position: "absolute",
-            top: verticalScale(-13),
-            left: scale(15),
-            // right: scale(70),
-            elevation: 1,
-            zIndex: 999,
-          }}
-        />
-        <CustomView
-          radius={scale(25)}
-          height={verticalScale(50)}
-          gradientColors={["#B8D3E959", "#B8D3E959"]}
-          boxStyle={{
-            backgroundColor: "white",
-            alignItems: "flex-start",
-            justifyContent: "center",
-            paddingHorizontal: scale(15),
-            minWidth: scale(190),
-            borderWidth: 1,
-            borderColor: "#fff",
-          }}
-        >
-          <Text style={{ fontSize: moderateScale(15), color: "#000" }}>
-            {m.text}
-          </Text>
-        </CustomView>
-      </View>
-    </View>
-  );
-};
-
-const QtyPriceCard = ({
-  m,
-  firstName,
-  steps,
-  renderTemplate,
-}: {
-  m: any;
-  firstName: string;
-  steps: any;
-  renderTemplate: (text: string) => string;
-}) => {
-  return (
-    <View
-      key={m.id}
-      style={{
-        alignSelf: "flex-end",
-        marginBottom: verticalScale(16),
-      }}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: scale(8),
-          marginBottom: verticalScale(16),
-          alignSelf: "flex-end",
-          marginRight: scale(6),
-        }}
-      >
-        <View
-          style={{
-            height: scale(32),
-            width: scale(32),
-            borderRadius: scale(32),
-            borderWidth: 1,
-            borderColor: "#DFDFDF",
-            overflow: "hidden",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Image
-            source={require("../../../assets/user.png")}
-            style={{ width: scale(30), height: scale(30) }}
-            resizeMode="center"
-          />
-        </View>
-        <Text style={{ fontSize: moderateScale(12), color: "#000" }}>
-          {firstName} - Customer
-        </Text>
-      </View>
-      <View
-        key={m.id}
-        style={{
-          alignItems: "flex-end",
-          marginBottom: verticalScale(16),
-        }}
-      >
-        <MessageTitle
-          steps={steps}
-          renderTemplate={renderTemplate}
-          stepIndex={m.stepIndex}
-          user
-          style={{
-            position: "absolute",
-            top: verticalScale(-15),
-            right: scale(70),
-            elevation: 1,
-            zIndex: 999,
-          }}
-        />
-        <QuantityPriceCard
-          quantity={m.payload.quantity}
-          price={m.payload.price}
-          originalPrice={m.payload.originalPrice}
-          discountPercent={m.payload.discountPercent}
-        />
-      </View>
-    </View>
-  );
-};
 /* ---------------- STYLES ---------------- */
 
 const styles = StyleSheet.create({
@@ -1524,7 +1425,7 @@ const styles = StyleSheet.create({
     // borderWidth: 1,
     // borderColor: "#E3EAF5",
   },
-  icon: { width: scale(31), height: scale(24), resizeMode: "center" },
+icon : { width: scale(31), height: scale(24), resizeMode : 'center' },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1552,7 +1453,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: verticalScale(10),
-    gap: scale(6),
+    gap: scale(10),
   },
 
   cancelBtn: {
@@ -1641,7 +1542,6 @@ const styles = StyleSheet.create({
     // backgroundColor: "#C8E6FF1A",
     alignItems: "center",
     justifyContent: "center",
-
     // flex : 1
   },
   notesBox: {

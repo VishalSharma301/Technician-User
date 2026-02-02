@@ -11,44 +11,31 @@ import {
 } from "react-native";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
-import GradientBorder from "../components/GradientBorder";
+
 import ScreenWrapper from "../components/ScreenWrapper";
-import ServiceBottomSheet from "../components/BottomSheet";
-import Header from "../components/Header";
+
 import CustomNavBar from "../components/CustomNavBar";
-import BottomSheet from "../components/BottomSheet";
-import BookingBottomSheet from "../components/BookingLogic";
+
 import { useAuth } from "../../hooks/useAuth";
 import { useProfile } from "../../hooks/useProfile";
 import { useAddress } from "../../hooks/useAddress";
 import { useServices } from "../../hooks/useServices";
 import {
   fetchBrandsByZip,
-  fetchServiceDetails,
   fetchServicesByZip,
-  getServiceConversationDetails,
   newServiceDetails,
 } from "../../utils/servicesApi";
 import { ServiceData } from "../../constants/types";
-import { innerColors, outerColors } from "../../constants/colors";
+
 import Tooltip from "../components/Tooltip";
 import { iconMap, IconName } from "../../utils/iconMap";
 import ServiceOfTheWeek from "../components/Slider";
-import BookingChatBot from "../components/BookingChatBot";
-import Recorder from "../components/BookingChatBot";
-import ChatbotBooking from "../components/ChatBot";
-import CB1 from "../components/CB1";
-import ChatbotBooking_NewFlow from "../components/ChatBot2";
-import ChatbotBooking3 from "../components/CC4";
-import ChatbotEngine from "../components/cbbcc/CB5";
-import ChatbotBooking4 from "../components/CC4";
-import ChatbotBookingSimpleRewind from "../components/CC5";
-import ChatbotBookingManualUI from "../components/CC5";
-import Chatbot6 from "../components/CC6";
-import ChatScreen from "../components/CC7";
-import Chatbot8 from "../components/CC8";
+
+import Chatbot8 from "../components/CC7";
 // import Chatbot8 from "../components/ChatBot";
 import CustomView from "../components/CustomView";
+import { getPendingVerifications } from "../../utils/verificationApis";
+import VerificationModal from "../components/VerificationModal";
 
 const categories = ["Popular", "Emergency", "Seasonal", "Daily Use"];
 
@@ -108,6 +95,8 @@ const HomeScreen = () => {
   }, [servicesByCategory]);
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [pendingServiceRequsest, setPendingServiceRequsest] = useState<ServiceData[]>([]);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   useEffect(() => {
     if (!selectedCategory && categories.length > 0) {
@@ -121,6 +110,41 @@ const HomeScreen = () => {
   const serviceOfTheWeek = useMemo(() => {
     return mostBookedServices.length > 0 ? mostBookedServices[0] : null;
   }, [mostBookedServices]);
+
+useEffect(() => {
+  let isMounted = true;
+
+  const load = async () => {
+    try {
+      const res = await getPendingVerifications();
+      if (isMounted) {
+        console.log("pending:", res.jobs);
+        setPendingServiceRequsest(res?.jobs || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch pending verifications", err);
+    }
+  };
+
+  // initial call
+  load();
+
+  // poll every 30 seconds
+  const intervalId = setInterval(load, 30000);
+
+  // cleanup on unmount
+  return () => {
+    isMounted = false;
+    clearInterval(intervalId);
+  };
+}, []);
+
+
+useEffect(() => {
+  if (pendingServiceRequsest.length > 0) {
+    setShowVerificationModal(true);
+  }
+}, [pendingServiceRequsest]);
 
   useEffect(() => {
     console.log(selectedAddress);
@@ -136,7 +160,7 @@ const HomeScreen = () => {
         const brandsRes = await fetchBrandsByZip(zipcode);
 
         if (servicesRes) {
-          console.log("🔧 Services fetched:");
+          console.log("🔧 Services fetched: ", services);
         } else {
           console.log("❌ Services failed");
         }
@@ -234,6 +258,12 @@ const HomeScreen = () => {
   return (
     <View style={{ flex: 1, backgroundColor: "#F0EFF8" }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+
+        <VerificationModal
+  visible={showVerificationModal}
+  jobs={pendingServiceRequsest}
+  onClose={() => setShowVerificationModal(false)}
+/>
         {/* HEADER */}
         <CustomView
           width={scale(374.68)}
@@ -331,25 +361,24 @@ const HomeScreen = () => {
 
               return (
                 <TouchableOpacity
-                 key={index}
-                    style={{
+                  key={index}
+                  style={
+                    {
                       // borderWidth: 1,
                       // flex: 1,
-                      
-                    }}
-                    onPress={() => setSelectedCategory(item)}
-                  >
-                <View
-                 
-                  style={[
-                    styles.chip,
-                    selectedCategory === item && {
-                      backgroundColor: "#DCECFE",
-                    },
-                    index == 3 && { borderRightWidth: 0 },
-                  ]}
+                    }
+                  }
+                  onPress={() => setSelectedCategory(item)}
                 >
-                  
+                  <View
+                    style={[
+                      styles.chip,
+                      selectedCategory === item && {
+                        backgroundColor: "#DCECFE",
+                      },
+                      index == 3 && { borderRightWidth: 0 },
+                    ]}
+                  >
                     <Image
                       source={BAR_ICONS[index] || BAR_ICONS["0"]}
                       style={{
@@ -361,8 +390,8 @@ const HomeScreen = () => {
                     <Text numberOfLines={1} style={styles.chipText}>
                       {chipLabels[index] ?? item}
                     </Text>
-                </View>
-                  </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
               );
             })}
           </CustomView>
@@ -413,140 +442,147 @@ const HomeScreen = () => {
 
         {/* HOW IT WORKS */}
 
-      {  selectedCategory &&
-          servicesByCategory?.[selectedCategory]?.length < 7 && (<CustomView
-          height={verticalScale(132.72)}
-          radius={scale(12)}
-          width={scale(374.68)}
-          shadowStyle={{ marginTop: verticalScale(21) }}
-          boxStyle={[
-            styles.howItWorks,
-            {
-              alignSelf: "center",
-              width: scale(374.68),
-              height: verticalScale(132.72),
-            },
-          ]}
-        >
-          <Text style={styles.sectionTitle}>How it Work</Text>
-          <CustomView
-            height={verticalScale(91.71)}
-            width={scale(355.19)}
-            radius={scale(12)}
-            shadowStyle={{ overflow: "visible" }}
-            boxStyle={[
-              styles.howItWorks,
-
-              {
-                flexDirection: "row",
-                // justifyContent: "space-between",
-                // paddingHorizontal: scale(9.16),
-                overflow: "visible",
-              },
-            ]}
-          >
-            {[
-              {
-                name: "Book Service",
-                color: "#6488BD",
-                secColor: "#7AA5F9",
-                iconName: "1",
-              },
-              {
-                name: "Meet Pro",
-                color: "#896DCB",
-                secColor: "#B292FF",
-                iconName: "2",
-              },
-              {
-                name: "Service",
-                color: "#9CBE76",
-                secColor: "#C3E2A2",
-                iconName: "3",
-              },
-              {
-                name: "Finished",
-                color: "#82BFEC",
-                secColor: "#B3DFFF",
-                iconName: "4",
-              },
-            ].map((item, index) => (
-              <View key={index} style={{ borderWidth: 0, padding: scale(4) }}>
-                <View
-                  style={{
-                    width: scale(20.24),
-                    height: verticalScale(12.67),
-                    backgroundColor: item.color,
-                    borderRadius: moderateScale(3.86),
-                    borderWidth: moderateScale(1),
-                    borderColor: item.secColor,
-                    position: "absolute",
-                    top: verticalScale(3),
-                    left: scale(14.12),
-                    justifyContent: "center",
-                    alignItems: "center",
-                    zIndex: 99999,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: moderateScale(7.44),
-                      fontWeight: 600,
-                      alignSelf: "center",
-                      color: "#fff",
-                      lineHeight: verticalScale(10),
-                    }}
-                  >
-                    {index + 1}
-                  </Text>
-                </View>
+        {selectedCategory &&
+          servicesByCategory?.[selectedCategory]?.length < 7 && (
+            <CustomView
+              height={verticalScale(132.72)}
+              radius={scale(12)}
+              width={scale(374.68)}
+              shadowStyle={{ marginTop: verticalScale(21) }}
+              boxStyle={[
+                styles.howItWorks,
+                {
+                  alignSelf: "center",
+                  width: scale(374.68),
+                  height: verticalScale(132.72),
+                },
+              ]}
+            >
+              <Text style={styles.sectionTitle}>How it Work</Text>
               <CustomView
-                height={verticalScale(73.47)}
-                width={scale(78.75)}
-                radius={scale(9.11)}
-                key={index}
+                height={verticalScale(91.71)}
+                width={scale(355.19)}
+                radius={scale(12)}
+                shadowStyle={{ overflow: "visible" }}
                 boxStyle={[
+                  styles.howItWorks,
+
                   {
-                    borderWidth: moderateScale(1),
-                    borderColor: "#fff",
-                    justifyContent: "center",
-                    paddingHorizontal: scale(2.88),
-                    paddingVertical: verticalScale(2.8),
+                    flexDirection: "row",
+                    // justifyContent: "space-between",
+                    // paddingHorizontal: scale(9.16),
+                    overflow: "visible",
                   },
                 ]}
               >
-                
-                <View
-                  style={{
-                    borderWidth: moderateScale(0.9),
-                    borderColor: item.color,
-                    height: "100%",
-                    borderRadius: scale(9.11),
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Image
-                    source={HIW_ICONS[item.iconName]}
-                    style={[
-                      {
-                        width: scale(43.49),
-                        height: verticalScale(34),
-                        resizeMode: "center",
-                      },
-                    ]}
-                  />
-                  <Text
-                    style={{ fontSize: moderateScale(7.44), fontWeight: 600 }}
+                {[
+                  {
+                    name: "Book Service",
+                    color: "#6488BD",
+                    secColor: "#7AA5F9",
+                    iconName: "1",
+                  },
+                  {
+                    name: "Meet Pro",
+                    color: "#896DCB",
+                    secColor: "#B292FF",
+                    iconName: "2",
+                  },
+                  {
+                    name: "Service",
+                    color: "#9CBE76",
+                    secColor: "#C3E2A2",
+                    iconName: "3",
+                  },
+                  {
+                    name: "Finished",
+                    color: "#82BFEC",
+                    secColor: "#B3DFFF",
+                    iconName: "4",
+                  },
+                ].map((item, index) => (
+                  <View
+                    key={index}
+                    style={{ borderWidth: 0, padding: scale(4) }}
                   >
-                    {item.name}
-                  </Text>
-                </View>
+                    <View
+                      style={{
+                        width: scale(20.24),
+                        height: verticalScale(12.67),
+                        backgroundColor: item.color,
+                        borderRadius: moderateScale(3.86),
+                        borderWidth: moderateScale(1),
+                        borderColor: item.secColor,
+                        position: "absolute",
+                        top: verticalScale(3),
+                        left: scale(14.12),
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 99999,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: moderateScale(7.44),
+                          fontWeight: 600,
+                          alignSelf: "center",
+                          color: "#fff",
+                          lineHeight: verticalScale(10),
+                        }}
+                      >
+                        {index + 1}
+                      </Text>
+                    </View>
+                    <CustomView
+                      height={verticalScale(73.47)}
+                      width={scale(78.75)}
+                      radius={scale(9.11)}
+                      key={index}
+                      boxStyle={[
+                        {
+                          borderWidth: moderateScale(1),
+                          borderColor: "#fff",
+                          justifyContent: "center",
+                          paddingHorizontal: scale(2.88),
+                          paddingVertical: verticalScale(2.8),
+                        },
+                      ]}
+                    >
+                      <View
+                        style={{
+                          borderWidth: moderateScale(0.9),
+                          borderColor: item.color,
+                          height: "100%",
+                          borderRadius: scale(9.11),
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Image
+                          source={HIW_ICONS[item.iconName]}
+                          style={[
+                            {
+                              width: scale(43.49),
+                              height: verticalScale(34),
+                              resizeMode: "center",
+                            },
+                          ]}
+                        />
+                        <Text
+                          style={{
+                            fontSize: moderateScale(7.44),
+                            fontWeight: 600,
+                          }}
+                        >
+                          {item.name}
+                        </Text>
+                      </View>
+                    </CustomView>
+                  </View>
+                ))}
               </CustomView>
-              </View>
-            ))}
-          </CustomView>
-        </CustomView>)}
+            </CustomView>
+          )}
         {/* SERVICE OF THE WEEK */}
         <CustomView
           width={scale(375)}
@@ -850,7 +886,7 @@ const styles = StyleSheet.create({
 
   chip: {
     // flex: 1,
-    
+
     height: "100%",
     // width : '100%',
     // alignItems: "center",
@@ -859,9 +895,9 @@ const styles = StyleSheet.create({
     borderColor: "#BCBBC580",
     // paddingHorizontal: scale(8),
     flexDirection: "row",
-                      alignItems: "center",
-                      paddingHorizontal: scale(8.5),
-                      gap: scale(3),
+    alignItems: "center",
+    paddingHorizontal: scale(8.5),
+    gap: scale(3),
   },
 
   chipText: {
@@ -969,318 +1005,3 @@ const styles = StyleSheet.create({
     color: "#777",
   },
 });
-
-// return (
-//   <ScreenWrapper>
-//     <ScrollView style={styles.container}>
-//       {/* Top Bar */}
-//       <Header />
-
-//       {/* Pin Section */}
-//       <TouchableOpacity
-//         onPress={() => setPinVisible((prev) => !prev)}
-//         style={styles.pinContainer}
-//       >
-//         <Text style={styles.pinText}>
-//           Pin - {selectedAddress.address.zipcode}
-//         </Text>
-//         <Icon
-//           name="pencil-outline"
-//           size={moderateScale(16)}
-//           color="#1E1E1E80"
-//         />
-//       </TouchableOpacity>
-//       <View
-//         style={{
-//           borderWidth: 0.7,
-//           borderColor: "#ffffffcd",
-//           paddingHorizontal: scale(11),
-//           borderRadius: moderateScale(12),
-//           marginTop: verticalScale(9),
-//           paddingTop: verticalScale(16),
-//           paddingBottom: verticalScale(10),
-//           backgroundColor: "#FFFFFF1A",
-//           // height: verticalScale(353),
-//         }}
-//       >
-//         {/* Category Tabs */}
-//         <View style={styles.categoriesContainer}>
-//           {categories.map((cat) => (
-//             <GradientBorder
-//               borderRadius={scale(23.6)}
-//               outerWidth={0.2}
-//               innerWidth={0.8}
-//               innerColors={outerColors}
-//               outerColors={innerColors}
-//               style={[
-//                 styles.categoryButton,
-//                 selectedCategory === cat && styles.activeCategory,
-//               ]}
-//               key={cat}
-//             >
-//               <TouchableOpacity onPress={() => setSelectedCategory(cat)}>
-//                 <Text
-//                   style={[
-//                     styles.categoryText,
-//                     selectedCategory === cat && styles.activeCategoryText,
-//                   ]}
-//                 >
-//                   {cat}
-//                 </Text>
-//               </TouchableOpacity>
-//             </GradientBorder>
-//           ))}
-//         </View>
-
-//         {/* Services Grid */}
-//         {/* Services Grid */}
-//         <View style={styles.gridContainer}>
-//           {servicess.length === 0 ? (
-//             <View
-//               style={{
-//                 alignItems: "center",
-//                 marginTop: verticalScale(20),
-//                 height: verticalScale(150),
-//                 justifyContent: "center",
-//                 // borderWidth : 1,
-//                 alignSelf: "center",
-//                 width: "100%",
-//               }}
-//             >
-//               <Text
-//                 style={{
-//                   fontSize: moderateScale(14),
-//                   fontWeight: "600",
-//                   color: "#000",
-//                   alignSelf: "center",
-//                 }}
-//               >
-//                 No Service Provider Available in this area
-//               </Text>
-//             </View>
-//           ) : (
-//             servicess.map((service) => (
-//               //   <View  key={service._id} style={{ borderWidth:0,  height: verticalScale(94), width : scale(85)}}>
-//               //  {/* Tooltip */}
-//               //     {activeTooltipId === service._id && (
-//               //       <Tooltip text={service.name} />
-//               //     )}
-//               //   <ImageBackground
-//               //     key={service._id}
-//               //     source={require("../../../assets/vv.png")}
-//               //     resizeMode="contain"
-//               //     style={{
-//               //       height: verticalScale(140),
-//               //       width: scale(110),
-//               //       // borderWidth: 1,
-//               //       alignItems: "center",
-//               //       marginHorizontal: -12,
-
-//               //       // marginLeft : -14,
-//               //       // marginRight : -10,
-//               //       // marginVertical: -10,
-//               //       // marginTop : verticalScale(2),
-
-//               //     }}
-//               //   >
-
-//               //     <TouchableOpacity
-//               //       style={styles.serviceCard}
-//               //       onPress={() => selectBrand(service)}
-//               //       onLongPress={() => setActiveTooltipId(service._id)}
-//               //       onPressOut={() => setActiveTooltipId(null)}
-//               //       delayLongPress={300}
-//               //     >
-//               //       <View style={styles.serviceIcon}>
-//               //         <Image
-//               //           source={
-//               //             iconMap[service.icon as IconName] ??
-//               //             iconMap["default"]
-//               //           }
-//               //           style={{
-//               //             height: "100%",
-//               //             width: "100%",
-//               //             minHeight: verticalScale(39),
-//               //             minWidth: scale(39),
-//               //             resizeMode: "contain",
-//               //           }}
-//               //         />
-//               //       </View>
-
-//               //       <Text
-//               //         numberOfLines={1}
-//               //         ellipsizeMode="tail"
-//               //         style={styles.serviceText}
-//               //       >
-//               //         {service.name}
-//               //       </Text>
-//               //     </TouchableOpacity>
-//               //   </ImageBackground>
-//               //   </View>
-//               <View
-//                 key={service._id}
-//                 style={{
-//                   shadowColor: "#000",
-//                   shadowOpacity: 0.05,
-//                   shadowRadius: 3,
-//                   paddingBottom: verticalScale(10),
-//                 }}
-//               >
-//                 <GradientBorder
-//                   key={service._id}
-//                   gradientStyle={{}}
-//                   style={{
-//                     width: scale(80),
-//                     height: scale(80),
-//                     backgroundColor: "#E8E8E8",
-//                     alignItems: "center",
-//                     justifyContent: "center",
-//                     // borderWidth: 1,
-
-//                     // elevation: 7,
-//                     position: "relative",
-//                     //                 shadowColor: "#000",
-//                     // shadowOpacity: 0.05,
-//                     // shadowRadius: 3,
-//                     // elevation: 2,
-//                   }}
-//                 >
-//                   {/* Tooltip */}
-//                   {activeTooltipId === service._id && (
-//                     <Tooltip text={service.name} />
-//                   )}
-
-//                   <TouchableOpacity
-//                     style={styles.serviceCard}
-//                     onPress={() => selectBrand(service)}
-//                     // onPress={() => serviceDetails(service._id)}
-//                     // onPress={() => setVisible(!visible)}
-//                     onLongPress={() => setActiveTooltipId(service._id)}
-//                     onPressOut={() => setActiveTooltipId(null)}
-//                     delayLongPress={300}
-//                   >
-//                     <View style={styles.serviceIcon}>
-//                       <Image
-//                         source={
-//                           iconMap[service.icon as IconName] ??
-//                           iconMap["default"]
-//                         }
-//                         style={{
-//                           height: "100%",
-//                           width: "100%",
-//                           minHeight: verticalScale(39),
-//                           minWidth: scale(39),
-//                           resizeMode: "contain",
-//                         }}
-//                       />
-//                     </View>
-
-//                     <Text
-//                       numberOfLines={1}
-//                       ellipsizeMode="tail"
-//                       style={styles.serviceText}
-//                     >
-//                       {service.name}
-//                     </Text>
-//                   </TouchableOpacity>
-//                 </GradientBorder>
-//               </View>
-//             ))
-//           )}
-//         </View>
-//       </View>
-//       {/* Badges Section */}
-//       <View style={styles.badgesRow}>
-//         <Image
-//           source={require("../../../assets/badges/badge2.png")}
-//           style={styles.badgeIcon}
-//         />
-//         <Image
-//           source={require("../../../assets/badges/badge3.png")}
-//           style={styles.badgeIcon}
-//         />
-//         <Image
-//           source={require("../../../assets/badges/badge1.png")}
-//           style={styles.badgeIcon}
-//         />
-//       </View>
-
-//       {/* Technician of the Week */}
-//       <Text style={styles.techHeader}>Service Of The Week</Text>
-
-//       <ServiceOfTheWeek
-//         onPressService={(serviceOfTheWeek) => selectBrand(serviceOfTheWeek)}
-//       />
-//     </ScrollView>
-//     <CustomNavBar isLocal={"Home"} />
-//     {/* <BottomSheet visible={visible} onClose={() => setVisible(false)}> */}
-//     {visible && (
-//       <View style={{ height: "100%" }}>
-//         {/* <ChatbotBooking3
-//           serviceObject={selectedServiceObject!}
-//           close={() => setVisible(false)}
-//         />   */}
-//         {/* <ChatbotEngine  backend={{
-//   service: selectedServiceObject?.data,
-//   conversationSteps: selectedServiceObject?.data?.conversationSteps,
-//   conversationSettings: selectedServiceObject?.data?.conversationSettings
-// }}/> */}
-//         {/* <ChatbotBooking4
-//           serviceObject={selectedServiceObject!}
-//           close={() => setVisible(false)}
-//         /> */}
-
-//         {/* <ChatbotBookingManualUI serviceObject={selectedServiceObject!}
-//           onClose={() => setVisible(false)} /> */}
-
-//           {/* <ChatScreen /> */}
-
-//         {/* <Chatbot6 serviceObject={selectedServiceObject!}
-//           onClose={() => setVisible(false)} /> */}
-
-//         <Chatbot8 serviceObject={selectedServiceObject?.data!}
-//           onClose={() => setVisible(false)} />
-//         {/* <ChatbotEngine
-//       serviceData={selectedServiceObject?.data!}
-//       userAddresses={userAddresses}
-//       onComplete={()=>{}}
-//       onCancel={()=> setVisible(false)}
-//     /> */}
-
-//         {/* <ChatbotBooking_NewFlow
-//           serviceObject={selectedServiceObject!}
-//           close={() => setVisible(false)}
-//         />   */}
-//       </View>
-//     )}
-//     {/* <View
-//       style={{
-//         height: "100%",
-//         opacity: 1,
-//         display: visible ? "flex" : "none",
-//         // borderWidth: 1,
-//       }}
-//     > */}
-//     {/* <Recorder /> */}
-//     {/* {selectedService && <CB1 service={selectedService} close={() => setVisible(false)} />} */}
-//     {/* {selectedService && <ChatbotBooking service={selectedService} close={() => setVisible(false)} />} */}
-//     {/* {selectedService && (
-//         <ChatbotBooking_NewFlow
-//           service={selectedService}
-//           close={() => setVisible(false)}
-//         />
-//       )} */}
-//     {/* {selectedService && (
-//         <BookingBottomSheet
-//           close={() => setVisible(false)}
-//           service={selectedService}
-//         />
-
-//       )} */}
-//     {/* </View> */}
-//     {/* </BottomSheet> */}
-//     <BottomSheet visible={pinVisible} onClose={() => setPinVisible(false)}>
-//       <ChangePinCode />
-//     </BottomSheet>
-//   </ScreenWrapper>
-// );

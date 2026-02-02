@@ -1,4 +1,5 @@
 import {
+  Button,
   Image,
   ImageBackground,
   ScrollView,
@@ -10,19 +11,13 @@ import {
 import { useServices } from "../../hooks/useServices";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 import { iconMap, IconName } from "../../utils/iconMap";
-import GradientBorder from "../components/GradientBorder";
-import ScreenWrapper from "../components/ScreenWrapper";
-import Header from "../components/Header";
-import Tooltip from "../components/Tooltip";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CustomNavBar from "../components/CustomNavBar";
-import BottomSheet from "../components/BottomSheet";
-import BookingBottomSheet from "../components/BookingLogic";
 import { ServiceData } from "../../constants/types";
-import BadgeCard from "../components/BadgeCard";
 import CustomView from "../components/CustomView";
 import { newServiceDetails } from "../../utils/servicesApi";
 import Chatbot8 from "../components/CC8";
+import * as Location from "expo-location";
 
 type ServiceObject = {
   data: ServiceData;
@@ -36,6 +31,9 @@ export default function CategoryScreen() {
   const [visible, setVisible] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceData>();
   const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
+  const [location, setLocation] = useState<any>();
+  const [text, setText] = useState<any>('waiting...');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedServiceObject, setSelectedServiceObject] =
     useState<ServiceObject>();
   async function selectBrand(service: ServiceData) {
@@ -49,6 +47,39 @@ export default function CategoryScreen() {
       setVisible(true);
     }
   }
+
+ async function fetchCurrentLocation() {
+  try {
+    const { status } =
+      await Location.requestForegroundPermissionsAsync();
+
+    if (status !== "granted") {
+      setErrorMsg("Permission to access location was denied");
+      return;
+    }
+
+    const loc = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Lowest,
+    });
+
+    setLocation(loc);
+    setErrorMsg(null);
+  } catch (err) {
+    setErrorMsg("Failed to fetch location");
+  }
+}
+
+console.log(text);
+
+  
+ useEffect(() => {
+  if (errorMsg) {
+    setText(errorMsg);
+  } else if (location) {
+    setText(location.coords.longitude + " , "+ location.coords.latitude);
+  }
+}, [errorMsg, location]);
+
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F0EFF8" }}>
@@ -177,15 +208,22 @@ export default function CategoryScreen() {
           </TouchableOpacity>
         )} */}
         </View>
+
+        <View>
+          <View style={{height : verticalScale(50), borderWidth : 1, margin : scale(16), justifyContent : 'center', padding : scale(12)}}>
+            <Text>{text}</Text>
+          </View>
+          <Button title="Get Location" onPress={fetchCurrentLocation} />
+        </View>
       </ScrollView>
-              {visible && (
-                    <View style={{ height: "100%", zIndex: 999999 }}>
-                      <Chatbot8
-                        serviceObject={selectedServiceObject?.data!}
-                        onClose={() => setVisible(false)}
-                      />
-                    </View>
-                  )}
+      {visible && (
+        <View style={{ height: "100%", zIndex: 999999 }}>
+          <Chatbot8
+            serviceObject={selectedServiceObject?.data!}
+            onClose={() => setVisible(false)}
+          />
+        </View>
+      )}
 
       <CustomNavBar isLocal={"Category"} />
       {/* <BottomSheet visible={visible} onClose={() => setVisible(false)}>

@@ -90,177 +90,177 @@ const LoginScreen = () => {
           resizeMode="contain"
         />
 
-        <CustomView radius={moderateScale(12)}>
-          <View style={styles.box}>
-            <Text style={styles.title}>
-              {isOtpLogin ? "Login with OTP" : isSignup ? "Sign Up" : "Login"}
-            </Text>
-            <Text style={styles.subText}>
-              {isOtpLogin
-                ? "Enter your phone number to receive an OTP"
-                : isSignup
-                ? "Create a new account"
-                : "Welcome Back"}
-            </Text>
+          <CustomView radius={moderateScale(12)}>
+            <View style={styles.box}>
+              <Text style={styles.title}>
+                {isOtpLogin ? "Login with OTP" : isSignup ? "Sign Up" : "Login"}
+              </Text>
+              <Text style={styles.subText}>
+                {isOtpLogin
+                  ? "Enter your phone number to receive an OTP"
+                  : isSignup
+                  ? "Create a new account"
+                  : "Welcome Back"}
+              </Text>
 
-            {/* Inputs */}
-            {isOtpLogin ? (
-              <>
-                <AuthInput
-                  iconName="phone-outline"
-                  placeholder="Enter Phone Number"
-                  keyboardType="phone-pad"
-                  title="Email or Phone"
-                  onChangeText={setPhoneNumberInput}
-                  maxLength={10}
-                  autoFocus={true}
-                />
-              </>
-            ) : (
-              <>
-                <AuthInput
-                  iconName="email-outline"
-                  placeholder="Email or Phone"
-                  title="Email or Phone"
-                />
-
-                {isSignup && (
+              {/* Inputs */}
+              {isOtpLogin ? (
+                <>
                   <AuthInput
-                    iconName="account-outline"
-                    placeholder="User Name"
-                    title="User Name"
+                    iconName="phone-outline"
+                    placeholder="Enter Phone Number"
+                    keyboardType="phone-pad"
+                    title="Email or Phone"
+                    onChangeText={setPhoneNumberInput}
+                    maxLength={10}
+                    autoFocus={true}
                   />
-                )}
-
-                <AuthInput
-                  iconName="lock-outline"
-                  placeholder="Enter Your Password"
-                  secureTextEntry
-                  title="Password"
-                />
-
-                {isSignup && (
+                </>
+              ) : (
+                <>
                   <AuthInput
-                    iconName="lock-check-outline"
-                    placeholder="Confirm Password"
+                    iconName="email-outline"
+                    placeholder="Email or Phone"
+                    title="Email or Phone"
+                  />
+
+                  {isSignup && (
+                    <AuthInput
+                      iconName="account-outline"
+                      placeholder="User Name"
+                      title="User Name"
+                    />
+                  )}
+
+                  <AuthInput
+                    iconName="lock-outline"
+                    placeholder="Enter Your Password"
                     secureTextEntry
-                    title="Confirm Password"
+                    title="Password"
                   />
-                )}
-              </>
-            )}
 
-            {/* Forgot Password */}
-            {!isSignup && !isOtpLogin && (
-              <TouchableOpacity
-                onPress={() => navigation.navigate("ResetPasswordScreen")}
-              >
-                <Text style={styles.forgotText}>Forgot Password?</Text>
-              </TouchableOpacity>
-            )}
+                  {isSignup && (
+                    <AuthInput
+                      iconName="lock-check-outline"
+                      placeholder="Confirm Password"
+                      secureTextEntry
+                      title="Confirm Password"
+                    />
+                  )}
+                </>
+              )}
 
-            {/* Main Button */}
-            <TouchableOpacity onPress={handleAuthAction}>
-              <LinearGradient
-                style={styles.button}
-                colors={["#027CC7", "#004DBD"]}
-              >
-                <Text style={styles.buttonText}>
-                  {isOtpLogin ? "Send OTP" : isSignup ? "Sign Up" : "Login"}
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-
-            {/* OR */}
-            {!isSignup && (
-              <>
-                {!isOtpLogin && (
-                  <>
-                    <Text style={styles.orText}>Or</Text>
-
-                    <TouchableOpacity onPress={toggleOtpLogin}>
-                    <CustomView
-                      radius={moderateScale(50)}
-                      boxStyle={{
-                        paddingVertical: verticalScale(8),
-                        alignItems: "center",
-                      }}
-                      shadowStyle={{marginVertical : verticalScale(10)}}
-                    >
-                        <Text style={styles.otpText}>Login With OTP</Text>
-                    </CustomView>
-                      </TouchableOpacity>
-                  </>
-                )}
-
-                {isOtpLogin && (
-                  <TouchableOpacity
-                    onPress={toggleOtpLogin}
-                  >
-                     <CustomView
-                      radius={moderateScale(50)}
-                      boxStyle={{
-                        paddingVertical: verticalScale(8),
-                        alignItems: "center",
-                      }}
-                      shadowStyle={{marginVertical : verticalScale(10)}}
-                    >
-                    <Text style={[styles.otpText, { color: "#000" }]}>
-                      Back to Login
-                    </Text>
-                    </CustomView>
-                  </TouchableOpacity>
-                )}
-              </>
-            )}
-
-            {/* Footer */}
-            {!isOtpLogin && (
-              <View style={{ flexDirection: "row", justifyContent: "center" }}>
-                <Text style={styles.footerText}>
-                  {isSignup
-                    ? "Already have an Account? "
-                    : "Don’t have an Account? "}
-                </Text>
+              {/* Forgot Password */}
+              {!isSignup && !isOtpLogin && (
                 <TouchableOpacity
-                  onPress={toggleSignup}
-                  style={{ alignItems: "center", justifyContent: "center" }}
+                  onPress={() => navigation.navigate("ResetPasswordScreen")}
                 >
-                  <Text style={styles.linkText}>
-                    {isSignup ? "Login" : "Sign Up"}
-                  </Text>
+                  <Text style={styles.forgotText}>Forgot Password?</Text>
                 </TouchableOpacity>
-              </View>
-            )}
+              )}
 
-            {/* Social Login */}
-            {!isSignup && (
-              <>
-                {/* <View style={styles.iconRow}>
-                    <Image
-                      style={styles.socialIcon}
-                      source={require("../../../assets/google.png")}
-                    />
-                    <Image
-                      style={styles.socialIcon}
-                      source={require("../../../assets/apple.png")}
-                    />
-                    <Image
-                      style={styles.socialIcon}
-                      source={require("../../../assets/more.png")}
-                    />
-                  </View> */}
+              {/* Main Button */}
+              <TouchableOpacity onPress={handleAuthAction}>
+                <LinearGradient
+                  style={styles.button}
+                  colors={["#027CC7", "#004DBD"]}
+                >
+                  <Text style={styles.buttonText}>
+                    {isOtpLogin ? "Send OTP" : isSignup ? "Sign Up" : "Login"}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
 
-                <Text style={styles.policyText}>
-                  By Continuing, you agree to our{"\n"}
-                  <BorderText>Terms of Service</BorderText> {"      "}
-                  <BorderText>Privacy Policy</BorderText> {"      "}
-                  <BorderText>Content Policy</BorderText>
-                </Text>
-              </>
-            )}
-          </View>
-        </CustomView>
+              {/* OR */}
+              {!isSignup && (
+                <>
+                  {!isOtpLogin && (
+                    <>
+                      <Text style={styles.orText}>Or</Text>
+
+                      <TouchableOpacity onPress={toggleOtpLogin}>
+                      <CustomView
+                        radius={moderateScale(50)}
+                        boxStyle={{
+                          paddingVertical: verticalScale(8),
+                          alignItems: "center",
+                        }}
+                        shadowStyle={{marginVertical : verticalScale(10)}}
+                      >
+                          <Text style={styles.otpText}>Login With OTP</Text>
+                      </CustomView>
+                        </TouchableOpacity>
+                    </>
+                  )}
+
+                  {isOtpLogin && (
+                    <TouchableOpacity
+                      onPress={toggleOtpLogin}
+                    >
+                      <CustomView
+                        radius={moderateScale(50)}
+                        boxStyle={{
+                          paddingVertical: verticalScale(8),
+                          alignItems: "center",
+                        }}
+                        shadowStyle={{marginVertical : verticalScale(10)}}
+                      >
+                      <Text style={[styles.otpText, { color: "#000" }]}>
+                        Back to Login
+                      </Text>
+                      </CustomView>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
+
+              {/* Footer */}
+              {!isOtpLogin && (
+                <View style={{ flexDirection: "row", justifyContent: "center" }}>
+                  <Text style={styles.footerText}>
+                    {isSignup
+                      ? "Already have an Account? "
+                      : "Don’t have an Account? "}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={toggleSignup}
+                    style={{ alignItems: "center", justifyContent: "center" }}
+                  >
+                    <Text style={styles.linkText}>
+                      {isSignup ? "Login" : "Sign Up"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Social Login */}
+              {!isSignup && (
+                <>
+                  {/* <View style={styles.iconRow}>
+                      <Image
+                        style={styles.socialIcon}
+                        source={require("../../../assets/google.png")}
+                      />
+                      <Image
+                        style={styles.socialIcon}
+                        source={require("../../../assets/apple.png")}
+                      />
+                      <Image
+                        style={styles.socialIcon}
+                        source={require("../../../assets/more.png")}
+                      />
+                    </View> */}
+
+                  <Text style={styles.policyText}>
+                    By Continuing, you agree to our{"\n"}
+                    <BorderText>Terms of Service</BorderText> {"      "}
+                    <BorderText>Privacy Policy</BorderText> {"      "}
+                    <BorderText>Content Policy</BorderText>
+                  </Text>
+                </>
+              )}
+            </View>
+          </CustomView>
       </View>
     </ScrollView>
   );
