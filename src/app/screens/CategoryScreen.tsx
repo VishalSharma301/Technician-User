@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Image,
   ImageBackground,
@@ -48,7 +49,53 @@ export default function CategoryScreen() {
     }
   }
 
- async function fetchCurrentLocation() {
+  const GOOGLE_MAPS_API_KEY = "AIzaSyCV2NRNl0uVeY37ID1gIoYgJexr9SBDn2Q";
+
+async function getZipFromCoords(
+  latitude: number,
+  longitude: number
+): Promise<string | null> {
+  try {
+    const address = await Location.reverseGeocodeAsync({
+      latitude,
+      longitude,
+    });
+
+    if (!address || address.length === 0) return null;
+
+    return address[0].postalCode ?? null;
+  } catch (err) {
+    console.log("Reverse geocode error:", err);
+    return null;
+  }
+}
+
+
+//  async function fetchCurrentLocation() {
+//   try {
+//     const { status } =
+//       await Location.requestForegroundPermissionsAsync();
+//       console.log('sss',status);
+      
+
+//     if (status !== "granted") {
+//       setErrorMsg("Permission to access location was denied");
+//       return;
+//     }
+
+//     const loc = await Location.getCurrentPositionAsync({
+//       accuracy: Location.Accuracy.High,
+//     });
+
+//     setLocation(loc);
+//     setErrorMsg(null);
+//   } catch (err: any) {
+//   console.log("LOCATION ERROR 👉", err);
+//   setErrorMsg(err?.message || "Failed to fetch location");
+// }
+// }
+
+async function fetchCurrentLocation() {
   try {
     const { status } =
       await Location.requestForegroundPermissionsAsync();
@@ -58,16 +105,40 @@ export default function CategoryScreen() {
       return;
     }
 
+    const servicesEnabled = await Location.hasServicesEnabledAsync();
+    if (!servicesEnabled) {
+      setErrorMsg("Please enable GPS / Location services");
+      return;
+    }
+
     const loc = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Lowest,
+      accuracy: Location.Accuracy.Balanced,
+      timeout: 15000,
     });
 
     setLocation(loc);
+
+    const zip = await getZipFromCoords(
+      loc.coords.latitude,
+      loc.coords.longitude
+    );
+
+    if (zip) {
+      setText(`ZIP Code: ${zip}`);
+      Alert.alert('ZIP CODE IS : ',zip)
+    } else {
+      setText("ZIP code not found");
+    }
+
     setErrorMsg(null);
-  } catch (err) {
-    setErrorMsg("Failed to fetch location");
+
+  } catch (err: any) {
+    console.log("LOCATION ERROR:", err);
+    setErrorMsg(err?.message || "Failed to fetch location");
   }
 }
+
+
 
 console.log(text);
 
@@ -76,7 +147,7 @@ console.log(text);
   if (errorMsg) {
     setText(errorMsg);
   } else if (location) {
-    setText(location.coords.longitude + " , "+ location.coords.latitude);
+    setText(location.coords.latitude + " , "+ location.coords.longitude);
   }
 }, [errorMsg, location]);
 

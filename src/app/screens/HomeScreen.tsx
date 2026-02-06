@@ -36,6 +36,7 @@ import Chatbot8 from "../components/CC7";
 import CustomView from "../components/CustomView";
 import { getPendingVerifications } from "../../utils/verificationApis";
 import VerificationModal from "../components/VerificationModal";
+import { VerificationJob } from "../../constants/verification";
 
 const categories = ["Popular", "Emergency", "Seasonal", "Daily Use"];
 
@@ -60,6 +61,11 @@ export const BAR_ICONS: Record<string, any> = {
   1: require("../../../assets/BarIcons/1.png"),
   2: require("../../../assets/BarIcons/2.png"),
   3: require("../../../assets/BarIcons/3.png"),
+};
+type VerificationType = "standard" | "parts_pending" | "workshop_required";
+
+type HomeJob = VerificationJob & {
+  verificationType: VerificationType;
 };
 
 const HomeScreen = () => {
@@ -95,7 +101,9 @@ const HomeScreen = () => {
   }, [servicesByCategory]);
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [pendingServiceRequsest, setPendingServiceRequsest] = useState<ServiceData[]>([]);
+  const [pendingServiceRequsest, setPendingServiceRequsest] = useState<
+    HomeJob[]
+  >([]);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
 
   useEffect(() => {
@@ -111,40 +119,59 @@ const HomeScreen = () => {
     return mostBookedServices.length > 0 ? mostBookedServices[0] : null;
   }, [mostBookedServices]);
 
-useEffect(() => {
-  let isMounted = true;
+  useEffect(() => {
+    let isMounted = true;
 
-  const load = async () => {
-    try {
-      const res = await getPendingVerifications();
-      if (isMounted) {
-        console.log("pending:", res.jobs);
-        setPendingServiceRequsest(res?.jobs || []);
+    const load = async () => {
+      try {
+        const res = await getPendingVerifications();
+        if (isMounted) {
+          console.log("pending:", res);
+          const { standard, parts_pending, workshop_required } =
+            res.verifications;
+
+          const allJobs: HomeJob[] = [
+            ...standard.map((job: VerificationJob) => ({
+              ...job,
+              verificationType: "standard" as const,
+            })),
+
+            ...parts_pending.map((job: VerificationJob) => ({
+              ...job,
+              verificationType: "parts_pending" as const,
+            })),
+
+            ...workshop_required.map((job: VerificationJob) => ({
+              ...job,
+              verificationType: "workshop_required" as const,
+            })),
+          ];
+
+          setPendingServiceRequsest(allJobs || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch pending verifications", err);
       }
-    } catch (err) {
-      console.error("Failed to fetch pending verifications", err);
+    };
+
+    // initial call
+    load();
+
+    // poll every 30 seconds
+    const intervalId = setInterval(load, 30000);
+
+    // cleanup on unmount
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (pendingServiceRequsest.length > 0) {
+      setShowVerificationModal(true);
     }
-  };
-
-  // initial call
-  load();
-
-  // poll every 30 seconds
-  const intervalId = setInterval(load, 30000);
-
-  // cleanup on unmount
-  return () => {
-    isMounted = false;
-    clearInterval(intervalId);
-  };
-}, []);
-
-
-useEffect(() => {
-  if (pendingServiceRequsest.length > 0) {
-    setShowVerificationModal(true);
-  }
-}, [pendingServiceRequsest]);
+  }, [pendingServiceRequsest]);
 
   useEffect(() => {
     console.log(selectedAddress);
@@ -258,12 +285,11 @@ useEffect(() => {
   return (
     <View style={{ flex: 1, backgroundColor: "#F0EFF8" }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-
         <VerificationModal
-  visible={showVerificationModal}
-  jobs={pendingServiceRequsest}
-  onClose={() => setShowVerificationModal(false)}
-/>
+          visible={showVerificationModal}
+          jobs={pendingServiceRequsest}
+          onClose={() => setShowVerificationModal(false)}
+        />
         {/* HEADER */}
         <CustomView
           width={scale(374.68)}
