@@ -42,7 +42,7 @@ const OrderDetailsScreen: React.FC = () => {
   // -----------------------------
 
   const statusHistory: JobStatusHistoryItem[] = item.statusHistory || [];
-  console.log(statusHistory);
+  console.log(item);
   const formatDateTime = (iso: string) => {
     const date = new Date(iso);
 
@@ -82,7 +82,7 @@ const OrderDetailsScreen: React.FC = () => {
           }}
         >
           <View style={styles.card}>
-            <InfoCard pin={item.completionPin} />
+            <InfoCard pin={item.completionPin} item={item} />
 
             <CustomView
               radius={scale(16.59)}
@@ -112,8 +112,7 @@ const OrderDetailsScreen: React.FC = () => {
               const { day, time } = formatDateTime(item.timestamp);
 
               function CCView({ children }: { children: React.ReactNode }) {
-                // return <CustomView radius={scale(0)}>{children}</CustomView>;
-                return <View>{children}</View>;
+                return <CustomView radius={scale(4)}>{children}</CustomView>;
               }
 
               return (
@@ -186,8 +185,9 @@ const OrderDetailsScreen: React.FC = () => {
 
 type TabType = "problem" | "basic" | "price";
 
-function InfoCard({ pin }: { pin: string }) {
+function InfoCard({ pin, item }: { pin: string; item: any }) {
   const [tab, setTab] = useState<TabType>("problem");
+  const additionalCharges = 200;
 
   const renderContent = () => {
     switch (tab) {
@@ -242,14 +242,19 @@ function InfoCard({ pin }: { pin: string }) {
           <>
             <Row
               icon={require("../../../assets/clock.png")}
+              label="Total Price"
+              value={`₹${item.priceBreakdown.total + additionalCharges + 150}`}
+            />
+            <Row
+              icon={require("../../../assets/clock.png")}
               label="Qty"
-              value="02"
+              value={item.quantity}
             />
             <Divider />
             <Row
               icon={require("../../../assets/clock.png")}
               label="Price"
-              value="₹5025"
+              value={`₹${item.priceBreakdown.total}`}
             />
             <Divider />
             <Row
@@ -261,7 +266,7 @@ function InfoCard({ pin }: { pin: string }) {
             <Row
               icon={require("../../../assets/clock.png")}
               label="Additional Charges"
-              value="₹200"
+              value={`₹${additionalCharges}`}
             />
           </>
         );
