@@ -15,222 +15,74 @@ import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { OrderStackParamList } from "../../constants/navigation";
 import { ServiceRequest } from "../../constants/serviceRequestTypes";
 import CustomView from "../components/CustomView";
-import {Ionicons as Icon} from "@expo/vector-icons"
+import { Ionicons as Icon } from "@expo/vector-icons";
+import { JobStatusHistoryItem } from "../../constants/timelineTypes";
+
+import { JobStatus } from "../../constants/timelineTypes";
+
+const STATUS_CONFIG: Record<string, { title: string; color: string }> = {
+  technician_assigned: { title: "Technician Assigned", color: "#4A90E2" },
+  confirmed_scheduled: { title: "Schedule Confirmed", color: "#F5A623" },
+  on_way: { title: "On The Way", color: "#2F80ED" },
+  arrived: { title: "Arrived", color: "#00A8E8" },
+  in_progress: { title: "In Progress", color: "#F2994A" },
+  parts_pending: { title: "Parts Pending", color: "#6C5CE7" },
+  at_workshop: { title: "At Workshop", color: "#8E44AD" },
+  verification_requested: { title: "Verification Requested", color: "#EB5757" },
+  completed: { title: "Completed", color: "#27AE60" },
+  cancelled: { title: "Cancelled", color: "#D32F2F" },
+};
 
 type NavigationProp = RouteProp<OrderStackParamList, "OrderDetailsScreen">;
 
 const OrderDetailsScreen: React.FC = () => {
   const route = useRoute<NavigationProp>();
   const item: ServiceRequest = route.params?.item;
-  const navigation = useNavigation()
+  const navigation = useNavigation();
   // -----------------------------
-  // 🔥 Dynamic Timeline Logic
-  // -----------------------------
-  const timeline = useMemo(() => {
-    if (!item) return [];
 
-    const createdDate = new Date(item.createdAt);
+  const statusHistory: JobStatusHistoryItem[] = item.statusHistory || [];
+  console.log(statusHistory);
+  const formatDateTime = (iso: string) => {
+    const date = new Date(iso);
 
-    const formatDate = (dateInput: string | Date | null | undefined) => {
-      if (!dateInput) return "";
-      const date =
-        typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-      return date.toLocaleDateString("en-GB");
-    };
+    const day = date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
 
-    const formatTime = (dateInput: string | Date | null | undefined) => {
-      if (!dateInput) return "";
-      const date =
-        typeof dateInput === "string" ? new Date(dateInput) : dateInput;
-      return date.toLocaleTimeString("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    };
+    const time = date.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
-    const addDays = (date: Date, days: number) => {
-      const result = new Date(date);
-      result.setDate(result.getDate() + days);
-      return result;
-    };
-
-    const status = item.status?.toLowerCase() || "pending";
-
-    return [
-      {
-        date: formatDate(item.createdAt),
-        time: formatTime(item.createdAt),
-        title: "Assigned",
-        desc: item.provider?.name || "Provider",
-        active: true,
-      },
-      {
-        date: formatDate(item.bookedAt || addDays(createdDate, 1)),
-        time: formatTime(item.bookedAt || addDays(createdDate, 1)),
-        title: "In-Progress",
-        desc: "Technician Working",
-        active: [
-          "accepted",
-          "technician_assigned",
-          "in_progress",
-          "ongoing",
-          "completed",
-        ].includes(status),
-      },
-      {
-        date: formatDate(item.serviceCompletedAt || addDays(createdDate, 3)),
-        time: formatTime(item.serviceCompletedAt || addDays(createdDate, 3)),
-        title: "Done",
-        desc: "Fixed Issue",
-        active: ["completed"].includes(status),
-      },
-      {
-        date: formatDate(item.serviceCompletedAt || addDays(createdDate, 4)),
-        time: formatTime(item.serviceCompletedAt || addDays(createdDate, 4)),
-        title: "Warranty",
-        desc: "5 Days Left",
-        highlight: true,
-        active: ["completed"].includes(status),
-      },
-      {
-        date: formatDate(item.updatedAt || addDays(createdDate, 5)),
-        time: formatTime(item.updatedAt || addDays(createdDate, 5)),
-        title: "Job Closed",
-        desc: "😊",
-        active: ["completed"].includes(status),
-      },
-    ];
-  }, [item]);
-
-  // ------------------------------------------------------
-
-  const statusTabs = [
-    { title: "Active", count: 25, color: "#027CC7" },
-    { title: "Pending", count: 125, color: "#FFD768" },
-    { title: "Completed", count: 145, color: "#22C55E" },
-    { title: "Cancel", count: 100, color: "#FF0000" },
-  ];
+    return { day, time };
+  };
+  const sortedHistory = useMemo(() => {
+    return [...statusHistory].sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+  }, [statusHistory]);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <TouchableOpacity onPress={()=>navigation.goBack()} style={{marginBottom : verticalScale(16)}}>
-
-      <Icon name="arrow-back" size={moderateScale(22)} color={"#717A7E"} />
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={{ marginBottom: verticalScale(16) }}
+      >
+        <Icon name="arrow-back" size={moderateScale(22)} color={"#717A7E"} />
       </TouchableOpacity>
-      {/* <Header /> */}
 
-      {/* Tabs */}
-      {/* <View style={styles.tabContainer}>
-          {statusTabs.map((tab, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.tabButton,
-                {
-                  borderColor: tab.color,
-                  backgroundColor:
-                    tab.title === "Active"
-                      ? `${tab.color}15`
-                      : tab.title === "Cancel"
-                      ? `${tab.color}10`
-                      : `${tab.color}08`,
-                },
-              ]}
-            >
-              <Text
-                style={[styles.tabText, { color: "#000", fontWeight: "600" }]}
-              >
-                {tab.title}
-              </Text>
-              <View
-                style={{
-                  width: scale(21),
-                  height: scale(21),
-                  backgroundColor: "#fff",
-                  borderRadius: scale(20),
-                  justifyContent: "center",
-                }}
-              >
-                <Text style={[styles.tabCount, { color: tab.color }]}>
-                  {tab.count}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View> */}
-
-      {/* Order Info */}
       <CustomView radius={scale(16.59)}>
         <View
           style={{
-            // borderWidth: 1,
-            // borderRadius: moderateScale(8),
-            // borderColor: "#fff",
             marginBottom: 200,
-            // backgroundColor: "#FFFFFF1A",
-            // marginTop: verticalScale(12),
           }}
         >
           <View style={styles.card}>
-            {/* <View style={styles.orderHeader}>
-              <ImageBackground
-                source={require("../../../assets/iconBG.png")}
-                style={styles.iconCircle}
-              >
-                <Text style={styles.iconText}>GE</Text>
-              </ImageBackground>
-
-              <View
-                style={{
-                  flex: 1,
-                  marginLeft: scale(10),
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <View>
-                  <Text style={styles.heading}>Order No.</Text>
-                  <Text style={styles.orderNo}>{item._id}</Text>
-                </View>
-
-                <View>
-                  <Text style={styles.heading}>Price</Text>
-                  <Text style={styles.price}>₹{item.finalPrice}</Text>
-                </View>
-              </View>
-            </View> */}
-
-            {/* <CustomView
-            radius={scale(16.13)}
-            shadowStyle={{ marginTop: verticalScale(10) }}
-          >
-            <View>
-              <View style={styles.boxRow}>
-                <Text style={styles.label}>Brand</Text>
-                <Text style={[styles.label,]}>
-                 XXX
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.boxRow,
-                  {
-                    borderTopWidth: moderateScale(1),
-                    borderBottomWidth: moderateScale(1),
-                    borderColor: "#E0E0E0",
-                  },
-                ]}
-              >
-                <Text style={styles.label}>Problem Duration</Text>
-                <Text style={styles.label}>2-3 Days</Text>
-              </View>
-              <View style={styles.boxRow}>
-                <Text style={styles.label}>Ac Type</Text>
-                <Text style={styles.label}>Window</Text>
-              </View>
-            </View>
-          </CustomView> */}
-            <InfoCard />
+            <InfoCard pin={item.completionPin} />
 
             <CustomView
               radius={scale(16.59)}
@@ -247,184 +99,84 @@ const OrderDetailsScreen: React.FC = () => {
                 </View>
               </View>
             </CustomView>
-            {/* Progress Bar */}
-            {/* <View
-              style={{
-                borderWidth: 1,
-                borderColor: "#fff",
-                backgroundColor: "#FFFFFF1A",
-                paddingVertical: verticalScale(14),
-                borderRadius: moderateScale(12),
-                marginTop: verticalScale(15),
-              }}
-            >
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#0083D3" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#E6B325" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#4CAF50" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#9C27B0" },
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.progressSegment,
-                    { backgroundColor: "#9E9E9E" },
-                  ]}
-                />
-              </View>
-
-              <View style={styles.verifyRow}>
-                <Text style={styles.deviceText}>1 WINDOW AC</Text>
-                <Text
-                  style={{
-                    backgroundColor: "#027CC7",
-                    paddingHorizontal: moderateScale(6),
-                    borderRadius: moderateScale(4),
-                    color: "#fff",
-                    fontWeight : '600',
-                    fontSize : moderateScale(14)
-                  }}
-                >
-                  PIN : {item.completionPin}
-                </Text>
-              </View>
-
-              <View style={styles.legendRow}>
-                {[
-                  { color: "#3B82F6", text: "Assigned" },
-                  { color: "#F59E0B", text: "In Progress" },
-                  { color: "#22C55E", text: "Done" },
-                  { color: "#8B5CF6", text: "Warranty" },
-                  { color: "#64748B", text: "Job Closed" },
-                ].map((item, i) => (
-                  <View key={i} style={styles.legendItem}>
-                    <View
-                      style={[
-                        styles.legendDot,
-                        { backgroundColor: item.color },
-                      ]}
-                    />
-                    <Text style={styles.legendText}>{item.text}</Text>
-                  </View>
-                ))}
-              </View>
-            </View> */}
           </View>
 
-          {/* ------------------------- */}
-          {/* 🔥 Dynamic Timeline UI */}
-          {/* ------------------------- */}
           <View style={styles.timelineContainer}>
-            {timeline.map((step, index) => (
-              <View key={index} style={styles.timelineItem}>
-                {/* LEFT TIME BOX */}
-                <CustomView radius={scale(4)} >
-                <View
-                  style={[styles.timeColumn, !step.active && { opacity: 0.4 }]}
-                >
-                  <Text
-                    style={[styles.timeText, !step.active && { color: "#777" }]}
-                  >
-                    {step.date}
-                  </Text>
+            {sortedHistory.map((item, index) => {
+              const isLast = index === sortedHistory.length - 1;
+              const config = STATUS_CONFIG[item.status] || {
+                title: item.status,
+                color: "#999",
+              };
 
-                  <Text
-                    style={[
-                      styles.timeSubText,
-                      !step.active && { color: "#777" },
-                    ]}
-                  >
-                    {step.time}
-                  </Text>
-                </View>
-</CustomView>
-                {/* MIDDLE ARROW */}
-                <View style={styles.arrowColumn}>
-                  <View
-                    style={[
-                      styles.arrowCircle,
-                      { backgroundColor: step.active ? "#0083D3" : "#9CA3AF" },
-                    ]}
-                  />
+              const { day, time } = formatDateTime(item.timestamp);
 
-                  {index !== timeline.length - 1 && (
+              function CCView({ children }: { children: React.ReactNode }) {
+                // return <CustomView radius={scale(0)}>{children}</CustomView>;
+                return <View>{children}</View>;
+              }
+
+              return (
+                <View key={item._id} style={styles.timelineItem}>
+                  {/* LEFT TIME COLUMN */}
+                  <CCView>
+                    <View style={styles.timeColumn}>
+                      <Text style={styles.timeText}>{day}</Text>
+                      <Text style={styles.timeSubText}>{time}</Text>
+                    </View>
+                  </CCView>
+
+                  {/* CENTER LINE + DOT */}
+                  <View style={styles.arrowColumn}>
                     <View
                       style={[
-                        styles.arrowLine,
-                        {
-                          backgroundColor: step.active ? "#0083D3" : "#9CA3AF",
-                        },
+                        styles.arrowCircle,
+                        { backgroundColor: config.color },
                       ]}
                     />
-                  )}
-                </View>
-
-                {/* RIGHT DETAIL BOX */}
-                <View
-                  style={[
-                    styles.detailColumn,
-                    !step.active && { opacity: 0.4 },
-                  ]}
-                >
-                  <View style={styles.detailBox}>
-                    <Text
-                      style={[
-                        styles.detailTitle,
-                        !step.active && { color: "#777" },
-                      ]}
-                    >
-                      {step.title}
-                    </Text>
-
-                    {step.highlight ? (
+                    {true && (
                       <View
                         style={[
-                          styles.badge,
-                          !step.active && { backgroundColor: "#E5E7EB" },
+                          styles.arrowLine,
+                          {
+                            backgroundColor: config.color,
+                            height: isLast
+                              ? verticalScale(55)
+                              : verticalScale(70),
+                          },
                         ]}
-                      >
-                        <Text
-                          style={[
-                            styles.badgeText,
-                            !step.active && { color: "#555" },
-                          ]}
-                        >
-                          {step.desc}
-                        </Text>
-                      </View>
-                    ) : (
-                      <Text
-                        numberOfLines={1}
+                      />
+                    )}
+                    {isLast && (
+                      <View
                         style={[
-                          styles.detailDesc,
-                          !step.active && { color: "#777" },
+                          {
+                            width: scale(17),
+                            height: scale(17),
+                            borderRadius: scale(21),
+                            backgroundColor: config.color,
+                            marginTop: verticalScale(-10),
+                          },
                         ]}
-                      >
-                        {step.desc}
-                      </Text>
+                      />
                     )}
                   </View>
+
+                  {/* RIGHT DETAIL BOX */}
+                  <CCView>
+                    <View style={styles.detailColumn}>
+                      <View style={styles.detailBox}>
+                        <Text style={styles.detailTitle}>{config.title}</Text>
+
+                        {!!item.notes && (
+                          <Text style={styles.detailDesc}>{item.notes}</Text>
+                        )}
+                      </View>
+                    </View>
+                  </CCView>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </View>
       </CustomView>
@@ -434,7 +186,7 @@ const OrderDetailsScreen: React.FC = () => {
 
 type TabType = "problem" | "basic" | "price";
 
-function InfoCard() {
+function InfoCard({ pin }: { pin: string }) {
   const [tab, setTab] = useState<TabType>("problem");
 
   const renderContent = () => {
@@ -442,35 +194,75 @@ function InfoCard() {
       case "problem":
         return (
           <>
-            <Row label="Brand" value="Samsung | Split | 1.5 Ton" icon={require('../../../assets/clock.png')} />
+            <Row
+              label="Brand"
+              value="Samsung | Split | 1.5 Ton"
+              icon={require("../../../assets/clock.png")}
+            />
             <Divider />
-            <Row icon={require('../../../assets/clock.png')} label="Problem Duration" value="2–3 Days " />
+            <Row
+              icon={require("../../../assets/clock.png")}
+              label="Problem Duration"
+              value="2–3 Days "
+            />
             <Divider />
-            <Row icon={require('../../../assets/clock.png')} label="AC Type" value="Window"  />
+            <Row
+              icon={require("../../../assets/clock.png")}
+              label="AC Type"
+              value="Window"
+            />
           </>
         );
 
       case "basic":
         return (
           <>
-            <Row icon={require('../../../assets/loc.png')} label="Zip code" value="250401"  />
+            <Row
+              icon={require("../../../assets/loc.png")}
+              label="Zip code"
+              value="250401"
+            />
             <Divider />
-            <Row icon={require('../../../assets/clock.png')} label="Service Time" value="Service within  24 hour" />
+            <Row
+              icon={require("../../../assets/clock.png")}
+              label="Service Time"
+              value="Service within  24 hour"
+            />
             <Divider />
-            <Row icon={require('../../../assets/home.png')} label="Address" value="Sector 70,  Mohali" />
+            <Row
+              icon={require("../../../assets/home.png")}
+              label="Address"
+              value="Sector 70,  Mohali"
+            />
           </>
         );
 
       case "price":
         return (
           <>
-            <Row icon={require('../../../assets/clock.png')} label="Qty" value="02" /> 
+            <Row
+              icon={require("../../../assets/clock.png")}
+              label="Qty"
+              value="02"
+            />
             <Divider />
-            <Row icon={require('../../../assets/clock.png')} label="Price" value="₹5025" /> 
+            <Row
+              icon={require("../../../assets/clock.png")}
+              label="Price"
+              value="₹5025"
+            />
             <Divider />
-            <Row icon={require('../../../assets/clock.png')} label="Visit Charges" value="₹150"  />
+            <Row
+              icon={require("../../../assets/clock.png")}
+              label="Visit Charges"
+              value="₹150"
+            />
             <Divider />
-            <Row icon={require('../../../assets/clock.png')} label="Additional Charges" value="₹200"  />
+            <Row
+              icon={require("../../../assets/clock.png")}
+              label="Additional Charges"
+              value="₹200"
+            />
           </>
         );
     }
@@ -508,6 +300,12 @@ function InfoCard() {
         shadowStyle={{ marginTop: verticalScale(10) }}
       >
         <View style={styles.content}>{renderContent()}</View>
+        <Divider />
+        <Row
+          icon={require("../../../assets/clock.png")}
+          label="Completion PIN"
+          value={pin}
+        />
       </CustomView>
     </>
   );
@@ -725,20 +523,20 @@ const styles = StyleSheet.create({
     marginTop: verticalScale(16),
     backgroundColor: "#FFFFFF1A",
     borderRadius: moderateScale(14),
-    padding: scale(14),
+    paddingVertical: verticalScale(14),
   },
   timelineItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     // gap : 10,
-    marginBottom: verticalScale(29),
+    // marginBottom: verticalScale(16),
     // borderWidth : 1,
     marginHorizontal: scale(16),
     // borderColor : 'red'
   },
   timeColumn: {
-    width: scale(121),
+    width: scale(148),
     height: verticalScale(56),
     // borderWidth: 1,
     // backgroundColor: "#FFFFFF1A",
@@ -748,6 +546,7 @@ const styles = StyleSheet.create({
     gap: verticalScale(4),
     alignItems: "center",
     paddingRight: scale(25),
+    borderRadius: scale(4),
   },
   timeText: {
     fontSize: moderateScale(11),
@@ -763,26 +562,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   arrowCircle: {
-    width: scale(10),
-    height: scale(10),
-    borderRadius: 10,
+    width: scale(17),
+    height: scale(17),
+    borderRadius: scale(21),
     backgroundColor: "#0083D3",
+    borderWidth: 1,
+    borderColor: "#fff",
   },
   arrowLine: {
-    width: scale(2),
-    height: verticalScale(40),
+    width: scale(6),
+    height: verticalScale(70),
     backgroundColor: "#0083D3",
-    marginTop: verticalScale(4),
+    marginTop: verticalScale(-3),
   },
   detailColumn: {
-    width: scale(121),
+    width: scale(148),
     height: verticalScale(56),
-    borderWidth: 1,
-    backgroundColor: "#FFFFFF1A",
-    borderRadius: moderateScale(12),
-    borderColor: "#fff",
+    // borderWidth: 1,
+    // backgroundColor: "#FFFFFF1A",
+    // borderRadius: moderateScale(4),
+    borderColor: "#000",
     justifyContent: "center",
-    overflow: "hidden", // important!
+    // overflow: "hidden", // important!
   },
   detailBox: {
     paddingLeft: scale(23), // short text → 23 left padding
@@ -811,29 +612,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: moderateScale(10.5),
   },
-  // tabContainer: {
-  //   flexDirection: "row",
-  //   height: verticalScale(38),
-  //   borderWidth: 1,
-  //   borderColor: "#E0E0E0",
-  //   borderRadius: scale(12),
-  //   overflow: "hidden",
-  // },
-
-  // tabButton: {
-  //   flex: 1,
-  //   flexDirection: "row",
-  //   alignItems: "center",
-  //   justifyContent: "center",
-  //   gap: scale(4),
-  // },
 
   activeTabButton: {
     backgroundColor: "#EAF7FF",
-    // borderWidth: 1,
-    // borderColor: "#2F80ED",
-    // borderRadius: scale(10),
-    // margin: scale(2),
   },
 
   tabIcon: {

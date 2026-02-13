@@ -113,7 +113,7 @@ const HomeScreen = () => {
   }, [categories]);
 
   const zipcode = selectedAddress.address.zipcode;
-  // console.log("services fetched");
+  // console.log("services fetched", services);
 
   const serviceOfTheWeek = useMemo(() => {
     return mostBookedServices.length > 0 ? mostBookedServices[0] : null;
@@ -158,7 +158,7 @@ const HomeScreen = () => {
     load();
 
     // poll every 30 seconds
-    const intervalId = setInterval(load, 30000);
+    const intervalId = setInterval(load, 10000);
 
     // cleanup on unmount
     return () => {
@@ -187,7 +187,7 @@ const HomeScreen = () => {
         const brandsRes = await fetchBrandsByZip(zipcode);
 
         if (servicesRes) {
-          console.log("🔧 Services fetched: ", services);
+          console.log("🔧 Services fetched: ");
         } else {
           console.log("❌ Services failed");
         }

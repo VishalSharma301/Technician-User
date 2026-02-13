@@ -227,3 +227,63 @@ export interface InvoiceAdditionalServices {
   items: InvoiceAdditionalServiceItem[];
   total: number;
 }
+
+
+export interface JobDetails {
+  jobInfo: JobInfo;
+  completionType: "parts_pending" | "completed" | "workshop_required";
+  invoice: JobInvoiceDetails;
+  technicianFindings: string;
+  partsPending?: PartsPending;
+  workshopDetails?: WorkshopDetailss;
+}
+
+
+export interface JobInfo {
+  jobId: string;
+  bookingDate: string; // ISO date string
+  verificationRequestedAt?: string; // ISO date string
+
+  address: Address;
+  provider: Provider;
+  technician: Technician;
+}
+export interface PartsPending {
+  availability: PartsAvailability;
+  requiredParts: RequiredPart[];
+  timeline: string;
+}
+export interface PartsAvailability {
+  estimate: "within_week" | "within_days" | "custom";
+  expectedReturnDate: string; // ISO date string
+  customDate: string | null;
+}
+export interface RequiredPart {
+  partName: string;
+  quantity: number;
+  estimatedCost: number;
+  supplier: string;
+  notes?: string;
+  total: number;
+}
+export interface WorkshopDetailss {
+  itemDescription: string;
+  repairRequired: string;
+  estimatedCost: number;
+
+  completionTime: WorkshopCompletionTimes;
+
+  photos: WorkshopPhotos;
+
+  timeline: string;
+  notes?: string;
+}
+export interface WorkshopPhotos {
+  before: string[]; // image URLs
+  after: string[];  // image URLs
+}
+export interface WorkshopCompletionTimes{
+  estimate: "1-2_days" | "3-5_days" | "within_week" | "custom";
+  expectedReturnDate: string; // ISO date string
+  customDate: string | null;
+}

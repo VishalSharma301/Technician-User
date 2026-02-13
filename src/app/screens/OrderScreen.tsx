@@ -17,10 +17,6 @@ import {
   ServiceRequestStatus,
 } from "../../constants/serviceRequestTypes";
 import { useNavigation } from "@react-navigation/native";
-import { ItemData } from "../../constants/types";
-import { formatDate } from "../../utils/date";
-import ScreenWrapper from "../components/ScreenWrapper";
-import Header from "../components/Header";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { OrderStackParamList } from "../../constants/navigation";
@@ -166,9 +162,8 @@ export default function OrderScreen() {
     <View style={styles.headerContainer}>
       {/* <Header /> */}
       <View>
-        <TouchableOpacity onPress={()=>navigation.goBack()} >
-        
-        <Icon name="arrow-back" size={moderateScale(22)} color={"#717A7E"} />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon name="arrow-back" size={moderateScale(22)} color={"#717A7E"} />
         </TouchableOpacity>
         <Text
           style={{
@@ -233,7 +228,6 @@ export default function OrderScreen() {
               </TouchableOpacity>
             );
           }}
-         
         />
       </CustomView>
     </View>
@@ -278,8 +272,35 @@ export default function OrderScreen() {
     );
   };
 
+  const getProgressStage = (item: ServiceRequest) => {
+    const rawStatus = item.status;
+
+    // Hard mapping first
+    const baseStage = STATUS_TO_PROGRESS[rawStatus];
+
+    // If already job closed → done
+    if (baseStage === "job_closed") return "job_closed";
+
+    // Handle completed → warranty logic
+    if (rawStatus === "completed" && item.serviceCompletedAt) {
+      const completedTime = new Date(item.serviceCompletedAt).getTime();
+      const now = Date.now();
+
+      const DAYS_5 = 5 * 24 * 60 * 60 * 1000;
+
+      if (now - completedTime < DAYS_5) {
+        return "warranty";
+      }
+
+      return "job_closed";
+    }
+
+    return baseStage;
+  };
+
   function OrderCard({ item }: { item: ServiceRequest }) {
-    const normalizedStatus = STATUS_TO_PROGRESS[item.status];
+    const normalizedStatus = getProgressStage(item);
+   
 
     return (
       <CustomView
@@ -292,8 +313,10 @@ export default function OrderScreen() {
       >
         <TouchableOpacity
           style={styles.card}
-          onPress={() => navigation.navigate("OrderDetailsScreen", { item })}
-          // onPress={() => console.log("STATUS FROM API:", item.status)}
+          onPress={() => {
+            navigation.navigate("OrderDetailsScreen", { item });
+            console.log("STATUS FROM API:", item);
+          }}
         >
           <Text
             style={{
@@ -318,6 +341,7 @@ export default function OrderScreen() {
               </View>
             </View>
           </CustomView>
+          <Text> id : {item._id}</Text>
           <CustomView
             radius={scale(16.13)}
             shadowStyle={{ marginTop: verticalScale(10) }}
