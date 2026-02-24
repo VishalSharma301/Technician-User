@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import {
+  dismissVerification,
   getJobVerificationDetails,
   verifyJobDetails,
 } from "../../utils/verificationApis";
@@ -70,6 +71,20 @@ const VerificationModal: React.FC<Props> = ({ visible, jobs, onClose }) => {
       console.log("res", res);
 
       setOtp(res.data.completionPin);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleDismiss = async () => {
+    if (!selectedJob) return;
+
+    try {
+      setLoading(true);
+      const res = await dismissVerification(selectedJob._id);
+      console.log("res", res);
+      closenow()
     } catch (e) {
       console.error(e);
     } finally {
@@ -336,7 +351,7 @@ const VerificationModal: React.FC<Props> = ({ visible, jobs, onClose }) => {
 
               {/* Bottom Buttons */}
               <View style={styles.bottomActions}>
-                <TouchableOpacity style={styles.dismissBtn}>
+                <TouchableOpacity style={styles.dismissBtn} onPress={handleDismiss}>
                   <Text style={styles.dismissText}>Dismiss</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.approveBtn} onPress={handleVerify}>

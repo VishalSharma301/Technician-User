@@ -16,6 +16,7 @@ import {
   HomeTabParamList,
   HomeStackParamList,
   OrderStackParamList,
+  ProfileStackParamList,
 } from "./src/constants/navigation";
 
 import CustomNavBar from "./src/app/components/CustomNavBar";
@@ -26,11 +27,14 @@ import AddAddressScreen from "./src/app/screens/AddressScreens/AddAddressScreen"
 import OrderDetailsScreen from "./src/app/screens/OrderDetailScreen";
 import JobsScreen from "./src/app/screens/JobsScreen";
 import ResetPasswordScreen from "./src/app/screens/AuthScreens/ResetPasswordScreen";
+import AccountHealthScreen from "./src/app/screens/AccountHealthScreen";
+import SubmitReviewScreen from "./src/app/screens/SubmitReviewScreen";
 
 const Stack = createStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<HomeTabParamList>();
 const HomeStackNav = createStackNavigator<HomeStackParamList>();
 const OrderStackNav = createStackNavigator<OrderStackParamList>();
+const ProfileStackNav = createStackNavigator<ProfileStackParamList>();
 
 export default function AuthStack() {
   return (
@@ -49,6 +53,14 @@ export  function OrderStack() {
       <OrderStackNav.Screen name="OrderScreen" component={OrderScreen} />
       <OrderStackNav.Screen name="OrderDetailsScreen" component={OrderDetailsScreen} />
     </OrderStackNav.Navigator>
+  );
+}
+export  function ProfileStack() {
+  return (
+    <ProfileStackNav.Navigator screenOptions={{ headerShown: false }}>
+      <ProfileStackNav.Screen name="ProfileScreen" component={ProfileScreen} />
+      <ProfileStackNav.Screen name="AccountHealthScreen" component={AccountHealthScreen} />
+    </ProfileStackNav.Navigator>
   );
 }
 
@@ -120,8 +132,8 @@ export function AuthenticatedTabs() {
         name="HomeStack"
         component={HomeStack}
       />
-      <Tabs.Screen name="JobsScreen" component={JobsScreen} />
-      <Tabs.Screen name="CartScreen" component={ProfileScreen} />
+      <Tabs.Screen name="JobsScreen" component={SubmitReviewScreen} />
+      <Tabs.Screen name="CartScreen" component={ProfileStack} />
       <Tabs.Screen name="CategoryScreen" component={CategoryScreen} />
       <Tabs.Screen name="OrderStack" component={OrderStack} />
     </Tabs.Navigator>

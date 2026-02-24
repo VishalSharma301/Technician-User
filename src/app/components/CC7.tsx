@@ -30,7 +30,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import ServicePriceCard from "./ServicePriceCard";
 import { InsetShadowBox } from "./InsetShadow";
 import ReviewDetailCard from "./ReviewDetailCard1";
-import ProviderCard from "./ProviderCard";
+import ProviderCard from "./ProviderCard1";
 import QuantityPriceCard from "./QuantityPriceCard";
 import { iconMap, IconName } from "../../utils/iconMap";
 
@@ -108,6 +108,9 @@ export default function Chatbot8({
     steps[currentStepIndex]?.stepType === "CAPACITY_SELECTION";
   /* ---------------- HELPERS ---------------- */
 
+
+
+
   const time = () =>
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -136,6 +139,9 @@ export default function Chatbot8({
       ? `${selectedAddress.label}, ${selectedAddress.address.street}`
       : "",
   };
+
+
+
 
   const renderTemplate = (t: string) =>
     t.replace(/{{(.*?)}}/g, (_, k) => templateVars[k.trim()] ?? "");
@@ -547,6 +553,10 @@ export default function Chatbot8({
       };
 
       const res = await createConversationBooking(service.id, payload);
+
+      console.log("response : ", res);
+      
+
       setResponse(res);
 
       // setMessages((p) => [
@@ -1036,6 +1046,9 @@ export default function Chatbot8({
                         paddingTop: verticalScale(20),
                         borderColor: "#BFBFBF",
                         borderRadius: scale(12),
+                        marginTop : verticalScale(-40),
+                        // borderWidth : 1
+
                       }}
                     >
                       {response && <ProviderCard res={response} />}
@@ -1651,7 +1664,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: scale(15),
     // marginTop: verticalScale(6),
     // borderRadius: scale(8),
-    // borderWidth: 1,
+    borderWidth: 1,
     // borderColor: "#C8E6FF80",
     // backgroundColor: "#C8E6FF1A",
     alignItems: "center",

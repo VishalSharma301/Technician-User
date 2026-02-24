@@ -38,6 +38,11 @@ export type OrderStackParamList = {
       }
   
 };
+export type ProfileStackParamList = {
+  ProfileScreen: undefined;
+  AccountHealthScreen: undefined;
+  
+};
 
 // Tabs
 export type HomeTabParamList = {

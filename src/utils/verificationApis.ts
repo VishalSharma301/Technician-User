@@ -70,3 +70,9 @@ export const verifyJobDetails = async (jobId: string) => {
   );
   return data;
 };
+export const dismissVerification = async (jobId: string) => {
+  const { data } = await apiClient.post(
+    `/api/users/jobs/${jobId}/reject`
+  );
+  return data;
+};

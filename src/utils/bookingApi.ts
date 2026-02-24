@@ -166,9 +166,26 @@ export interface ConversationBookingResponse {
     requestSubmittedAt: string;
     createdAt: string;
     updatedAt: string;
+    
 
     __v: number;
   };
+  providerStats : ProviderStats;
+}
+
+export interface ProviderBadge {
+  _id: string;
+  name: string;
+  icon: string;
+  earnedAt: string; // ISO date string
+}
+
+export interface ProviderStats {
+  badges: ProviderBadge[];
+  rating: number;
+  totalCompletedJobs: number;
+  totalReviews: number;
+  totalTechnicians: number;
 }
 
 export async function createConversationBooking(

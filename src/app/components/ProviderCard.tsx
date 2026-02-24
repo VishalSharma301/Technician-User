@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -18,15 +18,20 @@ import { useAddress } from "../../hooks/useAddress";
 export default function ProviderCard({
   res,
 }: {
-  res: ConversationBookingResponse;
+  res: ConversationBookingResponse | undefined;
 }) {
   const [activeTab, setActiveTab] = useState<"provider" | "customer">(
-    "provider"
+    "provider",
   );
   const { quickPickServices } = useServices();
   const { selectedAddress } = useAddress();
 
-  const name = res.data.provider?.companyName || "Company Name";
+  const name = res?.data.provider?.companyName || "Company Name";
+  const providerStats = res?.providerStats
+
+  useEffect(() => {
+    console.log("res : ", res);
+  });
 
   const initials = name
     .split(" ")
@@ -91,15 +96,15 @@ export default function ProviderCard({
               alignItems: "center",
             }}
           >
-           <Image
-                source={iconMap["trophy"]}
-                style={{
-                  height: verticalScale(21),
-                  width: scale(21),
-                  resizeMode: "center",
-                }}
-              />
-            <Text>96% Job Success</Text>
+            <Image
+              source={iconMap["trophy"]}
+              style={{
+                height: verticalScale(21),
+                width: scale(21),
+                resizeMode: "center",
+              }}
+            />
+            <Text>{96}% Job Success</Text>
           </View>
           <View
             style={{
@@ -117,9 +122,12 @@ export default function ProviderCard({
           radius={scale(8)}
           boxStyle={styles.statsRow}
         >
-          <StatItem label="Team Size" value="15" />
-          <StatItem label="Job Done" value="1200" />
-          <StatItem label="Rating" value={`${res.data.provider?.rating}/5`} />
+          <StatItem label="Team Size" value={providerStats?.totalTechnicians || 0} />
+          <StatItem label="Job Done" value={providerStats?.totalCompletedJobs!} />
+          <StatItem
+            label="Rating"
+            value={`${res?.data.provider?.rating || 0}/5`}
+          />
         </CustomView>
 
         <CustomView
@@ -273,7 +281,7 @@ export default function ProviderCard({
 
 /* ---------- SMALL COMPONENTS ---------- */
 
-function StatItem({ label, value }: { label: string; value: string }) {
+function StatItem({ label, value }: { label: string; value: string | number }) {
   return (
     <View style={styles.statBox}>
       <Text style={styles.statValue}>{value}</Text>
@@ -304,14 +312,14 @@ function ToggleButton({
       ]}
     >
       <Image
-                source={iconMap[icon]}
-                style={{
-                  height: verticalScale(17),
-                  width: scale(17),
-                  resizeMode: "center",
-                }}
-              />
-     
+        source={iconMap[icon]}
+        style={{
+          height: verticalScale(17),
+          width: scale(17),
+          resizeMode: "center",
+        }}
+      />
+
       <Text
         style={{
           color: active ? "#fff" : "#555",
@@ -375,14 +383,14 @@ function InfoRow({
           borderWidth: 0,
         }}
       >
-      <Image
-                source={iconMap["location"]}
-                style={{
-                  height: verticalScale(17),
-                  width: scale(17),
-                  resizeMode: "center",
-                }}
-              />
+        <Image
+          source={iconMap["location"]}
+          style={{
+            height: verticalScale(17),
+            width: scale(17),
+            resizeMode: "center",
+          }}
+        />
         <Text style={styles.infoLabel}>{label}</Text>
       </View>
       <Text style={styles.infoValue}>{value}</Text>

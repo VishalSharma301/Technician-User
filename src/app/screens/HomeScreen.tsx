@@ -37,6 +37,8 @@ import CustomView from "../components/CustomView";
 import { getPendingVerifications } from "../../utils/verificationApis";
 import VerificationModal from "../components/VerificationModal";
 import { VerificationJob } from "../../constants/verification";
+import { useServiceRequests } from "../../store/ServiceRequestContext";
+import ReviewModal from "../components/ReviewModal";
 
 const categories = ["Popular", "Emergency", "Seasonal", "Daily Use"];
 
@@ -105,6 +107,11 @@ const HomeScreen = () => {
     HomeJob[]
   >([]);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const { fetchServiceRequests, serviceRequests } = useServiceRequests();
+  const [reviewVisible, setReviewVisible] = useState(false);
+  const [pendingServiceId, setPendingServiceId] = useState<string | null>(null);
+
+  console.log(categories);
 
   useEffect(() => {
     if (!selectedCategory && categories.length > 0) {
@@ -113,7 +120,7 @@ const HomeScreen = () => {
   }, [categories]);
 
   const zipcode = selectedAddress.address.zipcode;
-  // console.log("services fetched", services);
+  console.log("services fetched", services);
 
   const serviceOfTheWeek = useMemo(() => {
     return mostBookedServices.length > 0 ? mostBookedServices[0] : null;
@@ -174,36 +181,57 @@ const HomeScreen = () => {
   }, [pendingServiceRequsest]);
 
   useEffect(() => {
-    console.log(selectedAddress);
-
     async function getAllServices() {
-      if (!zipcode) return; // safety
+      if (!zipcode) return;
 
       try {
         setIsLoading(true);
-        console.log("fetching services");
 
         const servicesRes = await fetchServicesByZip(zipcode);
         const brandsRes = await fetchBrandsByZip(zipcode);
 
-        if (servicesRes) {
-          console.log("🔧 Services fetched: ");
-        } else {
-          console.log("❌ Services failed");
-        }
-
-        setServices(servicesRes.data);
-        setBrands(brandsRes.data);
-
-        setIsLoading(false);
+        setServices(servicesRes?.data ?? []);
+        setBrands(brandsRes?.data ?? []);
       } catch (error) {
-        setIsLoading(false);
         console.error("❌ Failed to get services:", error);
+        setServices([]); // extra safety
+        setBrands([]); // extra safety
+      } finally {
+        setIsLoading(false);
       }
     }
 
     getAllServices();
   }, [zipcode]);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    fetchServiceRequests({
+      page: 1,
+      limit: 1000,
+    });
+
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!serviceRequests || serviceRequests.length === 0) return;
+
+    const pendingReview = serviceRequests.find(
+      (item) =>
+        item.status === "completed" &&
+        (item.showReview === true || item.showReview === "true"),
+    );
+
+    if (pendingReview) {
+      console.log("pendingReview : ", pendingReview);
+
+      setPendingServiceId(pendingReview._id);
+      setReviewVisible(true);
+    }
+  }, [serviceRequests]);
 
   // console.log(quickPickServices);
 
@@ -349,22 +377,29 @@ const HomeScreen = () => {
           }}
           boxStyle={[styles.topCategoryRow]}
         >
-          {quickPickServices.map((item, index) => (
-            <CustomView
+          {categories.map((item, index) => (
+            <TouchableOpacity
               key={index}
-              height={verticalScale(79.97)}
-              width={scale(79.39)}
-              radius={scale(14.88)}
-              boxStyle={[styles.topCategoryCard]}
+              onPress={() => setSelectedCategory(item)}
             >
-              <Image
-                source={iconMap[item.icon as IconName] || iconMap["default"]}
-                style={styles.topCategoryImage}
-              />
-              <Text numberOfLines={1} style={styles.topCategoryText}>
-                {item.name}
-              </Text>
-            </CustomView>
+              <CustomView
+                height={verticalScale(79.97)}
+                width={scale(79.39)}
+                radius={scale(14.88)}
+                boxStyle={[styles.topCategoryCard]}
+              >
+                <Image
+                  source={
+                    // iconMap[item.icon as IconName] ||
+                    iconMap["default"]
+                  }
+                  style={styles.topCategoryImage}
+                />
+                <Text numberOfLines={1} style={styles.topCategoryText}>
+                  {item}
+                </Text>
+              </CustomView>
+            </TouchableOpacity>
           ))}
         </CustomView>
 
@@ -669,6 +704,11 @@ const HomeScreen = () => {
           />
         </View>
       )}
+      <ReviewModal
+        visible={reviewVisible}
+        onClose={() => setReviewVisible(false)}
+        serviceRequestId={pendingServiceId!}
+      />
       <CustomNavBar isLocal="Home" />
     </View>
   );
@@ -867,11 +907,11 @@ const styles = StyleSheet.create({
 
   topCategoryRow: {
     flexDirection: "row",
-    // gap: scale(6),
+    gap: scale(5),
     paddingVertical: verticalScale(7.85),
-    // paddingHorizontal: scale(8.96),
+    paddingHorizontal: scale(8.96),
     alignItems: "center",
-    justifyContent: "space-evenly",
+    justifyContent: "flex-start",
     borderWidth: moderateScale(0.7),
     borderColor: "#fff",
 

@@ -44,6 +44,8 @@ const PROGRESS_COLORS = {
   assigned: "#3B82F6",
   in_progress: "#F59E0B",
   completed: "#22C55E",
+  // warranty: "#dbd1d1",
+  // job_closed: "#dbd1d1",
   warranty: "#8B5CF6",
   job_closed: "#64748B",
 } as const;
@@ -78,6 +80,8 @@ export default function OrderScreen() {
     updateFilters,
   } = useServiceRequests();
 
+  // console.log("serviceRequests : ", serviceRequests);
+  
   const [selectedTab, setSelectedTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const navigation = useNavigation<NavigationProp>();
@@ -181,7 +185,7 @@ export default function OrderScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           data={STATUS_TABS}
-          keyExtractor={(item) => item.value}
+          keyExtractor={(item, index) => item.value}
           contentContainerStyle={{
             // gap: scale(3.5),
             alignItems: "center",
@@ -274,6 +278,11 @@ export default function OrderScreen() {
 
   const getProgressStage = (item: ServiceRequest) => {
     const rawStatus = item.status;
+const completedStatus = item.statusHistory?.find(
+  (item) => item.status === "completed"
+);
+// console.log(completedStatus);
+
 
     // Hard mapping first
     const baseStage = STATUS_TO_PROGRESS[rawStatus];
@@ -282,11 +291,11 @@ export default function OrderScreen() {
     if (baseStage === "job_closed") return "job_closed";
 
     // Handle completed → warranty logic
-    if (rawStatus === "completed" && item.serviceCompletedAt) {
-      const completedTime = new Date(item.serviceCompletedAt).getTime();
+    if (rawStatus === "completed" && (item.serviceCompletedAt || completedStatus)) {
+      const completedTime = new Date(item.serviceCompletedAt || completedStatus?.timestamp || 0).getTime();
       const now = Date.now();
 
-      const DAYS_5 = 5 * 24 * 60 * 60 * 1000;
+      const DAYS_5 = 1 * 24 * 60 * 60 * 1000;
 
       if (now - completedTime < DAYS_5) {
         return "warranty";
@@ -297,10 +306,12 @@ export default function OrderScreen() {
 
     return baseStage;
   };
+  
 
   function OrderCard({ item }: { item: ServiceRequest }) {
     const normalizedStatus = getProgressStage(item);
    
+const isOnHold = !PROGRESS_STAGES.includes(normalizedStatus);
 
     return (
       <CustomView
@@ -375,6 +386,10 @@ export default function OrderScreen() {
                 <Text style={styles.label}>Price</Text>
                 <Text style={styles.label}>{item.finalPrice}</Text>
               </View>
+              <View style={styles.boxRow}>
+                <Text style={styles.label}>Completion Pin</Text>
+                <Text style={styles.label}>{item.completionPin}</Text>
+              </View>
             </View>
           </CustomView>
           <CustomView
@@ -396,8 +411,8 @@ export default function OrderScreen() {
                         styles.progressSegment,
                         {
                           backgroundColor: isActive
-                            ? PROGRESS_COLORS[stage]
-                            : "#D1D5DB",
+                            ? PROGRESS_COLORS[stage] : isOnHold ? "#FF0000"
+                            : "#dbd1d1",
                         },
                       ]}
                     />
@@ -407,6 +422,7 @@ export default function OrderScreen() {
 
               <View style={styles.verifyRow}>
                 <Text style={styles.deviceText}>1 WINDOW AC</Text>
+                {isOnHold &&<Text style={{color : 'red', marginRight : scale(20)}}>On Hold</Text>}
               </View>
 
               <View style={styles.legendRow}>
@@ -439,7 +455,7 @@ export default function OrderScreen() {
     <View style={styles.container}>
       <FlatList
         data={serviceRequests}
-        keyExtractor={(item) => item._id + item.bookedAt}
+        keyExtractor={(item,index) => `${item._id}_${index}` }
         renderItem={({ item }) => <OrderCard item={item} />}
         ListHeaderComponent={renderHeader}
         ListFooterComponent={renderFooter}
@@ -610,6 +626,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: verticalScale(10),
+    // borderWidth : 1
   },
   deviceText: {
     fontSize: moderateScale(12),
@@ -637,6 +654,7 @@ const styles = StyleSheet.create({
     borderColor: "#E5DFDF",
     paddingBottom: verticalScale(14),
     paddingTop: verticalScale(8),
+    // borderWidth : 1
   },
   legendItem: {
     flexDirection: "row",

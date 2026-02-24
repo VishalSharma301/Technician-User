@@ -34,7 +34,10 @@ interface Props {
   locations: Location[];
 }
 
-type NavigationProp = StackNavigationProp<RootStackParamList, "SelectLocationScreen">
+type NavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "SelectLocationScreen"
+>;
 
 export default function SelectLocationScreen() {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -45,27 +48,48 @@ export default function SelectLocationScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalData, setModalData] = useState<string[]>([]);
   const [modalType, setModalType] = useState<"state" | "city" | "zip" | null>(
-    null
+    null,
   );
-  const navigation = useNavigation<NavigationProp>()
-  const {setSelectedAddress} = useContext(AddressContext)
+  const navigation = useNavigation<NavigationProp>();
+  const { setSelectedAddress, selectedAddress } = useContext(AddressContext);
 
+  // useEffect(() => {
+  //   async function fetchAvailableLocations() {
+  //     try {
+  //       const availableLocations = await fetchzipcodes();
+  //       setLocations(availableLocations.data);
+  //     } catch (err) {
+  //       console.error("Unable to fetch Locations : ", err);
+  //       throw new Error("Error Occured");
+  //     }
+  //   }
+  //   fetchAvailableLocations();
+  // }, []);
   useEffect(() => {
-    async function fetchAvailableLocations() {
-      try {
-        const availableLocations = await fetchzipcodes();
-        setLocations(availableLocations.data);
-      } catch (err) {
-        console.error("Unable to fetch Locations : ", err);
-        throw new Error("Error Occured");
-      }
+    const defaultAddress = {
+      label: "Sanghol",
+      address: {
+        street: "",
+        city: "Sanghol",
+        state: "Punjab",
+        zipcode: "140802",
+        coordinates: { lat: 0, lon: 0 },
+      },
+      phone: "",
+    };
+
+    // ✅ Set address only once
+    setSelectedAddress(defaultAddress);
+
+    // ✅ Navigate only if zipcode exists
+    if (defaultAddress.address.zipcode) {
+      navigation.replace("AuthenticatedTabs");
     }
-    fetchAvailableLocations();
-  }, []);
+  });
 
   const states = useMemo(
     () => Array.from(new Set(locations.map((loc) => loc.state))),
-    [locations]
+    [locations],
   );
 
   const cities = useMemo(() => {
@@ -104,8 +128,7 @@ export default function SelectLocationScreen() {
     setModalVisible(false);
   };
 
-
-    const handleSaveAddress = () => {
+  const handleSaveAddress = () => {
     if (selectedState && selectedCity && selectedZip) {
       setSelectedAddress({
         label: selectedCity, // could be "Home"/"Work" later
@@ -118,23 +141,23 @@ export default function SelectLocationScreen() {
         },
         phone: "", // optional
       });
-      navigation.navigate("AuthenticatedTabs")
+      navigation.navigate("AuthenticatedTabs");
     }
   };
 
-  function skip (){
+  function skip() {
     setSelectedAddress({
-        label: "Sanghol", // could be "Home"/"Work" later
-        address: {
-          street: "", // keep empty for now
-          city: "Sanghol",
-          state: "Punjab",
-          zipcode: "140802",
-          coordinates: { lat: 0, lon: 0 }, // default until you fetch coords
-        },
-        phone: "", // optional
-      });
-      navigation.navigate("AuthenticatedTabs")
+      label: "Sanghol", // could be "Home"/"Work" later
+      address: {
+        street: "", // keep empty for now
+        city: "Sanghol",
+        state: "Punjab",
+        zipcode: "140802",
+        coordinates: { lat: 0, lon: 0 }, // default until you fetch coords
+      },
+      phone: "", // optional
+    });
+    navigation.navigate("AuthenticatedTabs");
   }
 
   return (
@@ -209,10 +232,12 @@ export default function SelectLocationScreen() {
             </View>
           </Modal>
           <Button
-            onPress={() => {handleSaveAddress()}}
+            onPress={() => {
+              handleSaveAddress();
+            }}
             title="Continue"
           />
-          <Button title="Skip" onPress={skip}/>
+          <Button title="Skip" onPress={skip} />
         </View>
       )}
     </SafeAreaView>
@@ -220,7 +245,7 @@ export default function SelectLocationScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#fff" },
+  container: { flex: 1, padding: 20, backgroundColor: "#fff", display: "none" },
   label: { fontSize: 16, fontWeight: "600", marginTop: 20 },
   selector: {
     borderWidth: 1,
