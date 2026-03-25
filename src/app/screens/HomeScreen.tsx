@@ -97,6 +97,8 @@ const HomeScreen = () => {
   const [selectedServiceObject, setSelectedServiceObject] =
     useState<ServiceObject>();
   const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
+  const [email, setEmail] = useState("");
+const [emailSubmitted, setEmailSubmitted] = useState(false);
 
   const categories = useMemo(() => {
     return servicesByCategory ? Object.keys(servicesByCategory) : [];
@@ -120,7 +122,7 @@ const HomeScreen = () => {
   }, [categories]);
 
   const zipcode = selectedAddress.address.zipcode;
-  console.log("services fetched", services);
+  console.log("services fetched");
 
   const serviceOfTheWeek = useMemo(() => {
     return mostBookedServices.length > 0 ? mostBookedServices[0] : null;
@@ -132,6 +134,10 @@ const HomeScreen = () => {
     const load = async () => {
       try {
         const res = await getPendingVerifications();
+
+        console.log('[pendings /a/a//a/a//aa :',res);
+        
+
         if (isMounted) {
           console.log("pending:", res);
           const { standard, parts_pending, workshop_required } =
@@ -299,16 +305,48 @@ const HomeScreen = () => {
   }
 
   if (!services || categories.length === 0) {
-    return (
-      <ScreenWrapper>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <Text>Loading services...</Text>
-        </View>
-      </ScreenWrapper>
-    );
-  }
+  return (
+    <ScreenWrapper>
+      <View style={styles.noServiceContainer}>
+        <Text style={styles.noServiceTitle}>
+          There is no provider available currently in your zipcode.
+        </Text>
+
+        <Text style={styles.noServiceSubtitle}>
+          Please leave your Email so we can inform you when services are
+          available in your area.
+        </Text>
+
+        {!emailSubmitted ? (
+          <View style={styles.emailRow}>
+            <TextInput
+              style={styles.emailInput}
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+            />
+
+            <TouchableOpacity
+              style={styles.emailBtn}
+              onPress={() => {
+                if (!email.trim()) return;
+                setEmailSubmitted(true);
+              }}
+            >
+              <Text style={styles.emailBtnText}>Submit</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <Text style={styles.emailAddedText}>
+            {email} has been added. We will inform you when services become
+            available in your area.
+          </Text>
+        )}
+      </View>
+    </ScreenWrapper>
+  );
+}
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F0EFF8" }}>
@@ -720,6 +758,63 @@ const styles = StyleSheet.create({
   container: {
     padding: scale(9),
   },
+  noServiceContainer: {
+  flex: 1,
+  justifyContent: "center",
+  alignItems: "center",
+  paddingHorizontal: scale(25),
+},
+
+noServiceTitle: {
+  fontSize: moderateScale(16),
+  fontWeight: "600",
+  textAlign: "center",
+  marginBottom: verticalScale(10),
+},
+
+noServiceSubtitle: {
+  fontSize: moderateScale(13),
+  textAlign: "center",
+  color: "#555",
+  marginBottom: verticalScale(20),
+},
+
+emailRow: {
+  flexDirection: "row",
+  alignItems: "center",
+},
+
+emailInput: {
+  flex: 1,
+  height: verticalScale(42),
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: moderateScale(8),
+  paddingHorizontal: scale(10),
+  backgroundColor: "#fff",
+},
+
+emailBtn: {
+  marginLeft: scale(8),
+  backgroundColor: "#027CC7",
+  paddingHorizontal: scale(16),
+  height: verticalScale(42),
+  borderRadius: moderateScale(8),
+  justifyContent: "center",
+  alignItems: "center",
+},
+
+emailBtnText: {
+  color: "#fff",
+  fontWeight: "600",
+},
+
+emailAddedText: {
+  marginTop: verticalScale(10),
+  fontSize: moderateScale(13),
+  textAlign: "center",
+  color: "#027CC7",
+},
   pinContainer: {
     flexDirection: "row",
     alignItems: "center",

@@ -24,7 +24,7 @@ import BookingContextProvider from "./src/store/BookingContext";
 function Navigator() {
   const { isAuthenticated, isLoading, token, setToken, setIsAuthenticated } =
     useAuth();
-  const { setEmail, setFirstName, setPhoneNumber, setLastName, setUserId, userId } =
+  const { setEmail, setFirstName, setPhoneNumber, setLastName, setUserId, userId , gender, setGender} =
     useProfile();
   const [restoring, setRestoring] = useState(true);
 
@@ -41,6 +41,9 @@ function Navigator() {
           setLastName(profileData.lastName);
           setPhoneNumber(profileData.phoneNumber);
           setUserId(profileData._id);
+           if (profileData.gender) {
+    setGender(profileData.gender); // ✅ ADD THIS
+  }
         }
         setIsAuthenticated(true);
       }

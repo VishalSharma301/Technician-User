@@ -70,9 +70,47 @@ export const verifyJobDetails = async (jobId: string) => {
   );
   return data;
 };
-export const dismissVerification = async (jobId: string) => {
+export const dismissVerification = async (
+  jobId: string,
+  reason: string
+) => {
   const { data } = await apiClient.post(
-    `/api/users/jobs/${jobId}/reject`
+    `/api/users/jobs/${jobId}/reject`,
+    { reason }
   );
   return data;
+};
+
+
+
+export interface UpdateUserPayload {
+  firstName?: string;
+  lastName?: string;
+  zipcode?: string;
+  profilePicture?: string;
+}
+
+export const updateProfile = async (
+  payload: UpdateUserPayload,
+  token: string
+) => {
+  try {
+    const { data } = await axios.put(
+      `${BASE}/api/users/update-user`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return data;
+  } catch (error: any) {
+    console.error(
+      "Update User Error:",
+      error?.response?.data || error.message
+    );
+    throw error?.response?.data || error;
+  }
 };

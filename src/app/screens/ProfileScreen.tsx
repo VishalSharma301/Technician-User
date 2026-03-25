@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   ViewStyle,
   Modal,
   TextInput,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,17 +22,16 @@ import CustomView from "../components/CustomView";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { ProfileStackParamList } from "../../constants/navigation";
-import { StackNavigationProp  } from "@react-navigation/stack";
-
+import { StackNavigationProp } from "@react-navigation/stack";
+import { updateProfile } from "../../utils/verificationApis";
+import { useAddress } from "../../hooks/useAddress";
+import { getProfileData, saveProfileData } from "../../utils/setAsyncStorage";
 
 type CCViewProps = {
   children: React.ReactNode;
   style?: ViewStyle;
 };
-type ProfileScreenNavigationProp =
-  StackNavigationProp<ProfileStackParamList>;
-
-
+type ProfileScreenNavigationProp = StackNavigationProp<ProfileStackParamList>;
 
 function CCView({ children, style }: CCViewProps) {
   return (
@@ -44,12 +45,62 @@ function CCView({ children, style }: CCViewProps) {
 }
 
 export default function ProfileScreen() {
-  const { logout } = useContext(AuthContext);
-  const { firstName, lastName, email, phoneNumber, picture } =
-    useContext(ProfileContext);
+  const { logout, token } = useContext(AuthContext);
+  const { selectedAddress } = useAddress();
+  const {
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+    picture,
+    setEmail,
+    setFirstName,
+    setLastName,
+    gender,
+    setGender
+  } = useContext(ProfileContext);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showGenderModal, setShowGenderModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  // const [editFirstName, setEditFirstName] = useState(firstName);
+  // const [editLastName, setEditLastName] = useState(lastName);
+  // const [editEmail, setEditEmail] = useState(email);
   const navigation = useNavigation<ProfileScreenNavigationProp>();
+
+
+useEffect(() => {
+  const loadGender = async () => {
+    const profile = await getProfileData();
+    if (profile?.gender) {
+      setGender(profile.gender);
+    }
+  };
+
+  loadGender();
+}, []);
+
+
+  const handleUpdateProfile = async () => {
+    try {
+      setLoading(true);
+
+      const payload = {
+        firstName: firstName,
+        lastName: lastName,
+        zipcode: selectedAddress.address.zipcode || "",
+      };
+
+      const res = await updateProfile(payload, token);
+      setShowEditModal(false);
+      console.log("User updated:", res);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -89,7 +140,9 @@ export default function ProfileScreen() {
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Professional Information</Text>
-              <Icon name="pencil-outline" size={moderateScale(18)} />
+              <TouchableOpacity onPress={() => setShowEditModal(true)}>
+                <Icon name="pencil-outline" size={moderateScale(18)} />
+              </TouchableOpacity>
             </View>
 
             <CCView>
@@ -115,11 +168,13 @@ export default function ProfileScreen() {
             </CCView>
 
             <CCView>
-              <View style={styles.fieldBox}>
-                <Icon name="gender-male-female" size={18} color="#386CD0" />
-                <Text style={styles.fieldText}>Gender</Text>
-                <Icon name="chevron-down" size={18} />
-              </View>
+              <TouchableOpacity onPress={() => setShowGenderModal(true)}>
+                <View style={styles.fieldBox}>
+                  <Icon name="gender-male-female" size={18} color="#386CD0" />
+                  <Text style={styles.fieldText}>{gender}</Text>
+                  <Icon name="chevron-down" size={18} />
+                </View>
+              </TouchableOpacity>
             </CCView>
           </View>
         </CCView>
@@ -176,71 +231,196 @@ export default function ProfileScreen() {
           </View>
         </CCView>
 
-        <TouchableOpacity
-        style={styles.closeBtn}
-        onPress={() => logout()}
-      >
-        <Text style={styles.closeText}>Logout</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.closeBtn} onPress={() => logout()}>
+          <Text style={styles.closeText}>Logout</Text>
+        </TouchableOpacity>
       </ScrollView>
       <Modal
-  visible={showAddressModal}
-  animationType="slide"
-  transparent
-  onRequestClose={() => setShowAddressModal(false)}
->
-  <View style={styles.modalOverlay}>
-    <CCView>
-    <View style={styles.modalContainer}>
-      
-      {/* Header */}
-      <View style={styles.modalHeader}>
-        <View style={styles.modalIcon}>
-          <Icon name="map-marker-outline" size={moderateScale(20)} color="#386CD0" />
-        </View>
-        <Text style={styles.modalTitle}>Address</Text>
-      </View>
+        visible={showAddressModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowAddressModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <CCView>
+            <View style={styles.modalContainer}>
+              {/* Header */}
+              <View style={styles.modalHeader}>
+                <View style={styles.modalIcon}>
+                  <Icon
+                    name="map-marker-outline"
+                    size={moderateScale(20)}
+                    color="#386CD0"
+                  />
+                </View>
+                <Text style={styles.modalTitle}>Address</Text>
+              </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {[
-          "Street Address",
-          "Apartment / Suite",
-          "City",
-          "State / Province",
-          "Postal Code / Zip",
-          "Country",
-        ].map((label, index) => (
-          <View key={index} style={styles.inputWrapper}>
-            <Text style={styles.inputLabel}>{label}</Text>
-            <CCView>
-            <TextInput
-              placeholder={`Enter ${label}`}
-              placeholderTextColor="#9CA3AF"
-              style={styles.textInput}
-            />
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {[
+                  "Street Address",
+                  "Apartment / Suite",
+                  "City",
+                  "State / Province",
+                  "Postal Code / Zip",
+                  "Country",
+                ].map((label, index) => (
+                  <View key={index} style={styles.inputWrapper}>
+                    <Text style={styles.inputLabel}>{label}</Text>
+                    <CCView>
+                      <TextInput
+                        placeholder={`Enter ${label}`}
+                        placeholderTextColor="#9CA3AF"
+                        style={styles.textInput}
+                      />
+                    </CCView>
+                  </View>
+                ))}
+              </ScrollView>
+
+              {/* Close Button */}
+              <TouchableOpacity
+                style={styles.closeBtn}
+                onPress={() => setShowAddressModal(false)}
+              >
+                <Text style={styles.closeText}>Save Address</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.closeBtn}
+                onPress={() => setShowAddressModal(false)}
+              >
+                <Text style={styles.closeText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           </CCView>
-          </View>
-        ))}
-      </ScrollView>
-
-      {/* Close Button */}
-      <TouchableOpacity
-        style={styles.closeBtn}
-        onPress={() => setShowAddressModal(false)}
+        </View>
+      </Modal>
+      <Modal
+        visible={showGenderModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGenderModal(false)}
       >
-        <Text style={styles.closeText}>Save Address</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.closeBtn}
-        onPress={() => setShowAddressModal(false)}
-      >
-        <Text style={styles.closeText}>Cancel</Text>
-      </TouchableOpacity>
-    </View>
-    </CCView>
-  </View>
-</Modal>
+        <View style={styles.modalOverlay}>
+          <CCView>
+            <View style={styles.genderModalContainer}>
+              <Text style={styles.modalTitle}>Select Gender</Text>
 
+              {["Male", "Female", "Unknown"].map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={styles.genderOption}
+                  onPress={async () => {
+                    setGender(item);
+                    setShowGenderModal(false);
+
+                    await saveProfileData({
+                      gender: item,
+                    } as any); // partial update (your merge logic handles rest)
+                  }}
+                >
+                  <Text style={styles.genderOptionText}>{item}</Text>
+                </TouchableOpacity>
+              ))}
+
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() => setShowGenderModal(false)}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </CCView>
+        </View>
+      </Modal>
+      <Modal
+        visible={showEditModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        {loading && (
+          <ActivityIndicator
+            size={42}
+            color={"red"}
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0,
+              zIndex: 99999,
+              elevation: 1,
+            }}
+          />
+        )}
+        <View style={styles.modalOverlay}>
+          <CCView>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>
+                Edit Professional Information
+              </Text>
+
+              {/* First Name */}
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputLabel}>First Name</Text>
+                <CCView>
+                  <TextInput
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    style={styles.textInput}
+                  />
+                </CCView>
+              </View>
+
+              {/* Last Name */}
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputLabel}>Last Name</Text>
+                <CCView>
+                  <TextInput
+                    value={lastName}
+                    onChangeText={setLastName}
+                    style={styles.textInput}
+                  />
+                </CCView>
+              </View>
+
+              {/* Email */}
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputLabel}>Email</Text>
+                <CCView>
+                  <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    style={styles.textInput}
+                  />
+                </CCView>
+              </View>
+
+              {/* Buttons */}
+              <TouchableOpacity
+                style={styles.closeBtn}
+                onPress={() => {
+                  // TODO: Connect to backend update API here
+                  // console.log("Updated:", editFirstName, editLastName, editEmail);
+                  handleUpdateProfile();
+                }}
+              >
+                <Text style={styles.closeText}>Save Changes</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() => setShowEditModal(false)}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </CCView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -256,78 +436,103 @@ const styles = StyleSheet.create({
     paddingHorizontal: scale(9),
     paddingBottom: verticalScale(140),
   },
-modalOverlay: {
-  flex: 1,
-  backgroundColor: "rgba(0,0,0,0.4)",
-  justifyContent: "center",
-  paddingHorizontal : scale(9),
-  // borderWidth : 1
-},
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    paddingHorizontal: scale(9),
+    // borderWidth : 1
+  },
+  genderModalContainer: {
+    padding: scale(16),
+    borderRadius: scale(10),
+  },
 
-modalContainer: {
-  // backgroundColor: "#fff",
-  // borderTopLeftRadius: scale(20),
-  // borderTopRightRadius: scale(20),
-  padding: scale(16),
-  // margin : scale(9),
-  // maxHeight: "85%",
-  borderRadius : scale(8)
-},
+  genderOption: {
+    paddingVertical: verticalScale(12),
+    borderBottomWidth: 0.5,
+    borderColor: "#E5E7EB",
+  },
 
-modalHeader: {
-  flexDirection: "row",
-  alignItems: "center",
-  marginBottom: verticalScale(16),
-},
+  genderOptionText: {
+    fontSize: moderateScale(16),
+  },
 
-modalIcon: {
-  width: scale(32),
-  height: scale(32),
-  borderRadius: scale(8),
-  backgroundColor: "#E8F0FF",
-  justifyContent: "center",
-  alignItems: "center",
-  marginRight: scale(10),
-  borderWidth : 1,
-  borderColor : '#1553CD'
-},
+  cancelBtn: {
+    marginTop: verticalScale(10),
+    paddingVertical: verticalScale(12),
+    alignItems: "center",
+  },
 
-modalTitle: {
-  fontSize: moderateScale(18),
-  fontWeight: "600",
-},
+  cancelText: {
+    color: "#004DBD",
+    fontWeight: "600",
+  },
+  modalContainer: {
+    // backgroundColor: "#fff",
+    // borderTopLeftRadius: scale(20),
+    // borderTopRightRadius: scale(20),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(16),
+    // margin : scale(9),
+    // maxHeight: "85%",
+    borderRadius: scale(8),
+  },
 
-inputWrapper: {
-  marginBottom: verticalScale(14),
-},
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: verticalScale(16),
+  },
 
-inputLabel: {
-  fontSize: moderateScale(16),
-  fontWeight: "600",
-  marginBottom: verticalScale(8),
-},
+  modalIcon: {
+    width: scale(32),
+    height: scale(32),
+    borderRadius: scale(8),
+    backgroundColor: "#E8F0FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: scale(10),
+    borderWidth: 1,
+    borderColor: "#1553CD",
+  },
 
-textInput: {
-  paddingHorizontal: scale(12),
-  paddingVertical: verticalScale(10),
-  fontSize: moderateScale(14),
-  // backgroundColor: "#F9FAFB",
-},
+  modalTitle: {
+    fontSize: moderateScale(18),
+    fontWeight: "600",
+  },
 
-closeBtn: {
-  backgroundColor: "#004DBD",
-  borderRadius: scale(10),
-  alignItems: "center",
-  justifyContent: "center",
-  paddingVertical: verticalScale(12),
-  marginTop: verticalScale(10),
-},
+  inputWrapper: {
+    marginBottom: verticalScale(14),
+  },
 
-closeText: {
-  color: "#fff",
-  fontSize: moderateScale(15),
-  fontWeight: "600",
-},
+  inputLabel: {
+    fontSize: moderateScale(16),
+    fontWeight: "600",
+    marginBottom: verticalScale(8),
+  },
+
+  textInput: {
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(10),
+    fontSize: moderateScale(14),
+    // backgroundColor: "#F9FAFB",
+  },
+
+  closeBtn: {
+    backgroundColor: "#004DBD",
+    borderRadius: scale(10),
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: verticalScale(12),
+    marginTop: verticalScale(10),
+  },
+
+  closeText: {
+    color: "#fff",
+    fontSize: moderateScale(15),
+    fontWeight: "600",
+  },
 
   /* Header */
   headerRow: {

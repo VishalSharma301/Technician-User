@@ -20,26 +20,47 @@ export default function ProviderCard({
     "about",
   );
 
-   const name = res?.data.provider?.companyName || "Company Name";
-  const providerStats = res?.providerStats
+  const provider = res?.data?.provider;
+  const providerProfile = res?.providerProfile;
+  const providerStats = res?.providerStats;
+  const ratings = providerProfile?.ratings;
 
+  const name = provider?.companyName || "Company Name";
+  const description =
+    providerProfile?.about.description || "No description available";
 
-  const reviews = [
-    {
-      id: "1",
-      name: "Gurpreet S.",
-      rating: 5,
-      text: "Very professional, fixed my AC quickly. Reasonable price.",
-      date: "2 days ago",
-    },
-    {
-      id: "2",
-      name: "Neha V.",
-      rating: 4,
-      text: "Geyser service was good, but response took a bit longer.",
-      date: "1 week ago",
-    },
-  ];
+  const jobSuccess = providerProfile.jobSuccessScore || 0;
+  const teamSize = providerProfile?.teamSize || 0;
+  const jobsDone = providerStats?.totalCompletedJobs || 0;
+
+  const avgRating = ratings?.averageRating || 0;
+  const totalReviews = ratings?.totalReviews || 0;
+  const ratingDistribution = ratings?.distribution || {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0,
+  };
+
+  const reviews = ratings?.recentReviews || [];
+
+  // const reviews = [
+  //   {
+  //     id: "1",
+  //     name: "Gurpreet S.",
+  //     rating: 5,
+  //     text: "Very professional, fixed my AC quickly. Reasonable price.",
+  //     date: "2 days ago",
+  //   },
+  //   {
+  //     id: "2",
+  //     name: "Neha V.",
+  //     rating: 4,
+  //     text: "Geyser service was good, but response took a bit longer.",
+  //     date: "1 week ago",
+  //   },
+  // ];
 
   const renderStars = (count: number) => {
     return "★".repeat(count) + "☆".repeat(5 - count);
@@ -59,13 +80,17 @@ export default function ProviderCard({
 
             <View style={styles.locationRow}>
               <Ionicons name="location-sharp" size={14} color="#2870b0" />
-              <Text style={styles.locationText}>{res.data.address.city}, {res.data.address.state}</Text>
+              <Text style={styles.locationText}>
+                {res.data.address.city}, {res.data.address.state}
+              </Text>
             </View>
 
             <View style={styles.badgeRow}>
               <View style={styles.successChip}>
                 <Ionicons name="trophy" size={12} color="#0e6245" />
-                <Text style={styles.successText}>Job success {98}%</Text>
+                <Text style={styles.successText}>
+                  Job success {jobSuccess}%
+                </Text>
               </View>
 
               <View style={styles.topRatedChip}>
@@ -78,8 +103,8 @@ export default function ProviderCard({
 
         {/* TEAM STATS */}
         <View style={styles.teamStats}>
-          <Text style={styles.statText}>👥 Team size: {providerStats.totalTechnicians}</Text>
-          <Text style={styles.statText}>📋 Jobs done: {providerStats.totalCompletedJobs}</Text>
+          <Text style={styles.statText}>👥 Team size: {teamSize}</Text>
+          <Text style={styles.statText}>📋 Jobs done: {jobsDone}</Text>
         </View>
 
         {/* TABS */}
@@ -106,124 +131,135 @@ export default function ProviderCard({
         {activeTab === "about" && (
           <View style={styles.panel}>
             <View style={styles.descriptionCard}>
-  <Text style={styles.descriptionTitle}>
-    About {name}
-  </Text>
+              <Text style={styles.descriptionTitle}>About {name}</Text>
 
-  <Text style={styles.descriptionText}>
-    <Text style={{ fontWeight: "600" }}>
-      Company description:
-    </Text>{" "}
-    With over a decade of experience, we specialize in
-    comprehensive home appliance repair and maintenance —
-    AC, chimney, geyser, and more. Our certified technicians
-    ensure prompt, reliable service with a 96-hour turnaround.
-    We proudly serve Bassi Pathana and surrounding areas,
-    maintaining a fully stocked inventory for quick fixes.
-    Customer satisfaction and background-verified staff are our
-    top priorities.
-  </Text>
+              <Text style={styles.descriptionText}>
+                <Text style={{ fontWeight: "600" }}>Company description:</Text>{" "}
+                {description}
+              </Text>
 
-  <View style={styles.badgeRowWrap}>
-    <View style={styles.greenBadge}>
-      <Text style={styles.greenBadgeText}>
-        ✔ 100% background checked
-      </Text>
-    </View>
+              <View style={styles.badgeRowWrap}>
+                <View style={styles.greenBadge}>
+                  <Text style={styles.greenBadgeText}>
+                    ✔ 100% background checked
+                  </Text>
+                </View>
 
-    <View style={styles.grayBadge}>
-      <Text style={styles.grayBadgeText}>
-        ● since 2010
-      </Text>
-    </View>
-  </View>
-</View>
-            <AboutRow icon="map-pin" label="Zip code" value={res.data.address.zipcode} />
+                <View style={styles.grayBadge}>
+                  <Text style={styles.grayBadgeText}>● since 2010</Text>
+                </View>
+              </View>
+            </View>
+            <AboutRow
+              icon="map-pin"
+              label="Zip code"
+              value={res.data.address.zipcode}
+            />
             <AboutRow
               icon="hourglass-half"
               label="Service done in"
-              value="within 96 hours"
+              value={providerProfile?.about.serviceDoneIn}
             />
-            <AboutRow icon="box" label="Inventory" value="Available" />
+
             <AboutRow
               icon="calendar"
               label="Founded · GST"
-              value="2010 · 5372772728288"
+              value={`${providerProfile?.about.foundedYear} · ${providerProfile?.about.gstNumber}`}
             />
-            <AboutRow icon="stopwatch" label="Response" value="30 min" />
+
+            <AboutRow
+              icon="stopwatch"
+              label="Response"
+              value={providerProfile?.about.responseTime}
+            />
+
+            <AboutRow
+              icon="globe"
+              label="Website"
+              value={providerProfile?.about.website || "Not available"}
+            />
+
+            <AboutRow
+              icon="map-marker-alt"
+              label="Service area"
+              value={providerProfile?.about.serviceArea}
+            />
+
+            {/* Certified + Background checked chips */}
+            <View style={styles.aboutRow}>
+              <FontAwesome5 name="shield-alt" size={16} color="#1f4970" />
+              <View
+                style={{
+                  marginLeft: 12,
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                }}
+              >
+                <View style={styles.chip}>
+                  <Text style={styles.chipText}>Certified</Text>
+                </View>
+
+                <View style={[styles.chip, { marginLeft: 8 }]}>
+                  <Text style={styles.chipText}>Background checked</Text>
+                </View>
+              </View>
+            </View>
+
             <AboutRow icon="globe" label="Website" value="abc@hhh.com" />
-            <AboutRow icon="map-marker-alt" label="Service area" value={res.data.address.city+" & nearby"} />
+            <AboutRow
+              icon="envelope"
+              label="Email"
+              value={providerProfile?.about.email}
+            />
 
-{/* Certified + Background checked chips */}
-<View style={styles.aboutRow}>
-  <FontAwesome5 name="shield-alt" size={16} color="#1f4970" />
-  <View style={{ marginLeft: 12, flexDirection: "row", flexWrap: "wrap" }}>
-    <View style={styles.chip}>
-      <Text style={styles.chipText}>Certified</Text>
-    </View>
+            {/* Payment */}
+            <View style={styles.aboutRow}>
+              <FontAwesome5 name="credit-card" size={16} color="#1f4970" />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={styles.label}>Payment</Text>
 
-    <View style={[styles.chip, { marginLeft: 8 }]}>
-      <Text style={styles.chipText}>Background checked</Text>
-    </View>
-  </View>
-</View>
+                <View style={{ flexDirection: "row", marginTop: 6 }}>
+                  {providerProfile?.about.acceptedPayments?.map(
+                    (payment: string) => (
+                      <View key={payment} style={styles.paymentChip}>
+                        <Text>{payment}</Text>
+                      </View>
+                    ),
+                  )}
+                </View>
+              </View>
+            </View>
 
-<AboutRow icon="globe" label="Website" value="abc@hhh.com" />
-<AboutRow icon="envelope" label="Email" value={res.data.provider?.email} />
+            {/* Languages */}
+            <View style={styles.aboutRow}>
+              <FontAwesome5 name="language" size={16} color="#1f4970" />
+              <View style={{ marginLeft: 12 }}>
+                <Text style={styles.label}>We speak</Text>
 
-{/* Payment */}
-<View style={styles.aboutRow}>
-  <FontAwesome5 name="credit-card" size={16} color="#1f4970" />
-  <View style={{ marginLeft: 12 }}>
-    <Text style={styles.label}>Payment</Text>
-
-    <View style={{ flexDirection: "row", marginTop: 6 }}>
-      <View style={styles.paymentChip}>
-        <Text>💵 cash</Text>
-      </View>
-
-      <View style={[styles.paymentChip, { marginLeft: 8 }]}>
-        <Text>📱 UPI</Text>
-      </View>
-    </View>
-  </View>
-</View>
-
-{/* Languages */}
-<View style={styles.aboutRow}>
-  <FontAwesome5 name="language" size={16} color="#1f4970" />
-  <View style={{ marginLeft: 12 }}>
-    <Text style={styles.label}>We speak</Text>
-
-    <View style={{ flexDirection: "row", marginTop: 6 }}>
-      <View style={styles.languageChip}>
-        <Text>Punjabi</Text>
-      </View>
-
-      <View style={[styles.languageChip, { marginLeft: 8 }]}>
-        <Text>Hindi</Text>
-      </View>
-    </View>
-  </View>
-</View>
+                <View style={{ flexDirection: "row", marginTop: 6 }}>
+                  {providerProfile?.about.languages?.map((lang: string) => (
+                    <View key={lang} style={styles.languageChip}>
+                      <Text>{lang}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
           </View>
         )}
 
         {activeTab === "services" && (
           <View style={styles.panel}>
-            <ServiceSection
-              title="Cooling & ventilation"
-              items={["AC service", "Chimney clean", "Geyser repair"]}
-            />
-            <ServiceSection
-              title="Additional repairs"
-              items={[
-                "Water heater",
-                "Ventilation",
-                "Washing machine",
-                "Microwave",
-              ]}
-            />
+            {providerProfile?.services?.byCategory &&
+              Object.entries(providerProfile.services.byCategory).map(
+                ([category, services]: any) => (
+                  <ServiceSection
+                    key={category}
+                    title={category}
+                    items={services.map((s: any) => s.name)}
+                  />
+                ),
+              )}
           </View>
         )}
 
@@ -238,25 +274,29 @@ export default function ProviderCard({
               </View>
 
               <View style={{ flex: 1 }}>
-                <RatingBar label="5★" percent={70} />
-                <RatingBar label="4★" percent={18} />
-                <RatingBar label="3★" percent={7} />
-                <RatingBar label="2★" percent={3} />
-                <RatingBar label="1★" percent={2} />
+                <RatingBar label="5★" percent={ratingDistribution[5]} />
+                <RatingBar label="4★" percent={ratingDistribution[4]} />
+                <RatingBar label="3★" percent={ratingDistribution[3]} />
+                <RatingBar label="2★" percent={ratingDistribution[2]} />
+                <RatingBar label="1★" percent={ratingDistribution[1]} />
               </View>
             </View>
 
             {/* Reviews */}
-            {reviews.map((item) => (
-              <View key={item.id} style={styles.reviewItem}>
+            {reviews.map((item: any) => (
+              <View key={item.reviewId} style={styles.reviewItem}>
                 <Text style={styles.reviewAuthor}>
-                  {item.name}{" "}
+                  {item.userName}{" "}
                   <Text style={{ color: "#f5b342" }}>
-                    {renderStars(item.rating)}
+                    {renderStars(Math.round(item.averageRating))}
                   </Text>
                 </Text>
-                <Text style={styles.reviewText}>{item.text}</Text>
-                <Text style={styles.reviewDate}>{item.date}</Text>
+
+                <Text style={styles.reviewText}>{item.feedback}</Text>
+
+                <Text style={styles.reviewDate}>
+                  {new Date(item.createdAt).toDateString()}
+                </Text>
               </View>
             ))}
           </View>
@@ -406,82 +446,82 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginBottom: 16,
   },
-descriptionCard: {
-  backgroundColor: "#f1f6fb",
-  padding: 16,
-  borderRadius: 18,
-  marginBottom: 20,
-},
+  descriptionCard: {
+    backgroundColor: "#f1f6fb",
+    padding: 16,
+    borderRadius: 18,
+    marginBottom: 20,
+  },
 
-descriptionTitle: {
-  fontSize: 16,
-  fontWeight: "700",
-  marginBottom: 8,
-  color: "#1a3852",
-},
+  descriptionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 8,
+    color: "#1a3852",
+  },
 
-descriptionText: {
-  fontSize: 14,
-  color: "#2b4e6e",
-  lineHeight: 20,
-},
+  descriptionText: {
+    fontSize: 14,
+    color: "#2b4e6e",
+    lineHeight: 20,
+  },
 
-badgeRowWrap: {
-  flexDirection: "row",
-  marginTop: 12,
-},
+  badgeRowWrap: {
+    flexDirection: "row",
+    marginTop: 12,
+  },
 
-greenBadge: {
-  backgroundColor: "#e2f0e8",
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 20,
-},
+  greenBadge: {
+    backgroundColor: "#e2f0e8",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
 
-greenBadgeText: {
-  fontSize: 12,
-  color: "#0e6245",
-  fontWeight: "600",
-},
+  greenBadgeText: {
+    fontSize: 12,
+    color: "#0e6245",
+    fontWeight: "600",
+  },
 
-grayBadge: {
-  backgroundColor: "#e9edf2",
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 20,
-  marginLeft: 8,
-},
+  grayBadge: {
+    backgroundColor: "#e9edf2",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginLeft: 8,
+  },
 
-grayBadgeText: {
-  fontSize: 12,
-  color: "#3d4f63",
-},
+  grayBadgeText: {
+    fontSize: 12,
+    color: "#3d4f63",
+  },
 
-chip: {
-  backgroundColor: "#e9f0f8",
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 20,
-},
+  chip: {
+    backgroundColor: "#e9f0f8",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
 
-chipText: {
-  fontSize: 12,
-  color: "#15456b",
-},
+  chipText: {
+    fontSize: 12,
+    color: "#15456b",
+  },
 
-paymentChip: {
-  backgroundColor: "#faf2ea",
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 20,
-},
+  paymentChip: {
+    backgroundColor: "#faf2ea",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
 
-languageChip: {
-  backgroundColor: "#e3ecf5",
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 20,
-},
+  languageChip: {
+    backgroundColor: "#e3ecf5",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
   label: { fontWeight: "600", color: "#657e9c" },
 
   value: { color: "#0d2d48", marginTop: 2 },

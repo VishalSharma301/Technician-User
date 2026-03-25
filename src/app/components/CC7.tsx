@@ -141,6 +141,10 @@ export default function Chatbot8({
   };
 
 
+  console.log('serviceObject :', serviceObject);
+  
+
+
 
 
   const renderTemplate = (t: string) =>
@@ -532,50 +536,75 @@ export default function Chatbot8({
 
   /* ---------------- BOOKING ---------------- */
 
-  const handleBooking = async () => {
-    // pushUserMessage("Book Now");
+ const handleBooking = async () => {
+  try {
+    const payload: CreateConversationBookingPayload = {
+      userId,
+      zipcode: selectedAddress.address.zipcode,
+      selectedOption: {
+        optionId: selectedOption._id,
+        name: selectedOption.name,
+        price: selectedOption.singlePrice,
+      },
+      quantity,
+      address: selectedAddress.address,
+      notes,
+      preferredDate: new Date().toISOString().split("T")[0],
+      preferredTime: "10:00 AM",
+      paymentMethod: "cash",
+    };
 
-    try {
-      const payload: CreateConversationBookingPayload = {
-        userId,
-        zipcode: selectedAddress.address.zipcode,
-        selectedOption: {
-          optionId: selectedOption._id,
-          name: selectedOption.name,
-          price: selectedOption.singlePrice,
-        },
-        quantity,
-        address: selectedAddress.address,
-        notes,
-        preferredDate: new Date().toISOString().split("T")[0],
-        preferredTime: "10:00 AM",
-        paymentMethod: "cash",
-      };
+    const res = await createConversationBooking(service.id, payload);
 
-      const res = await createConversationBooking(service.id, payload);
+    console.log("response : ", res);
 
-      console.log("response : ", res);
-      
+    setResponse(res);
 
-      setResponse(res);
-
-      // setMessages((p) => [
-      //   ...p,
-      //   {
-      //     id: Date.now().toString(),
-      //     from: "bot",
-      //     text: "__BADGE__",
-      //     stepIndex: currentStepIndex,
-      //     time: time(),
-      //   },
-      // ]);
-    } catch (err) {
-      console.error("Booking failed:", err);
-      // optional: show error toast/message here
-    }
+    // ✅ only set success if no error
     setBookingCompleted(true);
     setShowReview(false);
-  };
+
+  } catch (err: any) {
+    console.error("Booking failed:", err);
+
+    let errorMessage = "Something went wrong. Please try again.";
+
+    // ✅ Axios/API error handling
+    if (err?.response) {
+      const status = err.response.status;
+
+      if (status === 400) {
+        errorMessage = err.response.data?.message || "Invalid booking details.";
+      } else if (status === 401) {
+        errorMessage = "You are not authorized. Please login again.";
+      } else if (status === 404) {
+        errorMessage = "Service not found.";
+      } else if (status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      }
+    }
+
+    // ✅ Network error
+    else if (err?.request) {
+      errorMessage = "Network error. Please check your internet connection.";
+    }
+
+    // ✅ Optional: validation errors (frontend)
+    if (!selectedAddress) {
+      errorMessage = "Please select an address.";
+    } else if (!selectedOption) {
+      errorMessage = "Please select a service option.";
+    }
+
+    // 🔥 Show to user (choose one)
+    Alert.alert("Booking Failed", errorMessage);
+    // OR if you use toast:
+    // showToast(errorMessage);
+
+    // ❌ DO NOT mark booking completed
+    setBookingCompleted(false);
+  }
+};
 
   /* ---------------- STEP FLOW ---------------- */
 

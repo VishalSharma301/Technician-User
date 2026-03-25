@@ -9,6 +9,8 @@ import { useEffect } from "react";
 interface ProfileContext {
   firstName: string;
   setFirstName: (name: string) => void;
+  gender: string;
+  setGender: (name: string) => void;
   userId: string;
   setUserId: (name: string) => void;
   lastName: string;
@@ -28,13 +30,15 @@ interface ProfileContext {
 export const ProfileContext = createContext<ProfileContext>({
   firstName: "",
   setFirstName: () => {},
+  gender: "",
+  setGender: () => {},
   userId: "",
   setUserId: () => {},
   lastName: "",
   setLastName: () => {},
   email: "",
   setEmail: () => {},
-  phoneNumber : "",
+  phoneNumber : "9463786657",
   setPhoneNumber: () => {},
   isNewUser: false,
   setIsNewUser: () => {},
@@ -48,10 +52,11 @@ export default function ProfileContextProvider({
   children,
 }: PropsWithChildren) {
   const [firstName, setFirstName] = useState('');
+  const [gender, setGender] = useState('Male');
   const [userId, setUserId] = useState('');
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("9463786657");
   const [isNewUser, setIsNewUser] = useState(false);
   const [picture, setPicture] = useState('https://i.pravatar.cc/100');
   
@@ -105,6 +110,8 @@ export default function ProfileContextProvider({
   const value = {
     firstName,
     setFirstName,
+    gender,
+    setGender,
     userId,
     setUserId,
     lastName,

@@ -105,56 +105,53 @@ const ReviewModal = ({
     );
   };
 
- const hideReview = async () => {
-  try {
-    // 🔹 Basic validation
-    if (!serviceRequestId) {
-      throw new Error("Service request ID is missing");
-    }
-
-    if (!token) {
-      throw new Error("User authentication token missing");
-    }
-
-    const response = await axios.patch(
-      `${BASE}/api/users/service-request/${serviceRequestId}/hide-review`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        timeout: 10000, // 10 sec safety
+  const hideReview = async () => {
+    try {
+      // 🔹 Basic validation
+      if (!serviceRequestId) {
+        throw new Error("Service request ID is missing");
       }
-    );
 
-    // 🔹 Validate backend success
-    if (!response.data?.success) {
-      throw new Error(
-        response.data?.message || "Failed to hide review"
+      if (!token) {
+        throw new Error("User authentication token missing");
+      }
+
+      const response = await axios.patch(
+        `${BASE}/api/users/service-request/${serviceRequestId}/hide-review`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 10000, // 10 sec safety
+        },
       );
+
+      // 🔹 Validate backend success
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || "Failed to hide review");
+      }
+
+      return true; // success
+    } catch (error: any) {
+      // 🔹 Axios error handling
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "Hide Review API Error:",
+          error.response?.data || error.message,
+        );
+
+        alert(
+          error.response?.data?.message || "Network error while hiding review",
+        );
+      } else {
+        console.error("Hide Review Error:", error.message);
+        alert(error.message);
+      }
+
+      return false; // failed
     }
-
-    return true; // success
-  } catch (error: any) {
-    // 🔹 Axios error handling
-    if (axios.isAxiosError(error)) {
-      console.error(
-        "Hide Review API Error:",
-        error.response?.data || error.message
-      );
-
-      alert(
-        error.response?.data?.message ||
-          "Network error while hiding review"
-      );
-    } else {
-      console.error("Hide Review Error:", error.message);
-      alert(error.message);
-    }
-
-    return false; // failed
-  }
-};
+  };
   const handleDismiss = async () => {
     try {
       await hideReview();
@@ -174,7 +171,6 @@ const ReviewModal = ({
       );
 
       console.log(ratings);
-      
 
       if (hasEmptyRating) {
         alert("Please give all ratings before submitting");
@@ -183,12 +179,12 @@ const ReviewModal = ({
 
       const response = await axios.post(
         `${BASE}/api/users/reviews/${serviceRequestId}`,
-        {_id: serviceRequestId,
+        {
+          _id: serviceRequestId,
           ratings,
           feedback: review,
           images: [],
-          averageRating: (publicRating.toFixed(2)),
-          
+          averageRating: publicRating.toFixed(2),
         },
         {
           headers: {
@@ -363,7 +359,10 @@ const ReviewModal = ({
 
                 {/* BUTTONS */}
                 <View style={styles.buttonRow}>
-                  <TouchableOpacity style={styles.cancelBtn} onPress={handleDismiss}>
+                  <TouchableOpacity
+                    style={styles.cancelBtn}
+                    onPress={handleDismiss}
+                  >
                     <Text style={styles.cancelText}>Cancel</Text>
                   </TouchableOpacity>
 

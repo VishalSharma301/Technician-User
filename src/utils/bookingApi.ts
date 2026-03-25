@@ -171,8 +171,108 @@ export interface ConversationBookingResponse {
     __v: number;
   };
   providerStats : ProviderStats;
+  providerProfile : ProviderProfile;
+}
+// =======================
+// Provider Profile Types
+// =======================
+
+export interface ProviderProfile {
+  id: string;
+  name: string;
+  logo: string | null;
+  location: string;
+  teamSize: number;
+  totalCompletedJobs: number;
+  jobSuccessScore: number;
+
+  about: About;
+  badges: Badge[];
+  ratings: Ratings;
+  services: Services;
 }
 
+//
+// Profile Details
+//
+export interface About {
+  description: string;
+  acceptedPayments: PaymentMethod[];
+  email: string;
+  foundedYear: number;
+  gstNumber: string;
+  hasInventory: boolean;
+  isBackgroundChecked: boolean;
+  isCertified: boolean;
+  languages: string[];
+  responseTime: string;
+  serviceArea: string;
+  serviceDoneIn: string;
+  website: string | null;
+  workingHours: string;
+  zipcode: string;
+}
+
+export type PaymentMethod = "cash" | "UPI" | "card" | string;
+
+//
+// Badges
+//
+export interface Badge {
+  _id: string;
+  name: string;
+  icon: string;
+  earnedAt: string; // ISO Date
+}
+
+//
+// Ratings
+//
+export interface Ratings {
+  averageRating: number;
+  totalReviews: number;
+  distribution: {
+    1: number;
+    2: number;
+    3: number;
+    4: number;
+    5: number;
+  };
+  recentReviews: Review[];
+}
+
+export interface Review {
+  reviewId: string;
+  userName: string;
+  userAvatar: string | null;
+  feedback: string;
+  averageRating: number;
+  createdAt: string; // ISO Date
+
+  ratings: {
+    communication: number;
+    problemSolving: number;
+    professionalism: number;
+    punctuality: number;
+    serviceQuality: number;
+  };
+}
+
+//
+// Services
+//
+export interface Services {
+  byCategory: {
+    [category: string]: ServiceItem[];
+  };
+  moreAboutService: string[];
+}
+
+export interface ServiceItem {
+  serviceId: string;
+  name: string;
+  icon: string;
+}
 export interface ProviderBadge {
   _id: string;
   name: string;
@@ -194,17 +294,15 @@ export async function createConversationBooking(
 ): Promise<ConversationBookingResponse> {
   try {
     const response = await axiosClient.post<ConversationBookingResponse>(
-      `/test/services/${serviceId}/book-service/single`,
+      `/users/book/${serviceId}/single-service`,
       payload
     );
 
     return response.data;
   } catch (error: any) {
-    if (error.response) {
-      // Backend validation / known errors
-      throw new Error(error.response.data?.message || "Booking failed");
-    }
+  console.log("API ERROR:", error?.response || error);
 
-    throw new Error("Network error while creating booking");
-  }
+  // 🔥 DO NOT wrap — just forward
+  throw error;
+}
 }

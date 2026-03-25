@@ -6,6 +6,7 @@ interface userData {
   email: string;
   phoneNumber : string
   _id : string
+  gender : string
 }
 
 export async function saveProfileData(userProfileData: userData) {

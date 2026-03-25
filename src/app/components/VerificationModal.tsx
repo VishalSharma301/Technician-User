@@ -64,13 +64,16 @@ const VerificationModal: React.FC<Props> = ({ visible, jobs, onClose }) => {
   }
   const handleVerify = async () => {
     if (!selectedJob) return;
-
+console.log("selectedJob :", selectedJob);
     try {
+      
+      
       setLoading(true);
       const res = await verifyJobDetails(selectedJob._id);
       console.log("res", res);
 
       setOtp(res.data.completionPin);
+      closenow();
     } catch (e) {
       console.error(e);
     } finally {
@@ -82,9 +85,9 @@ const VerificationModal: React.FC<Props> = ({ visible, jobs, onClose }) => {
 
     try {
       setLoading(true);
-      const res = await dismissVerification(selectedJob._id);
+      const res = await dismissVerification(selectedJob._id,'User Rejected Job');
       console.log("res", res);
-      closenow()
+      closenow();
     } catch (e) {
       console.error(e);
     } finally {
@@ -253,7 +256,7 @@ const VerificationModal: React.FC<Props> = ({ visible, jobs, onClose }) => {
                     <View style={styles.spaceBetween}>
                       <Text style={styles.cardTitle}>Parts List</Text>
                       <Text style={styles.amount}>
-                        ₹{jobDetails.invoice.parts.total.toFixed(2)}
+                        ₹{jobDetails.invoice.parts?.total.toFixed(2)}
                       </Text>
                     </View>
 
@@ -303,10 +306,15 @@ const VerificationModal: React.FC<Props> = ({ visible, jobs, onClose }) => {
                     </View>
 
                     <View style={{ flexDirection: "row" }}>
-                      <Text style={[styles.text, { fontWeight: "700", fontSize : moderateScale(12) }]}>
+                      <Text
+                        style={[
+                          styles.text,
+                          { fontWeight: "700", fontSize: moderateScale(12) },
+                        ]}
+                      >
                         Reschedule Date
                       </Text>
-                      <Text style={[styles.subText, {marginTop : 0}]}>
+                      <Text style={[styles.subText, { marginTop: 0 }]}>
                         (Technician will fix this issue in given time)
                       </Text>
                     </View>
@@ -351,10 +359,16 @@ const VerificationModal: React.FC<Props> = ({ visible, jobs, onClose }) => {
 
               {/* Bottom Buttons */}
               <View style={styles.bottomActions}>
-                <TouchableOpacity style={styles.dismissBtn} onPress={handleDismiss}>
+                <TouchableOpacity
+                  style={styles.dismissBtn}
+                  onPress={handleDismiss}
+                >
                   <Text style={styles.dismissText}>Dismiss</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.approveBtn} onPress={handleVerify}>
+                <TouchableOpacity
+                  style={styles.approveBtn}
+                  onPress={handleVerify}
+                >
                   <Text style={styles.approveText}>Approved</Text>
                 </TouchableOpacity>
               </View>
@@ -569,19 +583,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF0000",
     // paddingVertical: verticalScale(10),
     borderRadius: scale(4),
-    height : verticalScale(38),
-    alignItems : 'center',
-    justifyContent : 'center'
+    height: verticalScale(38),
+    alignItems: "center",
+    justifyContent: "center",
     // marginRight: scale(10),
   },
 
   approveBtn: {
     flex: 1,
     backgroundColor: "#009EFF",
-     borderRadius: scale(4),
-    height : verticalScale(38),
-    alignItems : 'center',
-    justifyContent : 'center'
+    borderRadius: scale(4),
+    height: verticalScale(38),
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   dismissText: {
