@@ -80,6 +80,7 @@ useEffect(() => {
 
   loadGender();
 }, []);
+console.log(phoneNumber);
 
 
   const handleUpdateProfile = async () => {
@@ -168,13 +169,10 @@ useEffect(() => {
             </CCView>
 
             <CCView>
-              <TouchableOpacity onPress={() => setShowGenderModal(true)}>
-                <View style={styles.fieldBox}>
-                  <Icon name="gender-male-female" size={18} color="#386CD0" />
-                  <Text style={styles.fieldText}>{gender}</Text>
-                  <Icon name="chevron-down" size={18} />
-                </View>
-              </TouchableOpacity>
+            <View style={styles.fieldBox}>
+                <Icon name="gender-male-female" size={18} color="#386CD0" />
+                <Text style={styles.fieldText}>{gender}</Text>
+              </View>
             </CCView>
           </View>
         </CCView>
@@ -295,44 +293,7 @@ useEffect(() => {
           </CCView>
         </View>
       </Modal>
-      <Modal
-        visible={showGenderModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowGenderModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <CCView>
-            <View style={styles.genderModalContainer}>
-              <Text style={styles.modalTitle}>Select Gender</Text>
-
-              {["Male", "Female", "Unknown"].map((item) => (
-                <TouchableOpacity
-                  key={item}
-                  style={styles.genderOption}
-                  onPress={async () => {
-                    setGender(item);
-                    setShowGenderModal(false);
-
-                    await saveProfileData({
-                      gender: item,
-                    } as any); // partial update (your merge logic handles rest)
-                  }}
-                >
-                  <Text style={styles.genderOptionText}>{item}</Text>
-                </TouchableOpacity>
-              ))}
-
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => setShowGenderModal(false)}
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </CCView>
-        </View>
-      </Modal>
+   
       <Modal
         visible={showEditModal}
         transparent
@@ -398,6 +359,18 @@ useEffect(() => {
                   />
                 </CCView>
               </View>
+              <View style={styles.inputWrapper}>
+                <Text style={styles.inputLabel}>Gender</Text>
+                <CCView>
+                 <TouchableOpacity onPress={() => setShowGenderModal(true)}>
+                <View style={styles.fieldBox}>
+                  <Icon name="gender-male-female" size={18} color="#386CD0" />
+                  <Text style={styles.fieldText}>{gender}</Text>
+                  <Icon name="chevron-down" size={18} />
+                </View>
+              </TouchableOpacity>
+                </CCView>
+              </View>
 
               {/* Buttons */}
               <TouchableOpacity
@@ -414,6 +387,45 @@ useEffect(() => {
               <TouchableOpacity
                 style={styles.cancelBtn}
                 onPress={() => setShowEditModal(false)}
+              >
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </CCView>
+        </View>
+      </Modal>
+
+         <Modal
+        visible={showGenderModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowGenderModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <CCView>
+            <View style={styles.genderModalContainer}>
+              <Text style={styles.modalTitle}>Select Gender</Text>
+
+              {["Male", "Female", "Unknown"].map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={styles.genderOption}
+                  onPress={async () => {
+                    setGender(item);
+                    setShowGenderModal(false);
+
+                    await saveProfileData({
+                      gender: item,
+                    } as any); // partial update (your merge logic handles rest)
+                  }}
+                >
+                  <Text style={styles.genderOptionText}>{item}</Text>
+                </TouchableOpacity>
+              ))}
+
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() => setShowGenderModal(false)}
               >
                 <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>

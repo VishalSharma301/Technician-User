@@ -113,7 +113,7 @@ async function fetchCurrentLocation() {
 
     const loc = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
-      timeout: 15000,
+      timeInterval: 15000, // Update every 15 seconds
     });
 
     setLocation(loc);

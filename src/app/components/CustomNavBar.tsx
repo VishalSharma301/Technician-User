@@ -12,6 +12,15 @@ import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { useCart } from "../../hooks/useCart";
 import CustomView from "./CustomView";
+import { useTransition } from "../../store/TransitionContext";
+
+const TAB_ACCENTS: Record<string, string> = {
+  HomeStack: "#0583D0",
+  JobsScreen: "#10B981",
+  CategoryScreen: "#F97316",
+  OrderStack: "#8B5CF6",
+  CartScreen: "#E11D48",
+};
 
 type Props = Partial<BottomTabBarProps> & {
   isLocal?: "Home" | "Category";
@@ -19,7 +28,15 @@ type Props = Partial<BottomTabBarProps> & {
 
 export default function CustomNavBar({ state, navigation, isLocal }: Props) {
   const nav = navigation ?? useNavigation();
-  const { cartItems } = useCart();
+  const { triggerTransition } = useTransition(); // ← ADD
+
+  const handleNavigate = (routeName: string) => {
+    triggerTransition(
+      routeName,
+      TAB_ACCENTS[routeName] ?? "#0583D0",
+      () => nav?.navigate(routeName), // actual navigation happens inside callback
+    );
+  };
 
   // 🔥 Hide ONLY when used as GLOBAL nav bar AND HomeScreen is active
   if (!isLocal && state) {
@@ -43,7 +60,7 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
     >
       {/* Home */}
       <TouchableOpacity
-        onPress={() => nav?.navigate("HomeStack")}
+        onPress={() => handleNavigate("HomeStack")}
         style={[styles.navItem, { marginRight: scale(0) }]}
       >
         <Icon
@@ -63,7 +80,7 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
 
       {/* Jobs */}
       <TouchableOpacity
-        onPress={() => nav?.navigate("JobsScreen")}
+        onPress={() => handleNavigate("JobsScreen")}
         style={[styles.navItem, { marginRight: scale(0) }]}
       >
         <Icon
@@ -83,7 +100,7 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
 
       {/* Category */}
       <TouchableOpacity
-        onPress={() => nav?.navigate("CategoryScreen")}
+        onPress={() => handleNavigate("CategoryScreen")}
         style={[styles.navItem, { marginLeft: scale(0) }]}
       >
         <Icon
@@ -103,7 +120,7 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
 
       {/* Orders */}
       <TouchableOpacity
-        onPress={() => nav?.navigate("OrderStack")}
+        onPress={() => handleNavigate("OrderStack")}
         style={[styles.navItem, { marginLeft: scale(0) }]}
       >
         <Icon
@@ -123,7 +140,7 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
       {/* Cart */}
       <TouchableOpacity
         onPress={() => {
-          nav?.navigate("CartScreen");
+          handleNavigate("CartScreen");
         }}
         style={styles.navItem}
       >

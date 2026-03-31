@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { ConversationBookingResponse } from "../../utils/bookingApi";
+import AutoAssignLoader from "./AutoAssignLoader";
 
 export default function ProviderCard({
   res,
@@ -19,6 +21,9 @@ export default function ProviderCard({
   const [activeTab, setActiveTab] = useState<"about" | "services" | "ratings">(
     "about",
   );
+  const [loading, setLoading] = useState(true);
+  const [showFullDescription, setShowFullDescription] = useState(false);
+const MAX_LENGTH = 180; // tweak based on your UI
 
   const provider = res?.data?.provider;
   const providerProfile = res?.providerProfile;
@@ -29,7 +34,7 @@ export default function ProviderCard({
   const description =
     providerProfile?.about.description || "No description available";
 
-  const jobSuccess = providerProfile.jobSuccessScore || 0;
+  const jobSuccess = providerProfile?.jobSuccessScore || 0;
   const teamSize = providerProfile?.teamSize || 0;
   const jobsDone = providerStats?.totalCompletedJobs || 0;
 
@@ -42,6 +47,14 @@ export default function ProviderCard({
     4: 0,
     5: 0,
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const reviews = ratings?.recentReviews || [];
 
@@ -65,6 +78,10 @@ export default function ProviderCard({
   const renderStars = (count: number) => {
     return "★".repeat(count) + "☆".repeat(5 - count);
   };
+
+  if (loading) {
+    return <AutoAssignLoader onFinish={() => setLoading(false)} name={name}/>;
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -133,10 +150,24 @@ export default function ProviderCard({
             <View style={styles.descriptionCard}>
               <Text style={styles.descriptionTitle}>About {name}</Text>
 
-              <Text style={styles.descriptionText}>
-                <Text style={{ fontWeight: "600" }}>Company description:</Text>{" "}
-                {description}
-              </Text>
+             <View>
+  <Text style={styles.descriptionText}>
+    <Text style={{ fontWeight: "600" }}>Company description: </Text>
+
+    {showFullDescription
+      ? description
+      : description.slice(0, MAX_LENGTH)}
+
+    {description.length > MAX_LENGTH && (
+      <Text
+        style={{ color: "#1d4e7c", fontWeight: "600" }}
+        onPress={() => setShowFullDescription(prev => !prev)}
+      >
+        {showFullDescription ? "   Read less" : "...  Read more"}
+      </Text>
+    )}
+  </Text>
+</View>
 
               <View style={styles.badgeRowWrap}>
                 <View style={styles.greenBadge}>

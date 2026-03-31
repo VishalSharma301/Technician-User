@@ -12,6 +12,8 @@ import { Job } from "../../constants/jobType";
 import { getJobsByZipcode } from "../../utils/jobsApi";
 import ScreenWrapper from "../components/ScreenWrapper";
 import JobForm from "../components/JobForm";
+import ProviderCard from "../components/ProviderCard1";
+import ZoomBlurChatbot from "../components/BlurView";
 
 const JobsScreen = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -55,45 +57,48 @@ const JobsScreen = () => {
     );
   }
 
-  return (
-  
-      <View style={{ flex: 1 , backgroundColor : '#F0EFF8'}}>
-      <JobForm
-        visible={visible}
-        jobId={selectedJobId}
-        onClose={() => setVisible(false)}
-        onSubmit={() => setVisible(false)}
-      />
+  return <ZoomBlurChatbot />;
+  // return (
 
-      <View style={styles.container}>
-        {jobs.length === 0 ? (
-          <View style={styles.center}>
-            <Text>No jobs found</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={jobs}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <JobCard
-                job={item}
-                onPress={() => {
-                  setSelectedJobId(item.id);
-                  setVisible(true);
-                }}
-              />
-            )}
-            contentContainerStyle={{ padding: 16 }}
-            ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          />
-        )}
-      </View>
-    </View>
-   
-  );
+  //     <View style={{ flex: 1 , backgroundColor : '#F0EFF8'}}>
+
+  //     <JobForm
+  //       visible={visible}
+  //       jobId={selectedJobId}
+  //       onClose={() => setVisible(false)}
+  //       onSubmit={() => setVisible(false)}
+  //     />
+
+  //     <View style={styles.container}>
+  //       {jobs.length === 0 ? (
+  //         <View style={styles.center}>
+  //           <Text>No jobs found</Text>
+  //         </View>
+  //       ) : (
+  //         <FlatList
+  //           data={jobs}
+  //           keyExtractor={(item) => item.id}
+  //           renderItem={({ item }) => (
+  //             <JobCard
+  //               job={item}
+  //               onPress={() => {
+  //                 setSelectedJobId(item.id);
+  //                 setVisible(true);
+  //               }}
+  //             />
+  //           )}
+  //           contentContainerStyle={{ padding: 16 }}
+  //           ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+  //           refreshControl={
+  //             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+  //           }
+  //         />
+  //       )}
+  //     </View>
+
+  //   </View>
+
+  // );
 };
 
 export default JobsScreen;

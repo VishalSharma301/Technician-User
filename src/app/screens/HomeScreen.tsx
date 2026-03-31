@@ -111,9 +111,21 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const { fetchServiceRequests, serviceRequests } = useServiceRequests();
   const [reviewVisible, setReviewVisible] = useState(false);
+  const [showReminder, setShowReminder] = useState(false);
   const [pendingServiceId, setPendingServiceId] = useState<string | null>(null);
 
-  console.log(categories);
+  // console.log('categories : ', servicesByCategory);
+
+  const handleCloseReviewModal = () => {
+  setReviewVisible(false);
+
+  // 👇 show reminder
+  setShowReminder(true);
+
+  setTimeout(() => {
+    setShowReminder(false);
+  }, 3000);
+};
 
   useEffect(() => {
     if (!selectedCategory && categories.length > 0) {
@@ -122,7 +134,7 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
   }, [categories]);
 
   const zipcode = selectedAddress.address.zipcode;
-  console.log("services fetched");
+  // console.log("services fetched", services);
 
   const serviceOfTheWeek = useMemo(() => {
     return mostBookedServices.length > 0 ? mostBookedServices[0] : null;
@@ -525,7 +537,8 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
                     >
                       <Image
                         source={
-                          iconMap[item.icon as IconName] || iconMap["default"]
+                          {uri : item.icon}
+                          // iconMap[item.icon as IconName] || iconMap["default"]
                         }
                         style={styles.serviceImage}
                       />
@@ -742,9 +755,17 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
           />
         </View>
       )}
+
+      {showReminder && (
+  <View style={styles.reminderBox}>
+    <Text style={styles.reminderText}>
+      🔔 We'll remind you after 1 hour. Your feedback helps technicians grow!
+    </Text>
+  </View>
+)}
       <ReviewModal
         visible={reviewVisible}
-        onClose={() => setReviewVisible(false)}
+        onClose={handleCloseReviewModal}
         serviceRequestId={pendingServiceId!}
       />
       <CustomNavBar isLocal="Home" />
@@ -834,6 +855,29 @@ emailAddedText: {
     marginBottom: verticalScale(8),
     gap: scale(3.93),
   },
+    reminderBox: {
+  position: "absolute",
+  // bottom: 500,
+  top  :verticalScale(650),
+  left: 20,
+  right: 20,
+
+  backgroundColor: "#000",
+  borderLeftWidth: 4,
+  // borderLeftColor: "#2196f3",
+  padding: 16,
+  borderRadius: 16,
+
+  elevation: 5,
+  shadowColor: "#000",
+  shadowOpacity: 0.2,
+  shadowRadius: 10,
+},
+
+reminderText: {
+  fontSize: moderateScale(13),
+  color: "#fff",
+},
   categoryButton: {
     backgroundColor: "#F1F1F1",
     borderRadius: moderateScale(23.6),

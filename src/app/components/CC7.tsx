@@ -10,6 +10,8 @@ import {
   Platform,
   Image,
   ViewStyle,
+  Alert,
+  Animated,
 } from "react-native";
 
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
@@ -33,6 +35,8 @@ import ReviewDetailCard from "./ReviewDetailCard1";
 import ProviderCard from "./ProviderCard1";
 import QuantityPriceCard from "./QuantityPriceCard";
 import { iconMap, IconName } from "../../utils/iconMap";
+import { useAuth } from "../../hooks/useAuth";
+import { BlurView } from "expo-blur";
 
 /* ---------------- TYPES ---------------- */
 
@@ -62,6 +66,7 @@ export default function Chatbot8({
   serviceObject: any;
   onClose: () => void;
 }) {
+  const { health } = useAuth();
   const { userId, firstName } = useProfile();
   const { addresses, setAddresses, setSelectedAddress, selectedAddress } =
     useAddress();
@@ -92,9 +97,10 @@ export default function Chatbot8({
   const [manualQty, setManualQty] = useState("");
   const [manualQtyActive, setManualQtyActive] = useState(false);
   const [bookingCompleted, setBookingCompleted] = useState(false);
+  const [showPostBookingMessage, setShowPostBookingMessage] = useState(false);
   const [postBookingStage, setPostBookingStage] = useState(false);
   const [response, setResponse] = useState<ConversationBookingResponse | null>(
-    null
+    null,
   );
   const isCustomQuestionStep =
     steps[currentStepIndex]?.stepType === "CUSTOM_QUESTION";
@@ -107,10 +113,6 @@ export default function Chatbot8({
   const isCapacitySelection =
     steps[currentStepIndex]?.stepType === "CAPACITY_SELECTION";
   /* ---------------- HELPERS ---------------- */
-
-
-
-
   const time = () =>
     new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
@@ -140,67 +142,15 @@ export default function Chatbot8({
       : "",
   };
 
-
-  console.log('serviceObject :', serviceObject);
-  
-
-
-
+  console.log("serviceObject :", serviceObject);
 
   const renderTemplate = (t: string) =>
     t.replace(/{{(.*?)}}/g, (_, k) => templateVars[k.trim()] ?? "");
 
-  /* ---------------- BOT MESSAGE ---------------- */
-
-  // const pushBotMessage = (
-  //   text: string,
-  //   stepIndex: number,
-  //   options?: StepOption[]
-  // ) => {
-  //   const id = Date.now().toString();
-
-  //   setIsBotTyping(true);
-
-  //   showTypingIndicator(() => {
-  //     setMessages((p) => [
-  //       ...p,
-  //       {
-  //         id: `${id}-dots`,
-  //         from: "bot",
-  //         text: "__DOTS__",
-  //         stepIndex,
-  //         time: time(),
-  //       },
-  //     ]);
-  //   });
-
-  //   setTimeout(() => {
-  //     setMessages((p) => p.filter((m) => m.id !== `${id}-dots`));
-  //     setMessages((p) => [
-  //       ...p,
-  //       { id, from: "bot", text: "", stepIndex, time: time() },
-  //     ]);
-
-  //     typeText(
-  //       renderTemplate(text),
-  //       (t) =>
-  //         setMessages((p) =>
-  //           p.map((m) => (m.id === id ? { ...m, text: t } : m))
-  //         ),
-  //       () => {
-  //         setMessages((p) =>
-  //           p.map((m) => (m.id === id ? { ...m, options } : m))
-  //         );
-  //         setIsBotTyping(false); // ✅ ONLY HERE
-  //       }
-  //     );
-  //   }, 400);
-  // };
-
   const pushBotMessage = (
     text: string,
     stepIndex: number,
-    options?: StepOption[]
+    options?: StepOption[],
   ) => {
     const id = Date.now().toString();
 
@@ -357,11 +307,6 @@ export default function Chatbot8({
         return [];
     }
   };
-
-  //  useEffect(() => {
-  //     console.log('follow',followUpAnswers);
-
-  //   });
 
   /* ---------------- OPTION HANDLER ---------------- */
 
@@ -534,77 +479,82 @@ export default function Chatbot8({
     }, 50);
   };
 
+  // Add this component to your file
+
   /* ---------------- BOOKING ---------------- */
 
- const handleBooking = async () => {
-  try {
-    const payload: CreateConversationBookingPayload = {
-      userId,
-      zipcode: selectedAddress.address.zipcode,
-      selectedOption: {
-        optionId: selectedOption._id,
-        name: selectedOption.name,
-        price: selectedOption.singlePrice,
-      },
-      quantity,
-      address: selectedAddress.address,
-      notes,
-      preferredDate: new Date().toISOString().split("T")[0],
-      preferredTime: "10:00 AM",
-      paymentMethod: "cash",
-    };
+  const handleBooking = async () => {
+    try {
+      const payload: CreateConversationBookingPayload = {
+        userId,
+        zipcode: selectedAddress.address.zipcode,
+        selectedOption: {
+          optionId: selectedOption._id,
+          name: selectedOption.name,
+          price: selectedOption.singlePrice,
+        },
+        quantity,
+        address: selectedAddress.address,
+        notes,
+        preferredDate: new Date().toISOString().split("T")[0],
+        preferredTime: "10:00 AM",
+        paymentMethod: "cash",
+      };
 
-    const res = await createConversationBooking(service.id, payload);
+      const res = await createConversationBooking(service.id, payload);
 
-    console.log("response : ", res);
+      console.log("response : ", res);
 
-    setResponse(res);
+      setResponse(res);
 
-    // ✅ only set success if no error
-    setBookingCompleted(true);
-    setShowReview(false);
+      // ✅ only set success if no error
+      setBookingCompleted(true);
+      setShowReview(false);
+      setTimeout(() => {
+        setShowPostBookingMessage(true);
+      }, 6000);
+    } catch (err: any) {
+      console.error("Booking failed:", err);
 
-  } catch (err: any) {
-    console.error("Booking failed:", err);
+      let errorMessage = "Something went wrong. Please try again.";
 
-    let errorMessage = "Something went wrong. Please try again.";
+      // ✅ Axios/API error handling
+      if (err?.response) {
+        const status = err.response.status;
 
-    // ✅ Axios/API error handling
-    if (err?.response) {
-      const status = err.response.status;
-
-      if (status === 400) {
-        errorMessage = err.response.data?.message || "Invalid booking details.";
-      } else if (status === 401) {
-        errorMessage = "You are not authorized. Please login again.";
-      } else if (status === 404) {
-        errorMessage = "Service not found.";
-      } else if (status === 500) {
-        errorMessage = "Server error. Please try again later.";
+        if (status === 400) {
+          errorMessage =
+            err.response.data?.message || "Invalid booking details.";
+        } else if (status === 401) {
+          errorMessage = "You are not authorized. Please login again.";
+        } else if (status === 404) {
+          errorMessage = "Service not found.";
+        } else if (status === 500) {
+          errorMessage = "Server error. Please try again later.";
+        }
       }
+
+      // ✅ Network error
+      else if (err?.request) {
+        errorMessage = "Network error. Please check your internet connection.";
+      }
+
+      // ✅ Optional: validation errors (frontend)
+      if (!selectedAddress) {
+        errorMessage = "Please select an address.";
+      } else if (!selectedOption) {
+        errorMessage = "Please select a service option.";
+      }
+
+      // 🔥 Show to user (choose one)
+      Alert.alert("Booking Failed", errorMessage);
+      // OR if you use toast:
+      // showToast(errorMessage);
+
+      // ❌ DO NOT mark booking completed
+      setBookingCompleted(false);
     }
-
-    // ✅ Network error
-    else if (err?.request) {
-      errorMessage = "Network error. Please check your internet connection.";
-    }
-
-    // ✅ Optional: validation errors (frontend)
-    if (!selectedAddress) {
-      errorMessage = "Please select an address.";
-    } else if (!selectedOption) {
-      errorMessage = "Please select a service option.";
-    }
-
-    // 🔥 Show to user (choose one)
-    Alert.alert("Booking Failed", errorMessage);
-    // OR if you use toast:
-    // showToast(errorMessage);
-
-    // ❌ DO NOT mark booking completed
-    setBookingCompleted(false);
-  }
-};
+  };
 
   /* ---------------- STEP FLOW ---------------- */
 
@@ -616,7 +566,7 @@ export default function Chatbot8({
     // GREETING: show message once, then auto-advance
     if (step.stepType === "GREETING") {
       const alreadyRendered = messages.some(
-        (m) => m.stepIndex === currentStepIndex && m.from === "bot"
+        (m) => m.stepIndex === currentStepIndex && m.from === "bot",
       );
 
       if (!alreadyRendered && !isBotTyping) {
@@ -644,7 +594,7 @@ export default function Chatbot8({
         pushBotMessage(
           currentFollowUp.question,
           currentStepIndex,
-          resolveFollowUpOptions(currentFollowUp)
+          resolveFollowUpOptions(currentFollowUp),
         );
       }
       return;
@@ -652,14 +602,14 @@ export default function Chatbot8({
 
     // NORMAL STEP
     const alreadyRendered = messages.some(
-      (m) => m.stepIndex === currentStepIndex && m.from === "bot"
+      (m) => m.stepIndex === currentStepIndex && m.from === "bot",
     );
     if (alreadyRendered) return;
 
     pushBotMessage(
       step.messageTemplate,
       currentStepIndex,
-      resolveOptionsFromStep(step)
+      resolveOptionsFromStep(step),
     );
   }, [currentStepIndex, currentFollowUp, messages]);
 
@@ -771,392 +721,443 @@ export default function Chatbot8({
 
           /* BOT CARD */
           return (
-            <View key={m.id} style={{ alignItems: "flex-start" }}>
-              <Text
-                style={{
-                  marginBottom: verticalScale(7),
-                  fontSize: moderateScale(14),
-                }}
-              >
-                {"AI - AC Service Assistant"}
-              </Text>
-              <CustomView
-                isGradient={false}
-                radius={scale(14.9)}
-                width={scale(370)}
-                boxStyle={styles.botCard}
-                shadowStyle={{
-                  backgroundColor: "#8092ac68",
-                  marginBottom: verticalScale(16),
-                }}
-              >
-                <MessageTitle
-                  steps={steps}
-                  renderTemplate={renderTemplate}
-                  stepIndex={m.stepIndex}
+            <ZoomBlurEntrance key={m.id} delay={300}>
+              <View style={{ alignItems: "flex-start" }}>
+                <Text
                   style={{
-                    position: "absolute",
-                    top: verticalScale(10),
-                    left: scale(90),
-                    elevation: 1,
-                    zIndex: 999,
-                  }}
-                />
-                <View style={{ flexDirection: "row" }}>
-                  {
-                    <Image
-                      source={require("../../../assets/bot.png")}
-                      style={{ width: scale(57), aspectRatio: 1 }}
-                    />
-                  }
-                  {/* Bot bubble */}
-                  <CustomView
-                    width={scale(280)}
-                    shadowStyle={{
-                      backgroundColor: "#E3E3E3",
-                      marginTop: verticalScale(12),
-                      justifyContent: "center",
-                      alignSelf: "flex-start",
-                      // alignItems : 'center',
-                    }}
-                    isGradient={false}
-                    radius={scale(12.4)}
-                    boxStyle={[styles.botBubble]}
-                  >
-                    {m.text === "__DOTS__" ? (
-                      <TypingDots />
-                    ) : (
-                      <Text style={{ fontSize: moderateScale(16) }}>
-                        {!response ? m.text : "Your Service Is Booked!"}
-                      </Text>
-                    )}
-                  </CustomView>
-                </View>
-                <View
-                  style={{
-                    flexWrap: "wrap",
-                    flexDirection: "row",
-                    marginTop: verticalScale(10),
-                    gap: scale(4),
-                    // borderWidth: 2,
-                    alignItems: "center",
-                    justifyContent: "flex-start",
+                    marginBottom: verticalScale(7),
+                    fontSize: moderateScale(14),
                   }}
                 >
-                  {/* CUSTOM QUESTION CARD */}
-
-                  {isCustomQuestionMessage && !isBotTyping && (
+                  {"AI - AC Service Assistant"}
+                </Text>
+                <View
+                  style={{
+                    padding: scale(14),
+                    alignSelf: "flex-start",
+                    marginBottom: verticalScale(16),
+                  }}
+                >
+                  <MessageTitle
+                    steps={steps}
+                    renderTemplate={renderTemplate}
+                    stepIndex={m.stepIndex}
+                    style={{
+                      position: "absolute",
+                      top: verticalScale(10),
+                      left: scale(30),
+                      elevation: 1,
+                      zIndex: 999,
+                    }}
+                  />
+                  <View style={{ flexDirection: "row" }}>
+                    {/* Bot bubble */}
                     <CustomView
-                      width={scale(330)}
+                      width={scale(280)}
                       shadowStyle={{
                         backgroundColor: "#E3E3E3",
                         marginTop: verticalScale(12),
+                        justifyContent: "center",
+                        alignSelf: "flex-start",
+                        // alignItems : 'center',
                       }}
                       isGradient={false}
                       radius={scale(12.4)}
-                      boxStyle={[styles.botBubble, { gap: verticalScale(5) }]}
+                      boxStyle={[styles.botBubble]}
                     >
-                      {/* ZIP */}
-                      <CustomView
-                        height={verticalScale(45)}
-                        radius={scale(50)}
-                        boxStyle={styles.infoRow}
-                        width={scale(310)}
-                        shadowStyle={{ alignSelf: "flex-start" }}
-                      >
-                        <Image source={iconMap["zip"]} style={styles.icon} />
-                        <Text style={styles.infoLabel}>Zip code</Text>
-                        <Text style={styles.infoValue}>
-                          {selectedAddress?.address?.zipcode}
+                      {m.text === "__DOTS__" ? (
+                        <TypingDots />
+                      ) : (
+                        <Text style={{ fontSize: moderateScale(16) }}>
+                          {!response ? m.text : "Your Service Is Booked!"}
                         </Text>
-                      </CustomView>
-
-                      {/* SERVICE TIME */}
-                      <CustomView
-                        height={verticalScale(45)}
-                        radius={scale(50)}
-                        boxStyle={styles.infoRow}
-                        width={scale(310)}
-                        shadowStyle={{ alignSelf: "flex-start" }}
-                      >
-                        <Image
-                          source={iconMap["service_time"]}
-                          style={styles.icon}
-                        />
-                        <Text style={styles.infoLabel}>Service Time</Text>
-                        <Text style={styles.infoValue}>
-                          Service within {service.estimatedTime}
-                        </Text>
-                      </CustomView>
-
-                      {/* ACTION BUTTONS */}
-                      <View style={styles.actionRow}>
-                        <TouchableOpacity
-                          // style={styles.cancelBtn}
-                          onPress={() => {
-                            pushUserMessage("Cancel");
-                            onClose();
-                          }}
-                        >
-                          <CustomView
-                            height={verticalScale(45)}
-                            radius={scale(40)}
-                            boxStyle={[styles.optionBtn]}
-                            width={scale(150)}
-                            // shadowStyle={{flex : 1}}
-                          >
-                            <Text style={styles.cancelText}>Cancel</Text>
-                          </CustomView>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          // style={styles.confirmBtn}
-                          onPress={() => {
-                            pushUserMessage("Confirm");
-                            setCurrentStepIndex((s) => s + 1);
-                          }}
-                        >
-                          <CustomView
-                            height={verticalScale(45)}
-                            radius={scale(50)}
-                            boxStyle={[styles.optionBtn]}
-                            width={scale(150)}
-                            gradientColors={["#027CC7", "#027CC7"]}
-                            shadowStyle={{ flex: 1 }}
-                          >
-                            <Text style={styles.confirmText}>Confirm</Text>
-                          </CustomView>
-                        </TouchableOpacity>
-                      </View>
+                      )}
                     </CustomView>
-                  )}
-
-                  {/* OPTIONS */}
-                  {isLatestBotMessage &&
-                    !isBotTyping &&
-                    !isCustomQuestionStep &&
-                    !isQuantityStep &&
-                    !isFinalStep &&
-                    m.options?.map((o) => (
-                      <CustomView
-                        height={verticalScale(50)}
-                        radius={scale(40)}
-                        key={o.id}
-                        boxStyle={[
-                          styles.optionBtn,
-
-                          !isAddressStep &&
-                            !isBrandStep && {
-                              paddingHorizontal: 0,
-                              flexGrow: 1,
-                              flexBasis: "45%", // allows 2 per row when text is small
-                              maxWidth: "100%",
-                            },
-                          isBrandStep && {
-                            // flex : 1
-                            paddingHorizontal: 0,
-                            flexGrow: 1,
-                            flexBasis: "35%", // allows 2 per row when text is small
-                            maxWidth: "100%",
-                          },
-                          isAddressStep && {
-                            flexGrow: 1,
-                            flexBasis: "100%", // allows 2 per row when text is small
-                            maxWidth: "100%",
-                          },
-                        ]}
-                        width={isCapacitySelection ? scale(104) : undefined}
-                        shadowStyle={[
-                          !isAddressStep &&
-                            !isBrandStep && {
-                              alignSelf: "stretch",
-                              flexGrow: 1,
-                              flexBasis: "45%", // allows 2 per row when text is small
-                              maxWidth: "100%",
-                            },
-                          isCapacitySelection && {
-                            width: scale(104),
-                            alignSelf: "flex-start",
-                            flexGrow: 1,
-                            flexBasis: "20%", // allows 2 per row when text is small
-                            maxWidth: "30%",
-                          },
-                          isBrandStep && {
-                            flexGrow: 1,
-                            flexBasis: "31%", 
-                            maxWidth: "31.5%",
-                          },
-                          isAddressStep && {
-                            width: scale(335),
-                            // alignItems: "flex-start",
-                            // flexGrow: 1,
-                            // flexBasis: "100%", // allows 2 per row when text is small
-                            // maxWidth: "100%",
-                          },
-                        ]}
-                      >
-                        <TouchableOpacity
-                          onPress={() => handleOptionPress(o)}
-                          style={{
-                            width: "100%",
-                            // borderWidth: 1,
-                            height: "100%",
-                            justifyContent: "center",
-                            alignItems: "flex-start",
-                          }}
-                        >
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: scale(2),
-                              width: "100%",
-                              // borderWidth: 1,
-                              height: "100%",
-                              paddingHorizontal: scale(6),
-                            }}
-                          >
-                            <Image
-                              source={iconMap["clock"]}
-                              style={styles.icon}
-                            />
-                            <Text
-                              style={[
-                                {
-                                  fontSize: moderateScale(13),
-                                  fontWeight: "400",
-                                  // borderWidth: 1,
-                                  width: "80%",
-                                  marginRight: scale(0),
-                                },
-                                isBrandStep && {
-                                  fontSize: moderateScale(12),
-                                  fontWeight: "400",
-                                },
-                              ]}
-                              numberOfLines={2}
-                            >
-                              {o.label}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      </CustomView>
-                    ))}
-                </View>
-
-                {isLatestBotMessage && isFinalStep && !isBotTyping && (
+                  </View>
                   <View
                     style={{
-                      marginTop: verticalScale(50),
-                      borderWidth: 0,
-                      marginLeft: scale(-14),
-                      width: scale(368),
+                      flexWrap: "wrap",
+                      flexDirection: "row",
+                      marginTop: verticalScale(10),
+                      gap: scale(4),
+                      // borderWidth: 2,
+                      alignItems: "center",
+                      justifyContent: "flex-start",
                     }}
                   >
-                    {showReview && (
-                      <ReviewDetailCard
-                        qty={quantity}
-                        price={totalPrice}
-                        visitCharges={150}
-                        additionalCharges={0}
-                        acType={selectedOption?.name || ""}
-                        brand={selectedBrand?.name || ""}
-                        problemTitle={selectedProblem?.name || ""}
-                        problemDuration={selectedProblem?.estimatedTime || ""}
-                        onBookNow={() => {
-                          if (isBotTyping) return;
-                          handleBooking();
+                    {/* CUSTOM QUESTION CARD */}
+
+                    {isCustomQuestionMessage && !isBotTyping && (
+                      <CustomView
+                        width={scale(330)}
+                        shadowStyle={{
+                          backgroundColor: "#E3E3E3",
+                          marginTop: verticalScale(12),
                         }}
-                      />
+                        isGradient={false}
+                        radius={scale(12.4)}
+                        boxStyle={[styles.botBubble, { gap: verticalScale(5) }]}
+                      >
+                        {/* ZIP */}
+                        <CustomView
+                          height={verticalScale(45)}
+                          radius={scale(50)}
+                          boxStyle={styles.infoRow}
+                          width={scale(310)}
+                          shadowStyle={{ alignSelf: "flex-start" }}
+                        >
+                          <Image source={iconMap["zip"]} style={styles.icon} />
+                          <Text style={styles.infoLabel}>Zip code</Text>
+                          <Text style={styles.infoValue}>
+                            {selectedAddress?.address?.zipcode}
+                          </Text>
+                        </CustomView>
+
+                        {/* SERVICE TIME */}
+                        <CustomView
+                          height={verticalScale(45)}
+                          radius={scale(50)}
+                          boxStyle={styles.infoRow}
+                          width={scale(310)}
+                          shadowStyle={{ alignSelf: "flex-start" }}
+                        >
+                          <Image
+                            source={iconMap["service_time"]}
+                            style={styles.icon}
+                          />
+                          <Text style={styles.infoLabel}>Service Time</Text>
+                          <Text style={styles.infoValue}>
+                            Service within {service.estimatedTime}
+                          </Text>
+                        </CustomView>
+                        {health && health <= 50 && (
+                          <>
+                            <CustomView
+                              height={verticalScale(45)}
+                              radius={scale(50)}
+                              boxStyle={styles.infoRow}
+                              width={scale(310)}
+                              shadowStyle={{ alignSelf: "flex-start" }}
+                            >
+                              <Image
+                                source={iconMap["service_time"]}
+                                style={styles.icon}
+                              />
+                              <Text style={styles.infoLabel}>
+                                Current Account Health{" "}
+                              </Text>
+                              <Text style={styles.infoValue}>{health}</Text>
+                            </CustomView>
+                            <CustomView
+                              height={verticalScale(45)}
+                              radius={scale(50)}
+                              boxStyle={styles.infoRow}
+                              width={scale(310)}
+                              shadowStyle={{ alignSelf: "flex-start" }}
+                            >
+                              <Image
+                                source={iconMap["service_time"]}
+                                style={styles.icon}
+                              />
+                              <Text style={styles.infoLabel}>
+                                Payment Mode{" "}
+                              </Text>
+                              <Text style={styles.infoValue}>
+                                Advance Payment
+                              </Text>
+                            </CustomView>
+                          </>
+                        )}
+
+                        {/* ACTION BUTTONS */}
+                        <View style={styles.actionRow}>
+                          <TouchableOpacity
+                            // style={styles.cancelBtn}
+                            onPress={() => {
+                              pushUserMessage("Cancel");
+                              onClose();
+                            }}
+                          >
+                            <CustomView
+                              height={verticalScale(45)}
+                              radius={scale(40)}
+                              boxStyle={[styles.optionBtn]}
+                              width={scale(150)}
+                              // shadowStyle={{flex : 1}}
+                            >
+                              <Text style={styles.cancelText}>Cancel</Text>
+                            </CustomView>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            // style={styles.confirmBtn}
+                            onPress={() => {
+                              pushUserMessage("Confirm");
+                              setCurrentStepIndex((s) => s + 1);
+                            }}
+                          >
+                            <CustomView
+                              height={verticalScale(45)}
+                              radius={scale(50)}
+                              boxStyle={[styles.optionBtn]}
+                              width={scale(150)}
+                              gradientColors={["#027CC7", "#027CC7"]}
+                              shadowStyle={{ flex: 1 }}
+                            >
+                              <Text style={styles.confirmText}>Confirm</Text>
+                            </CustomView>
+                          </TouchableOpacity>
+                        </View>
+                      </CustomView>
                     )}
+
+                    {/* OPTIONS */}
+                    {isLatestBotMessage &&
+                      !isBotTyping &&
+                      !isCustomQuestionStep &&
+                      !isQuantityStep &&
+                      !isFinalStep &&
+                      m.options?.map((o) => {
+                        // console.log('optsssss : ',o);
+
+                        return (
+                          <CustomView
+                            gradientColors={["#ffffff", "#f5f4f6"]}
+                            height={
+                              isAddressStep
+                                ? verticalScale(50)
+                                : verticalScale(111)
+                            }
+                            radius={
+                              isAddressStep ? verticalScale(50) : scale(10)
+                            }
+                            key={o.id}
+                            boxStyle={[
+                              styles.optionBtn,
+
+                              !isAddressStep &&
+                                !isBrandStep && {
+                                  paddingHorizontal: 0,
+                                  flexGrow: 1,
+                                  flexBasis: "45%", // allows 2 per row when text is small
+                                  maxWidth: "100%",
+                                },
+                              isBrandStep && {
+                                // flex : 1
+                                paddingHorizontal: 0,
+                                flexGrow: 1,
+                                flexBasis: "35%", // allows 2 per row when text is small
+                                maxWidth: "100%",
+                              },
+                              isAddressStep && {
+                                flexGrow: 1,
+                                flexBasis: "100%", // allows 2 per row when text is small
+                                maxWidth: "100%",
+                              },
+                            ]}
+                            width={isCapacitySelection ? scale(104) : undefined}
+                            shadowStyle={[
+                              !isAddressStep &&
+                                !isBrandStep && {
+                                  alignSelf: "stretch",
+                                  flexGrow: 1,
+                                  flexBasis: "45%", // allows 2 per row when text is small
+                                  maxWidth: "100%",
+                                },
+                              isCapacitySelection && {
+                                width: scale(104),
+                                alignSelf: "flex-start",
+                                flexGrow: 1,
+                                flexBasis: "20%", // allows 2 per row when text is small
+                                maxWidth: "30%",
+                              },
+                              isBrandStep && {
+                                flexGrow: 1,
+                                flexBasis: "31%",
+                                maxWidth: "31.5%",
+                              },
+                              isAddressStep && {
+                                width: scale(335),
+                              },
+                            ]}
+                          >
+                            <TouchableOpacity
+                              onPress={() => handleOptionPress(o)}
+                              style={{
+                                width: "100%",
+                                // borderWidth: 1,
+                                height: "100%",
+                                justifyContent: "center",
+                                alignItems: "flex-start",
+                              }}
+                            >
+                              <View
+                                style={[
+                                  {
+                                    flexDirection: isAddressStep
+                                      ? "row"
+                                      : "column",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: scale(5),
+                                    width: "100%",
+                                    // borderWidth: 1,
+                                    height: "100%",
+                                    paddingHorizontal: scale(6),
+                                  },
+                                ]}
+                              >
+                                <Image
+                                  // source={ iconMap["service_time"]}
+                                  source={
+                                    isBrandStep
+                                      ? { uri: o.value.logo }
+                                      : iconMap["service_time"]
+                                  }
+                                  style={[
+                                    styles.icon,
+                                    isBrandStep && {
+                                      width: 60,
+                                      height: 40,
+                                      borderWidth: 0,
+                                    },
+                                  ]}
+                                />
+                                <Text
+                                  style={[
+                                    {
+                                      fontSize: moderateScale(14),
+                                      fontWeight: "400",
+                                      textAlign: "center",
+                                      // borderWidth: 1,
+                                      width: isAddressStep ? undefined : "100%",
+                                      marginRight: scale(0),
+                                    },
+                                  ]}
+                                  // numberOfLines={2}
+                                >
+                                  {o.label}
+                                </Text>
+                              </View>
+                            </TouchableOpacity>
+                          </CustomView>
+                        );
+                      })}
+                  </View>
+
+                  {isLatestBotMessage && isFinalStep && !isBotTyping && (
                     <View
                       style={{
-                        paddingLeft: scale(7),
-                        borderTopWidth: moderateScale(0.4),
-                        paddingTop: verticalScale(20),
-                        borderColor: "#BFBFBF",
-                        borderRadius: scale(12),
-                        marginTop : verticalScale(-40),
-                        // borderWidth : 1
-
+                        marginTop: verticalScale(50),
+                        borderWidth: 0,
+                        marginLeft: scale(-14),
+                        width: scale(368),
                       }}
                     >
-                      {response && <ProviderCard res={response} />}
+                      {showReview && (
+                        <ReviewDetailCard
+                          qty={quantity}
+                          price={totalPrice}
+                          visitCharges={150}
+                          additionalCharges={0}
+                          acType={selectedOption?.name || ""}
+                          brand={selectedBrand?.name || ""}
+                          problemTitle={selectedProblem?.name || ""}
+                          problemDuration={selectedProblem?.estimatedTime || ""}
+                          onBookNow={() => {
+                            if (isBotTyping) return;
+                            handleBooking();
+                          }}
+                        />
+                      )}
+                      <View
+                        style={{
+                          paddingLeft: scale(7),
+                          borderTopWidth: moderateScale(0.4),
+                          paddingTop: verticalScale(20),
+                          borderColor: "#BFBFBF",
+                          borderRadius: scale(12),
+                          marginTop: verticalScale(-40),
+                          // borderWidth : 1
+                        }}
+                      >
+                        {response && <ProviderCard res={response} />}
+                      </View>
                     </View>
-                  </View>
-                )}
+                  )}
 
-                {/* MANUAL QUANTITY INPUT */}
-                {isLatestBotMessage && isQuantityStep && !isBotTyping && (
-                  <View style={{ marginTop: verticalScale(50) }}>
-                    <ServicePriceCard
-                      originalPrice={ORIGINAL_UNIT_PRICE}
-                      discountPercent={DISCOUNT_PERCENT}
-                      unitPrice={ORIGINAL_UNIT_PRICE} // 👈 PASS ORIGINAL, NOT DISCOUNTED
-                      onConfirm={(qty) => {
-                        const discountedUnitPrice =
-                          ORIGINAL_UNIT_PRICE * (1 - DISCOUNT_PERCENT / 100);
+                  {/* MANUAL QUANTITY INPUT */}
+                  {isLatestBotMessage && isQuantityStep && !isBotTyping && (
+                    <View style={{ marginTop: verticalScale(50) }}>
+                      <ServicePriceCard
+                        originalPrice={ORIGINAL_UNIT_PRICE}
+                        discountPercent={DISCOUNT_PERCENT}
+                        unitPrice={ORIGINAL_UNIT_PRICE} // 👈 PASS ORIGINAL, NOT DISCOUNTED
+                        onConfirm={(qty) => {
+                          const discountedUnitPrice =
+                            ORIGINAL_UNIT_PRICE * (1 - DISCOUNT_PERCENT / 100);
 
-                        const finalPrice = qty * discountedUnitPrice;
+                          const finalPrice = qty * discountedUnitPrice;
 
-                        setQuantity(qty);
+                          setQuantity(qty);
 
-                        pushQuantityPriceMessage({
-                          quantity: qty,
-                          price: finalPrice,
-                          originalPrice: qty * ORIGINAL_UNIT_PRICE,
-                          discountPercent: DISCOUNT_PERCENT,
-                        });
+                          pushQuantityPriceMessage({
+                            quantity: qty,
+                            price: finalPrice,
+                            originalPrice: qty * ORIGINAL_UNIT_PRICE,
+                            discountPercent: DISCOUNT_PERCENT,
+                          });
 
+                          setCurrentStepIndex((s) => s + 1);
+                        }}
+                        onCancel={() => {}}
+                      />
+                    </View>
+                  )}
+
+                  {/* NOTES INPUT */}
+                  {isLatestBotMessage && notesInputActive && !isBotTyping && (
+                    <View style={styles.notesBox}>
+                      <TextInput
+                        placeholder={
+                          steps[currentStepIndex]?.data?.placeholder ||
+                          "Any special instructions?"
+                        }
+                        value={notes}
+                        onChangeText={setNotes}
+                        style={styles.input}
+                        multiline
+                      />
+                      <TouchableOpacity
+                        style={styles.sendBtn}
+                        onPress={() => {
+                          pushUserMessage(notes || "No special instructions");
+                          setNotesInputActive(false);
+                          setCurrentStepIndex((s) => s + 1);
+                        }}
+                      >
+                        <Feather name="send" color="#fff" size={18} />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* ADDRESS FORM */}
+                  {isLatestBotMessage && showAddressForm && (
+                    <AddressComponent
+                      onAddressSaved={(addr: any) => {
+                        setAddresses((p) => [...p, addr]);
+                        setSelectedAddress(addr);
+                        setShowAddressForm(false);
                         setCurrentStepIndex((s) => s + 1);
                       }}
-                      onCancel={() => {}}
                     />
-                  </View>
-                )}
-
-                {/* NOTES INPUT */}
-                {isLatestBotMessage && notesInputActive && !isBotTyping && (
-                  <View style={styles.notesBox}>
-                    <TextInput
-                      placeholder={
-                        steps[currentStepIndex]?.data?.placeholder ||
-                        "Any special instructions?"
-                      }
-                      value={notes}
-                      onChangeText={setNotes}
-                      style={styles.input}
-                      multiline
-                    />
-                    <TouchableOpacity
-                      style={styles.sendBtn}
-                      onPress={() => {
-                        pushUserMessage(notes || "No special instructions");
-                        setNotesInputActive(false);
-                        setCurrentStepIndex((s) => s + 1);
-                      }}
-                    >
-                      <Feather name="send" color="#fff" size={18} />
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {/* ADDRESS FORM */}
-                {isLatestBotMessage && showAddressForm && (
-                  <AddressComponent
-                    onAddressSaved={(addr: any) => {
-                      setAddresses((p) => [...p, addr]);
-                      setSelectedAddress(addr);
-                      setShowAddressForm(false);
-                      setCurrentStepIndex((s) => s + 1);
-                    }}
-                  />
-                )}
-              </CustomView>
-            </View>
+                  )}
+                </View>
+              </View>
+            </ZoomBlurEntrance>
           );
         })}
 
-        {bookingCompleted && (
+        {bookingCompleted && showPostBookingMessage && (
           <View style={{ alignItems: "flex-start" }}>
             <Text
               style={{
@@ -1403,89 +1404,91 @@ const UserMessage = ({
   renderTemplate: (text: string) => string;
 }) => {
   return (
-    <View
-      key={m.id}
-      style={{
-        alignSelf: "flex-end",
-        marginBottom: verticalScale(16),
-      }}
-    >
+    <ZoomBlurEntrance key={m.id} delay={60}>
       <View
+        key={m.id}
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: scale(8),
-          marginBottom: verticalScale(16),
           alignSelf: "flex-end",
-          marginRight: scale(6),
+          marginBottom: verticalScale(16),
         }}
       >
         <View
           style={{
-            height: scale(32),
-            width: scale(32),
-            borderRadius: scale(32),
-            borderWidth: 1,
-            borderColor: "#DFDFDF",
-            overflow: "hidden",
-            justifyContent: "center",
+            flexDirection: "row",
             alignItems: "center",
+            gap: scale(8),
+            marginBottom: verticalScale(16),
+            alignSelf: "flex-end",
+            marginRight: scale(6),
           }}
         >
-          <Image
-            source={require("../../../assets/user.png")}
-            style={{ width: scale(30), height: scale(30) }}
-            resizeMode="center"
-          />
-        </View>
-        <Text style={{ fontSize: moderateScale(12), color: "#000" }}>
-          {firstName} - Customer
-        </Text>
-      </View>
-      <View
-        style={{
-          // marginBottom: verticalScale(16),
-          alignItems: "flex-end",
-          // borderWidth: 1,
-          alignSelf: "flex-end",
-          // height : verticalScale(100),
-          // justifyContent : 'flex-end'
-        }}
-      >
-        <MessageTitle
-          steps={steps}
-          renderTemplate={renderTemplate}
-          stepIndex={m.stepIndex}
-          user
-          style={{
-            position: "absolute",
-            top: verticalScale(-13),
-            left: scale(15),
-            // right: scale(70),
-            elevation: 1,
-            zIndex: 999,
-          }}
-        />
-        <CustomView
-          radius={scale(25)}
-          height={verticalScale(50)}
-          gradientColors={["#B8D3E959", "#B8D3E959"]}
-          boxStyle={{
-            backgroundColor: "white",
-            alignItems: "flex-start",
-            justifyContent: "center",
-            paddingHorizontal: scale(15),
-            minWidth: scale(190),
-            borderWidth: 1,
-            borderColor: "#fff",
-          }}
-        >
-          <Text style={{ fontSize: moderateScale(15), color: "#000" }}>
-            {m.text}
+          <View
+            style={{
+              height: scale(32),
+              width: scale(32),
+              borderRadius: scale(32),
+              borderWidth: 1,
+              borderColor: "#DFDFDF",
+              overflow: "hidden",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Image
+              source={require("../../../assets/user.png")}
+              style={{ width: scale(30), height: scale(30) }}
+              resizeMode="center"
+            />
+          </View>
+          <Text style={{ fontSize: moderateScale(12), color: "#000" }}>
+            {firstName} - Customer
           </Text>
-        </CustomView>
+        </View>
+        <View
+          style={{
+            // marginBottom: verticalScale(16),
+            alignItems: "flex-end",
+            // borderWidth: 1,
+            alignSelf: "flex-end",
+            // height : verticalScale(100),
+            // justifyContent : 'flex-end'
+          }}
+        >
+          <MessageTitle
+            steps={steps}
+            renderTemplate={renderTemplate}
+            stepIndex={m.stepIndex}
+            user
+            style={{
+              position: "absolute",
+              top: verticalScale(-13),
+              left: scale(15),
+              // right: scale(70),
+              elevation: 1,
+              zIndex: 999,
+            }}
+          />
+          <CustomView
+            radius={scale(25)}
+            height={verticalScale(50)}
+            gradientColors={["#B8D3E959", "#B8D3E959"]}
+            boxStyle={{
+              backgroundColor: "white",
+              alignItems: "flex-start",
+              justifyContent: "center",
+              paddingHorizontal: scale(15),
+              minWidth: scale(190),
+              borderWidth: 1,
+              borderColor: "#fff",
+            }}
+          >
+            <Text style={{ fontSize: moderateScale(15), color: "#000" }}>
+              {m.text}
+            </Text>
+          </CustomView>
+        </View>
       </View>
-    </View>
+    </ZoomBlurEntrance>
   );
 };
 
@@ -1501,93 +1504,144 @@ const QtyPriceCard = ({
   renderTemplate: (text: string) => string;
 }) => {
   return (
-    <View
-      key={m.id}
-      style={{
-        alignSelf: "flex-end",
-        marginBottom: verticalScale(16),
-      }}
-    >
+    <ZoomBlurEntrance key={m.id} delay={1000}>
       <View
+        key={m.id}
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: scale(8),
-          marginBottom: verticalScale(16),
           alignSelf: "flex-end",
-          marginRight: scale(6),
+          marginBottom: verticalScale(16),
         }}
       >
         <View
           style={{
-            height: scale(32),
-            width: scale(32),
-            borderRadius: scale(32),
-            borderWidth: 1,
-            borderColor: "#DFDFDF",
-            overflow: "hidden",
-            justifyContent: "center",
+            flexDirection: "row",
             alignItems: "center",
+            gap: scale(8),
+            marginBottom: verticalScale(16),
+            alignSelf: "flex-end",
+            marginRight: scale(6),
           }}
         >
-          <Image
-            source={require("../../../assets/user.png")}
-            style={{ width: scale(30), height: scale(30) }}
-            resizeMode="center"
+          <View
+            style={{
+              height: scale(32),
+              width: scale(32),
+              borderRadius: scale(32),
+              borderWidth: 1,
+              borderColor: "#DFDFDF",
+              overflow: "hidden",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Image
+              source={require("../../../assets/user.png")}
+              style={{ width: scale(30), height: scale(30) }}
+              resizeMode="center"
+            />
+          </View>
+          <Text style={{ fontSize: moderateScale(12), color: "#000" }}>
+            {firstName} - Customer
+          </Text>
+        </View>
+        <View
+          key={m.id}
+          style={{
+            alignItems: "flex-end",
+            marginBottom: verticalScale(16),
+          }}
+        >
+          <MessageTitle
+            steps={steps}
+            renderTemplate={renderTemplate}
+            stepIndex={m.stepIndex}
+            user
+            style={{
+              position: "absolute",
+              top: verticalScale(-15),
+              right: scale(70),
+              elevation: 1,
+              zIndex: 999,
+            }}
+          />
+          <QuantityPriceCard
+            quantity={m.payload.quantity}
+            price={m.payload.price}
+            originalPrice={m.payload.originalPrice}
+            discountPercent={m.payload.discountPercent}
           />
         </View>
-        <Text style={{ fontSize: moderateScale(12), color: "#000" }}>
-          {firstName} - Customer
-        </Text>
       </View>
-      <View
-        key={m.id}
-        style={{
-          alignItems: "flex-end",
-          marginBottom: verticalScale(16),
-        }}
-      >
-        <MessageTitle
-          steps={steps}
-          renderTemplate={renderTemplate}
-          stepIndex={m.stepIndex}
-          user
-          style={{
-            position: "absolute",
-            top: verticalScale(-15),
-            right: scale(70),
-            elevation: 1,
-            zIndex: 999,
-          }}
-        />
-        <QuantityPriceCard
-          quantity={m.payload.quantity}
-          price={m.payload.price}
-          originalPrice={m.payload.originalPrice}
-          discountPercent={m.payload.discountPercent}
-        />
-      </View>
-    </View>
+    </ZoomBlurEntrance>
   );
 };
+
+const ZoomBlurEntrance = ({
+  children,
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  delay?: number;
+}) => {
+  const scale = useRef(new Animated.Value(1.3)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const blurOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(scale, {
+        toValue: 1,
+        delay,
+        tension: 60,
+        friction: 9,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 420,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.timing(blurOpacity, {
+        toValue: 0,
+        duration: 380,
+        delay: delay + 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View style={{ transform: [{ scale }], opacity }}>
+      {children}
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFillObject,
+          { opacity: blurOpacity, borderRadius: 12, overflow: "hidden" },
+        ]}
+        pointerEvents="none"
+      >
+        <BlurView style={StyleSheet.absoluteFill} intensity={16} tint="light" />
+      </Animated.View>
+    </Animated.View>
+  );
+};
+
 /* ---------------- STYLES ---------------- */
 
 const styles = StyleSheet.create({
   confirmCard: {
-    // marginTop: verticalScale(10),
-    // backgroundColor: "#F9FAFF",
-    // borderRadius: scale(14),
     padding: scale(14),
-    // borderWidth: 1,
-    // borderColor: "#E3EAF5",
   },
-  icon: { width: scale(31), height: scale(24), resizeMode: "center" },
+  icon: {
+    width: scale(40),
+    height: scale(35),
+    resizeMode: "center",
+    borderWidth: 0,
+  },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    // backgroundColor: "#FFFFFF",
-    // borderRadius: scale(30),
-    // paddingVertical: verticalScale(10),
     paddingHorizontal: scale(14),
     gap: scale(10),
   },
@@ -1639,22 +1693,15 @@ const styles = StyleSheet.create({
   },
 
   botCard: {
-    // backgroundColor: "#ffffff",
-    // borderRadius: scale(12),
     padding: scale(14),
-    // marginBottom: verticalScale(9),
     alignSelf: "flex-start",
-    // maxWidth: "100%",
     borderWidth: moderateScale(1),
     borderColor: "#EFEFEF",
   },
   topHeader: {
     backgroundColor: "#0A7BC2",
     padding: scale(14),
-    // flexDirection: "row",
     justifyContent: "space-between",
-    // borderWidth: 2,
-    // borderRadius: scale(14),
   },
   headerLeft: { flexDirection: "row", alignItems: "center" },
   appIconPlaceholder: {
@@ -1674,7 +1721,6 @@ const styles = StyleSheet.create({
     padding: scale(10),
     backgroundColor: "#ffffff",
     paddingBottom: 150,
-    // borderWidth: 1,
   },
   bubble: { padding: scale(12), borderRadius: scale(10) },
   botBubble: {
@@ -1682,24 +1728,13 @@ const styles = StyleSheet.create({
     paddingTop: verticalScale(14),
     paddingBottom: verticalScale(7),
     justifyContent: "center",
-    // minHeight : verticalScale(50)
-    // borderWidth: 2,
   },
-  userBubble: {
-    // backgroundColor: "#1784c7ff",
-    // alignSelf: "flex-end",
-  },
+  userBubble: {},
   optionBtn: {
     paddingHorizontal: scale(15),
-    // marginTop: verticalScale(6),
-    // borderRadius: scale(8),
     borderWidth: 1,
-    // borderColor: "#C8E6FF80",
-    // backgroundColor: "#C8E6FF1A",
     alignItems: "center",
     justifyContent: "center",
-
-    // flex : 1
   },
   notesBox: {
     flexDirection: "row",

@@ -8,6 +8,7 @@ import {
   TextInput,
   ViewStyle,
   Modal,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
@@ -17,6 +18,7 @@ import CustomView from "../components/CustomView";
 import axios from "axios";
 import { useAuth } from "../../hooks/useAuth";
 import { BASE } from "../../utils/BASE_URL";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type CCViewProps = {
   children: React.ReactNode;
@@ -51,6 +53,7 @@ const ReviewModal = ({
   const { token } = useAuth();
   const [review, setReview] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showReminder, setShowReminder] = useState(false);
   const [ratings, setRatings] = useState({
     serviceQuality: 0,
     professionalism: 0,
@@ -60,6 +63,15 @@ const ReviewModal = ({
   });
 
   const ratingValues = Object.values(ratings);
+
+const handleRemindLater = () => {
+  setShowReminder(true);
+
+  // auto hide after 5 sec (same as your web code)
+  setTimeout(() => {
+    setShowReminder(false);
+  }, 5000);
+};
 
   const publicRating =
     ratingValues.reduce((sum, value) => sum + value, 0) / ratingValues.length;
@@ -152,14 +164,37 @@ const ReviewModal = ({
       return false; // failed
     }
   };
-  const handleDismiss = async () => {
-    try {
-      await hideReview();
-    } catch (e) {
-      console.error(e);
-    }
-    onClose();
-  };
+  // const handleDismiss = async () => {
+  //   try {
+  //     // Alert.alert('','We will remind you after 4 hours.')
+  //     // handleRemindLater()
+  //     await hideReview();
+
+  //   } catch (e) {
+  //     console.error(e);
+  //   }
+  //   onClose();
+  // };
+
+const handleDismiss = async () => {
+  try {
+    await hideReview();
+
+    const reminderTime = Date.now() + 60 * 60 * 1000; // +1 hour
+
+    await AsyncStorage.setItem(
+      "reviewReminder",
+      JSON.stringify({
+        serviceRequestId,
+        time: reminderTime,
+      })
+    );
+  } catch (e) {
+    console.error(e);
+  }
+
+  onClose();
+};
 
   const handleSubmitReview = async () => {
     try {
@@ -363,7 +398,7 @@ const ReviewModal = ({
                     style={styles.cancelBtn}
                     onPress={handleDismiss}
                   >
-                    <Text style={styles.cancelText}>Cancel</Text>
+                    <Text style={styles.cancelText}>Remind Later</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -411,6 +446,30 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: verticalScale(10),
   },
+  reminderBox: {
+    position: "absolute",
+    bottom: 80, // 👈 control how high from bottom
+    left: 20,
+    right: 20,
+
+    backgroundColor: "#000",
+    borderLeftWidth: 4,
+    // borderLeftColor: "#2196f3",
+    padding: 16,
+    borderRadius: 16,
+
+    // shadow
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+  },
+
+  reminderText: {
+    fontSize: 14,
+    color: "#fff",
+  },
+
   backText: {
     marginLeft: scale(4),
   },

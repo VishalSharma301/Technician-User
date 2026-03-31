@@ -16,6 +16,8 @@ interface AuthContext {
   setIsLoading: (value: boolean) => void;
   token : string,
   setToken :(token : string)=> void,
+  health : number,
+  setHealth :(health : number)=> void,
   fetchToken : ()=>void,
   logout : ()=>void,
   expoPushToken : string | null | undefined,
@@ -32,7 +34,9 @@ export const AuthContext = createContext<AuthContext>({
   fetchToken : ()=>{},
   logout : ()=>{},
   expoPushToken : null,
-  setExpoPushToken : ()=>{}
+  setExpoPushToken : ()=>{},
+  health : 0,
+  setHealth : ()=>{}
 });
 
 export default function AuthContextProvider({ children }: PropsWithChildren) {
@@ -40,6 +44,7 @@ export default function AuthContextProvider({ children }: PropsWithChildren) {
    const [expoPushToken, setExpoPushToken] = useState<string | null | undefined>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState('');
+  const [health, setHealth] = useState(0);
   const { setEmail, setFirstName, setLastName, setPhoneNumber, clearProfile } =
     useContext(ProfileContext);
 
@@ -103,7 +108,9 @@ export default function AuthContextProvider({ children }: PropsWithChildren) {
     fetchToken,
     logout,
     expoPushToken,
-    setExpoPushToken
+    setExpoPushToken,
+    health,
+    setHealth
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

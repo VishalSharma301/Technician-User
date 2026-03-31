@@ -13,7 +13,7 @@ interface CustomViewProps {
   isGradient?: boolean;
 
   /** 🔥 NEW */
-  gradientColors?: readonly [ColorValue, ColorValue, ...ColorValue[]]
+  gradientColors?: readonly [ColorValue, ColorValue, ...ColorValue[]];
   gradientStart?: { x: number; y: number };
   gradientEnd?: { x: number; y: number };
 }
@@ -33,9 +33,9 @@ export default function CustomView({
   gradientEnd = { x: 1, y: 1 },
 }: CustomViewProps) {
   const resolvedColors: readonly [ColorValue, ColorValue, ...ColorValue[]] =
-  isGradient
-    ? gradientColors ?? ["#F7F6FA", "#EDEBF4"]
-    : ["#FFFFFF", "#FFFFFF"];
+    isGradient
+      ? (gradientColors ?? ["#F7F6FA", "#EDEBF4"])
+      : ["#FFFFFF", "#FFFFFF"];
 
   return (
     // 🔹 Shadow layer
@@ -68,8 +68,8 @@ export default function CustomView({
               height,
               width,
               borderRadius: radius,
-              borderWidth : moderateScale(0.7),
-              borderColor : '#ffffff'
+              borderWidth: moderateScale(0.7),
+              borderColor: "#ffffff",
             },
             boxStyle,
           ]}

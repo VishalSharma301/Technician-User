@@ -16,7 +16,7 @@ import CustomView from "../../components/CustomView";
 import { LinearGradient } from "expo-linear-gradient";
 
 const VerificationScreen = () => {
-  const { setIsAuthenticated, setToken } = useAuth();
+  const { setIsAuthenticated, setToken, health, setHealth } = useAuth();
   const {
     phoneNumber,
     setUserId,
@@ -34,10 +34,12 @@ const VerificationScreen = () => {
     // console.log("otpdata : ", phoneNumber + code);
     const result = await loginDirect(); // ✅ ADDED
     // const result = await verifyOtp(phoneNumber, code); // ✅ ADDED
+console.log('result : ', result);
 
     if (result && result.token?.token) {
       const jwtToken = result.token.token;
       const userData = result.user;
+      const health = userData.health
       console.log("Verification successful");
       try {
         setToken(jwtToken); // from AuthContext
@@ -46,6 +48,8 @@ const VerificationScreen = () => {
         setLastName(userData.lastName);
         setUserId(userData._id);
         setIsAuthenticated(true);
+        setPhoneNumber(result.user.phoneNumber);
+        setHealth(health)
       } catch (err) {
         console.error("Error saving token or user:", err);
       }

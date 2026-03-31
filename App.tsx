@@ -4,7 +4,11 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import AuthStack, { AuthenticatedScreens, AuthenticatedTabs, LoadingScreen } from "./Navigation";
+import AuthStack, {
+  AuthenticatedScreens,
+  AuthenticatedTabs,
+  LoadingScreen,
+} from "./Navigation";
 import { useAuth } from "./src/hooks/useAuth";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AuthContextProvider from "./src/store/AuthContext";
@@ -20,12 +24,28 @@ import CartContextProvider from "./src/store/CartContext";
 import { ServiceRequestsProvider } from "./src/store/ServiceRequestContext";
 import AddressContextProvider from "./src/store/AddressContext";
 import BookingContextProvider from "./src/store/BookingContext";
+import { TransitionProvider } from "./src/store/TransitionContext";
+import TransitionOverlay from "./src/app/components/NavAnimation";
 
 function Navigator() {
-  const { isAuthenticated, isLoading, token, setToken, setIsAuthenticated } =
-    useAuth();
-  const { setEmail, setFirstName, setPhoneNumber, setLastName, setUserId, userId , gender, setGender} =
-    useProfile();
+  const {
+    isAuthenticated,
+    isLoading,
+    token,
+    setToken,
+    setIsAuthenticated,
+    setHealth,
+  } = useAuth();
+  const {
+    setEmail,
+    setFirstName,
+    setPhoneNumber,
+    setLastName,
+    setUserId,
+    userId,
+    gender,
+    setGender,
+  } = useProfile();
   const [restoring, setRestoring] = useState(true);
 
   useEffect(() => {
@@ -40,10 +60,11 @@ function Navigator() {
           setFirstName(profileData.firstName);
           setLastName(profileData.lastName);
           setPhoneNumber(profileData.phoneNumber);
+          setHealth(profileData.health);
           setUserId(profileData._id);
-           if (profileData.gender) {
-    setGender(profileData.gender); // ✅ ADD THIS
-  }
+          if (profileData.gender) {
+            setGender(profileData.gender); // ✅ ADD THIS
+          }
         }
         setIsAuthenticated(true);
       }
@@ -53,7 +74,6 @@ function Navigator() {
     fetchingToken();
   }, []);
 
-   
   return (
     <NavigationContainer>
       {restoring ? (
@@ -74,16 +94,18 @@ export default function App() {
         <ProfileContextProvider>
           <ServicesContextProvider>
             <AddressContextProvider>
-              
-            <CartContextProvider>
-              <BookingContextProvider>
-              <ServiceRequestsProvider>
-              <SafeAreaView style={{ flex: 1 }}>
-                <Navigator />
-              </SafeAreaView>
-              </ServiceRequestsProvider>
-              </BookingContextProvider>
-            </CartContextProvider>
+              <CartContextProvider>
+                <BookingContextProvider>
+                  <ServiceRequestsProvider>
+                    <TransitionProvider>
+                      <SafeAreaView style={{ flex: 1 }}>
+                        <Navigator />
+                        <TransitionOverlay /> 
+                      </SafeAreaView>
+                    </TransitionProvider>
+                  </ServiceRequestsProvider>
+                </BookingContextProvider>
+              </CartContextProvider>
             </AddressContextProvider>
           </ServicesContextProvider>
         </ProfileContextProvider>

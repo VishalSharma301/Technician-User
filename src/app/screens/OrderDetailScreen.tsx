@@ -20,6 +20,8 @@ import { JobStatusHistoryItem } from "../../constants/timelineTypes";
 
 import { JobStatus } from "../../constants/timelineTypes";
 import { LinearGradient } from "expo-linear-gradient";
+import { blue } from "react-native-reanimated/lib/typescript/Colors";
+import ReviewModal from "../components/ReviewModal";
 
 const STATUS_CONFIG: Record<string, { title: string; color: string }> = {
   technician_assigned: { title: "Technician Assigned", color: "#4A90E2" },
@@ -40,8 +42,10 @@ const OrderDetailsScreen: React.FC = () => {
   const route = useRoute<NavigationProp>();
   const item: ServiceRequest = route.params?.item;
   const navigation = useNavigation();
-   const [tab, setTab] = useState<TabType>("problem");
+  const [tab, setTab] = useState<TabType>("problem");
   const additionalCharges = 200;
+  const [reviewVisible, setReviewVisible] = useState(false);
+  const [showReminder, setShowReminder] = useState(false);
   // -----------------------------
 
   const statusHistory: JobStatusHistoryItem[] = item.statusHistory || [];
@@ -71,138 +75,146 @@ const OrderDetailsScreen: React.FC = () => {
     );
   }, [statusHistory]);
 
-
   type TabType = "problem" | "basic" | "price";
 
-function InfoCard({ pin, item }: { pin: string; item: any }) {
- 
+  const handleCloseReviewModal = () => {
+    setReviewVisible(false);
 
-  const renderContent = () => {
-    switch (tab) {
-      case "problem":
-        return (
-          <>
-            <Row
-              label="Brand"
-              value="Samsung | Split | 1.5 Ton"
-              icon={require("../../../assets/clock.png")}
-            />
-            <Divider />
-            <Row
-              icon={require("../../../assets/clock.png")}
-              label="Problem Duration"
-              value="2–3 Days "
-            />
-            <Divider />
-            <Row
-              icon={require("../../../assets/clock.png")}
-              label="AC Type"
-              value="Window"
-            />
-          </>
-        );
+    // 👇 show reminder
+    setShowReminder(true);
 
-      case "basic":
-        return (
-          <>
-            <Row
-              icon={require("../../../assets/loc.png")}
-              label="Zip code"
-              value="250401"
-            />
-            <Divider />
-            <Row
-              icon={require("../../../assets/clock.png")}
-              label="Service Time"
-              value="Service within  24 hour"
-            />
-            <Divider />
-            <Row
-              icon={require("../../../assets/home.png")}
-              label="Address"
-              value="Sector 70,  Mohali"
-            />
-          </>
-        );
-
-      case "price":
-        return (
-          <>
-            <Row
-              icon={require("../../../assets/clock.png")}
-              label="Total Price"
-              value={`₹${item.priceBreakdown.total + additionalCharges + 150}`}
-            />
-            <Row
-              icon={require("../../../assets/clock.png")}
-              label="Qty"
-              value={item.quantity}
-            />
-            <Divider />
-            <Row
-              icon={require("../../../assets/clock.png")}
-              label="Price"
-              value={`₹${item.priceBreakdown.total}`}
-            />
-            <Divider />
-            <Row
-              icon={require("../../../assets/clock.png")}
-              label="Visit Charges"
-              value="₹150"
-            />
-            <Divider />
-            <Row
-              icon={require("../../../assets/clock.png")}
-              label="Additional Charges"
-              value={`₹${additionalCharges}`}
-            />
-          </>
-        );
-    }
+    setTimeout(() => {
+      setShowReminder(false);
+    }, 5000);
   };
 
-  return (
-    <>
-      {/* Tabs */}
-      <CustomView radius={scale(24)} boxStyle={{ overflow: "hidden" }}>
-        <View style={styles.tabContainer}>
-          <TabButton
-            title="Problem info"
-            icon={require("../../../assets/drill.png")}
-            active={tab === "problem"}
-            onPress={() => setTab("problem")}
-          />
-          <TabButton
-            title="Basic Info"
-            icon={require("../../../assets/setting.png")}
-            active={tab === "basic"}
-            onPress={() => setTab("basic")}
-          />
-          <TabButton
-            title="Price"
-            icon={require("../../../assets/setting.png")}
-            active={tab === "price"}
-            onPress={() => setTab("price")}
-          />
-        </View>
-      </CustomView>
+  function InfoCard({ pin, item }: { pin: string; item: any }) {
+    const renderContent = () => {
+      switch (tab) {
+        case "problem":
+          return (
+            <>
+              <Row
+                label="Brand"
+                value="Samsung | Split | 1.5 Ton"
+                icon={require("../../../assets/clock.png")}
+              />
+              <Divider />
+              <Row
+                icon={require("../../../assets/clock.png")}
+                label="Problem Duration"
+                value="2–3 Days "
+              />
+              <Divider />
+              <Row
+                icon={require("../../../assets/clock.png")}
+                label="AC Type"
+                value="Window"
+              />
+            </>
+          );
 
-      {/* Card Content */}
-      <CustomView
-        radius={scale(16)}
-        shadowStyle={{ marginTop: verticalScale(10) }}
-      >
-        <View style={styles.content}>{renderContent()}</View>
-        <Divider />
-        <Row
-          icon={require("../../../assets/clock.png")}
-          label="Completion PIN"
-          value={pin}
-        />
-      </CustomView>
-    </>
-  );
-}
+        case "basic":
+          return (
+            <>
+              <Row
+                icon={require("../../../assets/loc.png")}
+                label="Zip code"
+                value="250401"
+              />
+              <Divider />
+              <Row
+                icon={require("../../../assets/clock.png")}
+                label="Service Time"
+                value="Service within  24 hour"
+              />
+              <Divider />
+              <Row
+                icon={require("../../../assets/home.png")}
+                label="Address"
+                value="Sector 70,  Mohali"
+              />
+            </>
+          );
+
+        case "price":
+          return (
+            <>
+              <Row
+                icon={require("../../../assets/clock.png")}
+                label="Total Price"
+                value={`₹${item.priceBreakdown.total + additionalCharges + 150}`}
+              />
+              <Row
+                icon={require("../../../assets/clock.png")}
+                label="Qty"
+                value={item.quantity}
+              />
+              <Divider />
+              <Row
+                icon={require("../../../assets/clock.png")}
+                label="Price"
+                value={`₹${item.priceBreakdown.total}`}
+              />
+              <Divider />
+              <Row
+                icon={require("../../../assets/clock.png")}
+                label="Visit Charges"
+                value="₹150"
+              />
+              <Divider />
+              <Row
+                icon={require("../../../assets/clock.png")}
+                label="Additional Charges"
+                value={`₹${additionalCharges}`}
+              />
+            </>
+          );
+      }
+    };
+
+    return (
+      <>
+        {/* Tabs */}
+        <CustomView radius={scale(24)} boxStyle={{ overflow: "hidden" }}>
+          <View style={styles.tabContainer}>
+            <TabButton
+              title="Problem info"
+              icon={require("../../../assets/drill.png")}
+              active={tab === "problem"}
+              onPress={() => setTab("problem")}
+            />
+            <TabButton
+              title="Basic Info"
+              icon={require("../../../assets/setting.png")}
+              active={tab === "basic"}
+              onPress={() => setTab("basic")}
+            />
+            <TabButton
+              title="Price"
+              icon={require("../../../assets/setting.png")}
+              active={tab === "price"}
+              onPress={() => setTab("price")}
+            />
+          </View>
+        </CustomView>
+
+        {/* Card Content */}
+        <CustomView
+          radius={scale(16)}
+          shadowStyle={{ marginTop: verticalScale(10) }}
+        >
+          <View style={styles.content}>{renderContent()}</View>
+          <Divider />
+          <Row
+            icon={require("../../../assets/clock.png")}
+            label="Completion PIN"
+            value={pin}
+          />
+        </CustomView>
+      </>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -213,139 +225,139 @@ function InfoCard({ pin, item }: { pin: string; item: any }) {
         <Icon name="arrow-back" size={moderateScale(22)} color={"#717A7E"} />
       </TouchableOpacity>
 
-     
-        <View
-          style={{
-            marginBottom: 200,
-            // borderWidth : 1
-          }}
-        >
-          <View style={{paddingVertical : verticalScale(14)}}>
-            <InfoCard pin={item.completionPin} item={item} />
+      <View
+        style={{
+          marginBottom: 200,
+          // borderWidth : 1
+        }}
+      >
+        <View style={{ paddingVertical: verticalScale(14) }}>
+          <InfoCard pin={item.completionPin} item={item} />
 
-            <CustomView
-              radius={scale(16.59)}
-              shadowStyle={{ marginTop: verticalScale(10) }}
-            >
-              <View style={styles.infoRow}>
-                <View>
-                  <Text style={styles.label}>{item.service.name}</Text>
-                  <Text style={styles.subLabel}>Type Of Service</Text>
-                </View>
-                <View>
-                  <Text style={styles.label}>{item.provider?.name}</Text>
-                  <Text style={styles.subLabel}>Service Provider</Text>
-                </View>
+          <CustomView
+            radius={scale(16.59)}
+            shadowStyle={{ marginTop: verticalScale(10) }}
+          >
+            <View style={styles.infoRow}>
+              <View>
+                <Text style={styles.label}>{item.service.name}</Text>
+                <Text style={styles.subLabel}>Type Of Service</Text>
               </View>
-            </CustomView>
-          </View>
-
-
-              { tab == 'price' && (  <View>
-        
-          
-
-          
-          {/* Additional Services */}
-          {inspection?.additionalServices && inspection.additionalServices.count > 0 && (<CCView>
-            <View style={styles.card}>
-              <View style={styles.spaceBetween}>
-                <Text style={styles.cardTitle}>Additional Services</Text>
-                <Text style={styles.amount}>
-                  ₹{inspection?.totals.additionalServices}
-                </Text>
+              <View>
+                <Text style={styles.label}>{item.provider?.name}</Text>
+                <Text style={styles.subLabel}>Service Provider</Text>
               </View>
-
-              {inspection?.additionalServices.items.map((item, index) => (
-                <ServiceRow
-                  key={index}
-                  name={item.serviceName}
-                  brand={item.serviceName}
-                  price={item.unitPrice}
-                  qty={item.quantity  }
-                />
-              ))}
             </View>
-          </CCView>)}
+          </CustomView>
 
+          {item.status == "completed" && (
+            <TouchableOpacity
+              style={{ alignSelf: "flex-end", margin: 10 }}
+              onPress={() => setReviewVisible(true)}
+            >
+              <Text style={{ color: "blue" }}> Give Rating </Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-          {/* Parts List */}
-          {inspection?.parts && inspection.parts.count > 0 && (
-  <CCView>
-    <View style={styles.card}>
-      <View style={styles.spaceBetween}>
-        <Text style={styles.cardTitle}>Parts List</Text>
-        <Text style={styles.amount}>
-          ₹ {inspection?.totals.parts.toFixed(2)}
-        </Text>
-      </View>
-      <PriceRow2
-            label={'Part Name'}
-            warranty= {'Warranty'}
-            value={`Price`}
-            bold={true}
-          />
+        {tab == "price" && (
+          <View>
+            {/* Additional Services */}
+            {inspection?.additionalServices &&
+              inspection.additionalServices.count > 0 && (
+                <CCView>
+                  <View style={styles.card}>
+                    <View style={styles.spaceBetween}>
+                      <Text style={styles.cardTitle}>Additional Services</Text>
+                      <Text style={styles.amount}>
+                        ₹{inspection?.totals.additionalServices}
+                      </Text>
+                    </View>
 
-      {inspection?.parts.items.map((part) => {
-        const name =
-          part.productName || "part"
+                    {inspection?.additionalServices.items.map((item, index) => (
+                      <ServiceRow
+                        key={index}
+                        name={item.serviceName}
+                        brand={item.serviceName}
+                        price={item.unitPrice}
+                        qty={item.quantity}
+                      />
+                    ))}
+                  </View>
+                </CCView>
+              )}
 
-        const price =
-          part.totalWithGst ||
-          0;
+            {/* Parts List */}
+            {inspection?.parts && inspection.parts.count > 0 && (
+              <CCView>
+                <View style={styles.card}>
+                  <View style={styles.spaceBetween}>
+                    <Text style={styles.cardTitle}>Parts List</Text>
+                    <Text style={styles.amount}>
+                      ₹ {inspection?.totals.parts.toFixed(2)}
+                    </Text>
+                  </View>
+                  <PriceRow2
+                    label={"Part Name"}
+                    warranty={"Warranty"}
+                    value={`Price`}
+                    bold={true}
+                  />
 
-        return (
-          <PriceRow2
-            key={part.partId}
-            label={name}
-            value={`₹ ${price.toFixed(2)}`}
-            warranty= {'3 weeks'}
-          />
-        );
-      })}
-    </View>
-  </CCView>
-)}
+                  {inspection?.parts.items.map((part) => {
+                    const name = part.productName || "part";
 
+                    const price = part.totalWithGst || 0;
 
-          {/* Part Not Available / Workshop */}
-                {inspection?.pendingEstimates?.requiredParts && (
-  <CCView>
-    <View style={styles.card}>
-      <View style={styles.spaceBetween}>
-        <Text style={styles.cardTitle}>Pending Part</Text>
-        <Text style={styles.amount}>
-          {/* ₹ {inspection?.totals.parts} */}
-        </Text>
-      </View>
-      <PriceRow2
-            label={'Part Name'}
-            // warranty= {'Warranty'}
-            value={`Est. Price`}
-            bold={true}
-          />
+                    return (
+                      <PriceRow2
+                        key={part.partId}
+                        label={name}
+                        value={`₹ ${price.toFixed(2)}`}
+                        warranty={"3 weeks"}
+                      />
+                    );
+                  })}
+                </View>
+              </CCView>
+            )}
 
-      {inspection?.pendingEstimates?.requiredParts.map((part, ind) => {
-        const name =
-          part.partName
+            {/* Part Not Available / Workshop */}
+            {inspection?.pendingEstimates?.requiredParts && (
+              <CCView>
+                <View style={styles.card}>
+                  <View style={styles.spaceBetween}>
+                    <Text style={styles.cardTitle}>Pending Part</Text>
+                    <Text style={styles.amount}>
+                      {/* ₹ {inspection?.totals.parts} */}
+                    </Text>
+                  </View>
+                  <PriceRow2
+                    label={"Part Name"}
+                    // warranty= {'Warranty'}
+                    value={`Est. Price`}
+                    bold={true}
+                  />
 
-        const price =
-          part.estimatedCost ||
-          0;
+                  {inspection?.pendingEstimates?.requiredParts.map(
+                    (part, ind) => {
+                      const name = part.partName;
 
-        return (
-          <PriceRow2
-            key={ind}
-            label={name}
-            value={`₹ ${price}`}
-            
-          />
-        );
-      })}
-    </View>
-  </CCView>
-)}
-              {/* {inspection?.workshopDetails && (() => {
+                      const price = part.estimatedCost || 0;
+
+                      return (
+                        <PriceRow2
+                          key={ind}
+                          label={name}
+                          value={`₹ ${price}`}
+                        />
+                      );
+                    },
+                  )}
+                </View>
+              </CCView>
+            )}
+            {/* {inspection?.workshopDetails && (() => {
   const { day, time } = formatDateTime(inspection.workshopDetails?.expectedReturnDate);
 
   return (
@@ -380,130 +392,143 @@ function InfoCard({ pin, item }: { pin: string; item: any }) {
   );
 })()} */}
 
-          {/* Price Summary */}
-      <CCView>
-  <View style={styles.card}>
-    <View style={styles.spaceBetween}>
-      <Text style={styles.cardTitle}>Service Detail</Text>
-      <Text style={styles.cardTitle}>Price</Text>
-    </View>
+            {/* Price Summary */}
+            <CCView>
+              <View style={styles.card}>
+                <View style={styles.spaceBetween}>
+                  <Text style={styles.cardTitle}>Service Detail</Text>
+                  <Text style={styles.cardTitle}>Price</Text>
+                </View>
 
-    {/* Custom Services */}
-     <PriceRow
-        label="Original Service Price"
-        value={`₹ ${inspection?.totals.originalService || 0}`}
-      />
-     <PriceRow
-        label="Additional Service Price"
-        value={`₹ ${inspection?.totals.additionalServices || 0}`}
-      />
-     {/* <PriceRow
+                {/* Custom Services */}
+                <PriceRow
+                  label="Original Service Price"
+                  value={`₹ ${inspection?.totals.originalService || 0}`}
+                />
+                <PriceRow
+                  label="Additional Service Price"
+                  value={`₹ ${inspection?.totals.additionalServices || 0}`}
+                />
+                {/* <PriceRow
         label="Custom Service Price"
         value={`₹ ${121}`}
       /> */}
-     <PriceRow
-        label="Part Price With Gst"
-        value={`₹ ${inspection?.totals.parts.toFixed(2) || 0}`}
-      />
-    {/* Parts */}
-    {/* {!!addedParts.length && (
+                <PriceRow
+                  label="Part Price With Gst"
+                  value={`₹ ${inspection?.totals.parts.toFixed(2) || 0}`}
+                />
+                {/* Parts */}
+                {/* {!!addedParts.length && (
       <PriceRow
         label="Parts"
         value={`₹ ${calculatePartsTotal()}`}
       />
     )} */}
 
-    <View style={styles.divider} />
+                <View style={styles.divider} />
 
-    <View style={styles.spaceBetween}>
-      <Text style={styles.total}>Total Service Price</Text>
-      <Text style={styles.total}>
-        ₹ {inspection?.totals.grandTotal}
-      </Text>
-    </View>
-  </View>
-</CCView>
+                <View style={styles.spaceBetween}>
+                  <Text style={styles.total}>Total Service Price</Text>
+                  <Text style={styles.total}>
+                    ₹ {inspection?.totals.grandTotal}
+                  </Text>
+                </View>
+              </View>
+            </CCView>
+          </View>
+        )}
 
-        </View>)}
+        <View style={styles.timelineContainer}>
+          {sortedHistory.map((item, index) => {
+            const isLast = index === sortedHistory.length - 1;
+            const config = STATUS_CONFIG[item.status] || {
+              title: item.status,
+              color: "#999",
+            };
 
-          <View style={styles.timelineContainer}>
-            {sortedHistory.map((item, index) => {
-              const isLast = index === sortedHistory.length - 1;
-              const config = STATUS_CONFIG[item.status] || {
-                title: item.status,
-                color: "#999",
-              };
+            const { day, time } = formatDateTime(item.timestamp);
 
-              const { day, time } = formatDateTime(item.timestamp);
+            function CCView({ children }: { children: React.ReactNode }) {
+              return <CustomView radius={scale(4)}>{children}</CustomView>;
+            }
 
-              function CCView({ children }: { children: React.ReactNode }) {
-                return <CustomView radius={scale(4)}>{children}</CustomView>;
-              }
+            return (
+              <View key={item._id} style={styles.timelineItem}>
+                {/* LEFT TIME COLUMN */}
+                <CCView>
+                  <View style={styles.timeColumn}>
+                    <Text style={styles.timeText}>{day}</Text>
+                    <Text style={styles.timeSubText}>{time}</Text>
+                  </View>
+                </CCView>
 
-              return (
-                <View key={item._id} style={styles.timelineItem}>
-                  {/* LEFT TIME COLUMN */}
-                  <CCView>
-                    <View style={styles.timeColumn}>
-                      <Text style={styles.timeText}>{day}</Text>
-                      <Text style={styles.timeSubText}>{time}</Text>
-                    </View>
-                  </CCView>
-
-                  {/* CENTER LINE + DOT */}
-                  <View style={styles.arrowColumn}>
+                {/* CENTER LINE + DOT */}
+                <View style={styles.arrowColumn}>
+                  <View
+                    style={[
+                      styles.arrowCircle,
+                      { backgroundColor: config.color },
+                    ]}
+                  />
+                  {true && (
                     <View
                       style={[
-                        styles.arrowCircle,
-                        { backgroundColor: config.color },
+                        styles.arrowLine,
+                        {
+                          backgroundColor: config.color,
+                          height: isLast
+                            ? verticalScale(55)
+                            : verticalScale(70),
+                        },
                       ]}
                     />
-                    {true && (
-                      <View
-                        style={[
-                          styles.arrowLine,
-                          {
-                            backgroundColor: config.color,
-                            height: isLast
-                              ? verticalScale(55)
-                              : verticalScale(70),
-                          },
-                        ]}
-                      />
-                    )}
-                    {isLast && (
-                      <View
-                        style={[
-                          {
-                            width: scale(17),
-                            height: scale(17),
-                            borderRadius: scale(21),
-                            backgroundColor: config.color,
-                            marginTop: verticalScale(-10),
-                          },
-                        ]}
-                      />
-                    )}
-                  </View>
-
-                  {/* RIGHT DETAIL BOX */}
-                  <CCView>
-                    <View style={styles.detailColumn}>
-                      <View style={styles.detailBox}>
-                        <Text style={styles.detailTitle}>{config.title}</Text>
-
-                        {!!item.notes && (
-                          <Text style={styles.detailDesc}>{item.notes}</Text>
-                        )}
-                      </View>
-                    </View>
-                  </CCView>
+                  )}
+                  {isLast && (
+                    <View
+                      style={[
+                        {
+                          width: scale(17),
+                          height: scale(17),
+                          borderRadius: scale(21),
+                          backgroundColor: config.color,
+                          marginTop: verticalScale(-10),
+                        },
+                      ]}
+                    />
+                  )}
                 </View>
-              );
-            })}
-          </View>
+
+                {/* RIGHT DETAIL BOX */}
+                <CCView>
+                  <View style={styles.detailColumn}>
+                    <View style={styles.detailBox}>
+                      <Text style={styles.detailTitle}>{config.title}</Text>
+
+                      {!!item.notes && (
+                        <Text style={styles.detailDesc}>{item.notes}</Text>
+                      )}
+                    </View>
+                  </View>
+                </CCView>
+              </View>
+            );
+          })}
         </View>
-    
+      </View>
+      {showReminder && (
+        <View style={styles.reminderBox}>
+          <Text style={styles.reminderText}>
+            🔔 We'll remind you after 1 hour. Your feedback helps technicians
+            grow!
+          </Text>
+        </View>
+      )}
+
+      <ReviewModal
+        visible={reviewVisible}
+        onClose={handleCloseReviewModal}
+        serviceRequestId={item._id}
+      />
     </ScrollView>
   );
 };
@@ -524,21 +549,21 @@ function CCView({ children, style }: CCViewProps) {
     </CustomView>
   );
 }
-  function ReviewRow({
-    label,
-    value,
-  }: {
-    label: string;
-    value?: string | number;
-  }) {
-    if (!value) return null;
-    return (
-      <View style={{ flexDirection: "row", marginBottom: 6 }}>
-        <Text style={{ fontWeight: "600", width: 140 }}>{label}</Text>
-        <Text style={{ flex: 1 }}>{value}</Text>
-      </View>
-    );
-  }
+function ReviewRow({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number;
+}) {
+  if (!value) return null;
+  return (
+    <View style={{ flexDirection: "row", marginBottom: 6 }}>
+      <Text style={{ fontWeight: "600", width: 140 }}>{label}</Text>
+      <Text style={{ flex: 1 }}>{value}</Text>
+    </View>
+  );
+}
 
 const ServiceRow = ({ name, brand, price, qty }: any) => (
   <View style={{ marginBottom: 10 }}>
@@ -562,13 +587,24 @@ const PriceRow = ({ label, value }: any) => (
 );
 const PriceRow2 = ({ label, value, warranty, bold }: any) => (
   <View style={styles.spaceBetween}>
-    <Text numberOfLines={1} style={[styles.text, bold &&{fontWeight : '600'} , {width : '55%' }]}>{label}</Text>
-    <Text style={[styles.text, bold &&{fontWeight : '600'} , {width : '20%' }]}>{warranty}</Text>
-    <Text style={[styles.text, bold &&{fontWeight : '600'}, {width : '20%' }]}>{value}</Text>
+    <Text
+      numberOfLines={1}
+      style={[styles.text, bold && { fontWeight: "600" }, { width: "55%" }]}
+    >
+      {label}
+    </Text>
+    <Text
+      style={[styles.text, bold && { fontWeight: "600" }, { width: "20%" }]}
+    >
+      {warranty}
+    </Text>
+    <Text
+      style={[styles.text, bold && { fontWeight: "600" }, { width: "20%" }]}
+    >
+      {value}
+    </Text>
   </View>
 );
-
-
 
 const TabButton = ({ title, icon, active, onPress }: any) => {
   return (
@@ -625,6 +661,29 @@ const styles = StyleSheet.create({
     // marginTop: verticalScale(16),
     // gap: scale(4),
     // borderWidth : 1
+  },
+  reminderBox: {
+    position: "absolute",
+    // bottom: 500,
+    top: verticalScale(650),
+    left: 20,
+    right: 20,
+
+    backgroundColor: "#000",
+    borderLeftWidth: 4,
+    // borderLeftColor: "#2196f3",
+    padding: 16,
+    borderRadius: 16,
+
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+  },
+
+  reminderText: {
+    fontSize: moderateScale(13),
+    color: "#fff",
   },
   tabButton: {
     flex: 1,
@@ -808,7 +867,7 @@ const styles = StyleSheet.create({
     paddingRight: scale(25),
     borderRadius: scale(4),
   },
-    serviceTitleRow: {
+  serviceTitleRow: {
     flexDirection: "row",
     alignItems: "center",
   },
@@ -858,7 +917,6 @@ const styles = StyleSheet.create({
     color: "#2764E7",
   },
 
-
   qtyRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -870,21 +928,20 @@ const styles = StyleSheet.create({
     paddingVertical: verticalScale(3),
     borderRadius: scale(6),
   },
-spaceBetween: {
+  spaceBetween: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: verticalScale(8),
   },
-   cardTitle: {
+  cardTitle: {
     fontSize: moderateScale(15),
     fontWeight: "600",
     marginBottom: verticalScale(10),
   },
-   amount: {
+  amount: {
     fontWeight: "700",
     fontSize: moderateScale(14),
   },
-
 
   dropRow: {
     borderWidth: scale(1),
