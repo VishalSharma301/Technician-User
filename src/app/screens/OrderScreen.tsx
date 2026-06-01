@@ -22,12 +22,13 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import { OrderStackParamList } from "../../constants/navigation";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import CustomView from "../components/CustomView";
+import ReviewModal from "../components/ReviewModal";
+import CustomNavBar from "../components/CustomNavBar";
 
 const STATUS_TABS = [
-  { label: "Active", value: "all", color: "#027CC7" },
-  { label: "Pending", value: "booked", color: "#FFD768" },
-  { label: "Completed", value: "completed", color: "#027CC7" },
-  { label: "Cancelled", value: "cancelled", color: "#FF0000" },
+  { label: "All", value: "all" },
+  { label: "Active", value: "active" },
+  { label: "Completed", value: "completed" },
 ];
 
 type NavigationProp = StackNavigationProp<OrderStackParamList, "OrderScreen">;
@@ -41,7 +42,7 @@ const PROGRESS_STAGES = [
 ] as const;
 
 const PROGRESS_COLORS = {
-  assigned: "#3B82F6",
+  assigned: "#194594",
   in_progress: "#F59E0B",
   completed: "#22C55E",
   // warranty: "#dbd1d1",
@@ -81,12 +82,14 @@ export default function OrderScreen() {
   } = useServiceRequests();
 
   // console.log("serviceRequests : ", serviceRequests);
-  
+
   const [selectedTab, setSelectedTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const navigation = useNavigation<NavigationProp>();
+
   const currentTab =
     STATUS_TABS.find((tab) => tab.value === selectedTab) ?? STATUS_TABS[0];
+
   const getTabCount = (value: string) => {
     if (!stats) return 0;
 
@@ -114,15 +117,15 @@ export default function OrderScreen() {
     };
   }, []);
 
-  const handleTabChange = (tab: (typeof STATUS_TABS)[0]) => {
-    setSelectedTab(tab.value);
+ const handleTabChange = (tab: (typeof STATUS_TABS)[0]) => {
+  setSelectedTab(tab.value);
 
-    if (tab.value === "all") {
-      updateFilters({ status: undefined });
-    } else {
-      updateFilters({ status: tab.value as ServiceRequestStatus });
-    }
-  };
+  if (tab.value === "all" || tab.value === "active") {
+    updateFilters({ status: undefined });
+  } else {
+    updateFilters({ status: tab.value as ServiceRequestStatus });
+  }
+};
 
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
@@ -162,32 +165,34 @@ export default function OrderScreen() {
     fetchServiceRequests(filters);
   };
 
+
+
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       {/* <Header /> */}
       <View>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        {/* <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="arrow-back" size={moderateScale(22)} color={"#717A7E"} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <Text
           style={{
-            fontSize: moderateScale(14),
+            fontSize: moderateScale(20),
             fontWeight: "600",
-            marginVertical: verticalScale(6),
-            color: "#1A1A1A",
+            marginBottom: verticalScale(12),
+            color: "#864C2D",
           }}
         >
-          Orders
+          My Bookings
         </Text>
       </View>
-      <CustomView radius={scale(14.84)} boxStyle={{ overflow: "hidden" }}>
+      
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
           data={STATUS_TABS}
           keyExtractor={(item, index) => item.value}
           contentContainerStyle={{
-            // gap: scale(3.5),
+            gap: scale(12),
             alignItems: "center",
             // justifyContent: "space-between",
             width: scale(370),
@@ -204,20 +209,20 @@ export default function OrderScreen() {
                   styles.tabButton,
                   {
                     // borderColor: item.color,
-                    backgroundColor: isActive ? "#DCECFE" : "#ffffff00",
-                    borderRightWidth:
-                      index == STATUS_TABS.length - 1 ? 0 : moderateScale(1),
-                    borderColor: "#BCBBC580",
+                    backgroundColor: isActive ? "#FB8264" : "",
+                    borderWidth: moderateScale(1),
+                    borderColor: "#F07D62",
+                    // borderRightWidth: moderateScale(1),
                   },
                 ]}
               >
                 <Text
-                  style={[styles.tabText, { color: "#000", fontWeight: "600" }]}
+                  style={[styles.tabText, { color: isActive ? "#FFF" : "#FB8264", fontWeight: "700" }]}
                 >
                   {item.label}
                 </Text>
 
-                <View
+                {/* <View
                   style={[styles.countCircle, { backgroundColor: item.color }]}
                 >
                   <Text
@@ -228,12 +233,12 @@ export default function OrderScreen() {
                   >
                     {getTabCount(item.value)}
                   </Text>
-                </View>
+                </View> */}
               </TouchableOpacity>
             );
           }}
         />
-      </CustomView>
+     
     </View>
   );
 
@@ -278,11 +283,10 @@ export default function OrderScreen() {
 
   const getProgressStage = (item: ServiceRequest) => {
     const rawStatus = item.status;
-const completedStatus = item.statusHistory?.find(
-  (item) => item.status === "completed"
-);
-// console.log(completedStatus);
-
+    const completedStatus = item.statusHistory?.find(
+      (item) => item.status === "completed",
+    );
+    // console.log(completedStatus);
 
     // Hard mapping first
     const baseStage = STATUS_TO_PROGRESS[rawStatus];
@@ -291,8 +295,13 @@ const completedStatus = item.statusHistory?.find(
     if (baseStage === "job_closed") return "job_closed";
 
     // Handle completed → warranty logic
-    if (rawStatus === "completed" && (item.serviceCompletedAt || completedStatus)) {
-      const completedTime = new Date(item.serviceCompletedAt || completedStatus?.timestamp || 0).getTime();
+    if (
+      rawStatus === "completed" &&
+      (item.serviceCompletedAt || completedStatus)
+    ) {
+      const completedTime = new Date(
+        item.serviceCompletedAt || completedStatus?.timestamp || 0,
+      ).getTime();
       const now = Date.now();
 
       const DAYS_5 = 1 * 24 * 60 * 60 * 1000;
@@ -306,157 +315,142 @@ const completedStatus = item.statusHistory?.find(
 
     return baseStage;
   };
-  
+
+  const filteredRequests = serviceRequests.filter((item) => {
+  if (selectedTab === "active") {
+    const normalized = getProgressStage(item);
+
+    return !["completed", "job_closed"].includes(normalized);
+  }
+
+  if (selectedTab === "completed") {
+    const normalized = getProgressStage(item);
+
+    return ["completed", "job_closed"].includes(normalized);
+  }
+
+  return true;
+});
 
   function OrderCard({ item }: { item: ServiceRequest }) {
     const normalizedStatus = getProgressStage(item);
-   
-const isOnHold = !PROGRESS_STAGES.includes(normalizedStatus);
+
+    // console.log("item :",item);
+
+    const getStatusConfig = () => {
+      switch (normalizedStatus) {
+        case "in_progress":
+          return {
+            label: "In Progress",
+            bg: "#FEF3C7",
+            text: "#DD851C",
+            progress: 0.75,
+            bottomText: "In Progress",
+          };
+
+        case "completed":
+        case "job_closed":
+          return {
+            label: "Completed",
+            bg: "#D1FAE5",
+            text: "#1CA177",
+            progress: 1,
+            bottomText: "Done",
+          };
+
+        case "assigned":
+        default:
+          return {
+            label: "Scheduled",
+            bg: "#EDE9FE",
+            text: "#7D3FDE",
+            progress: 0,
+            bottomText: "Booked",
+          };
+      }
+    };
+
+    const status = getStatusConfig();
 
     return (
-      <CustomView
-        radius={scale(16)}
-        boxStyle={{
-          overflow: "hidden",
-          paddingHorizontal: scale(12.6),
-          paddingVertical: verticalScale(18),
-        }}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={styles.bookingCard}
+        onPress={() => navigation.navigate("OrderDetailsScreen", { item })}
       >
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() => {
-            navigation.navigate("OrderDetailsScreen", { item });
-            console.log("STATUS FROM API:", item);
-          }}
-        >
-          <Text
-            style={{
-              textTransform: "uppercase",
-              fontSize: moderateScale(16),
-              fontWeight: "700",
-              marginBottom: verticalScale(12),
-            }}
-          >
-            {item.service.name} REPAIR
-          </Text>
-
-          <CustomView radius={scale(16.3)}>
-            <View style={styles.infoRow}>
-              <View>
-                <Text style={styles.label}>{item.service.name}</Text>
-                <Text style={styles.subLabel}>Type Of Service</Text>
-              </View>
-              <View>
-                <Text style={styles.label}>{item.provider?.name}</Text>
-                <Text style={styles.subLabel}>Service Provider</Text>
-              </View>
+        {/* Top Row */}
+        <View style={styles.bookingTopRow}>
+          <View style={styles.leftSection}>
+            <View style={styles.serviceIconBox}>
+              <Icon name="construct-outline" size={22} color="#864C2D" />
             </View>
-          </CustomView>
-          <Text> id : {item._id}</Text>
-          <CustomView
-            radius={scale(16.13)}
-            shadowStyle={{ marginTop: verticalScale(10) }}
-          >
+
             <View>
-              <View style={styles.boxRow}>
-                <Text style={styles.label}>1 Window AC</Text>
-                <Text style={[styles.label, { color: currentTab.color }]}>
-                  <Icon
-                    name="ellipse"
-                    size={moderateScale(10)}
-                    color={currentTab.color}
-                  />{" "}
-                  {currentTab.label}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.boxRow,
-                  {
-                    borderTopWidth: moderateScale(1),
-                    borderBottomWidth: moderateScale(1),
-                    borderColor: "#E0E0E0",
-                  },
-                ]}
-              >
-                <Text style={styles.label}>Problem Type</Text>
-                <Text style={styles.label}>Active</Text>
-              </View>
-              <View style={styles.boxRow}>
-                <Text style={styles.label}>Price</Text>
-                <Text style={styles.label}>{item.finalPrice}</Text>
-              </View>
-              <View style={styles.boxRow}>
-                <Text style={styles.label}>Completion Pin</Text>
-                <Text style={styles.label}>{item.completionPin}</Text>
-              </View>
+              <Text style={styles.serviceTitle}>{item.service?.name}</Text>
+
+              <Text style={styles.serviceSubtitle}>
+                {item.service?.category.name || "Service"}
+              </Text>
             </View>
-          </CustomView>
-          <CustomView
-            radius={scale(16.13)}
-            shadowStyle={{ marginTop: verticalScale(10) }}
-          >
-            <View style={styles.progressContainer}>
-              {/* 🔥 FIXED PROGRESS BAR */}
-              <View style={styles.progressBar}>
-                {PROGRESS_STAGES.map((stage) => {
-                  const isActive =
-                    PROGRESS_STAGES.indexOf(normalizedStatus) >=
-                    PROGRESS_STAGES.indexOf(stage);
+          </View>
 
-                  return (
-                    <View
-                      key={stage}
-                      style={[
-                        styles.progressSegment,
-                        {
-                          backgroundColor: isActive
-                            ? PROGRESS_COLORS[stage] : isOnHold ? "#FF0000"
-                            : "#dbd1d1",
-                        },
-                      ]}
-                    />
-                  );
-                })}
-              </View>
+          <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
+            <Text style={[styles.statusText, { color: status.text }]}>
+              {status.label}
+            </Text>
+          </View>
+        </View>
 
-              <View style={styles.verifyRow}>
-                <Text style={styles.deviceText}>1 WINDOW AC</Text>
-                {isOnHold &&<Text style={{color : 'red', marginRight : scale(20)}}>On Hold</Text>}
-              </View>
+        {/* Date + Time */}
+        <View style={styles.dateTimeRow}>
+          <View style={styles.dateItem}>
+            <Icon name="calendar-outline" size={16} color="#864C2D" />
+            <Text style={styles.dateText}>
+              {new Date(item.bookedAt!).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </Text>
+          </View>
 
-              <View style={styles.legendRow}>
-                {[
-                  { color: "#3B82F6", text: "Assigned" },
-                  { color: "#F59E0B", text: "In Progress" },
-                  { color: "#22C55E", text: "Done" },
-                  { color: "#8B5CF6", text: "Warranty" },
-                  { color: "#64748B", text: "Job Closed" },
-                ].map((item, i) => (
-                  <View key={i} style={styles.legendItem}>
-                    <View
-                      style={[
-                        styles.legendDot,
-                        { backgroundColor: item.color },
-                      ]}
-                    />
-                    <Text style={styles.legendText}>{item.text}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          </CustomView>
-        </TouchableOpacity>
-      </CustomView>
+          <View style={styles.dateItem}>
+            <Icon name="time-outline" size={16} color="#864C2D" />
+            <Text style={styles.dateText}>
+              {item.timeSlot || "2:00-5:00 PM"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Progress */}
+        <View style={styles.progressTrack}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${status.progress * 100}%`,
+              },
+            ]}
+          />
+        </View>
+
+        {/* Bottom */}
+        <View style={styles.bottomRow}>
+          <Text style={styles.bottomStatus}>{status.bottomText}</Text>
+
+          <Text style={styles.priceText}>₹{item.inspection?.totals.grandTotal ?? item.finalPrice}</Text>
+        </View>
+      </TouchableOpacity>
     );
   }
 
   return (
     <View style={styles.container}>
       <FlatList
-        data={serviceRequests}
-        keyExtractor={(item,index) => `${item._id}_${index}` }
+        data={filteredRequests}
+        keyExtractor={(item, index) => `${item._id}_${index}`}
         renderItem={({ item }) => <OrderCard item={item} />}
+        
         ListHeaderComponent={renderHeader}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmpty}
@@ -471,7 +465,7 @@ const isOnHold = !PROGRESS_STAGES.includes(normalizedStatus);
         onEndReachedThreshold={0.5}
         contentContainerStyle={[
           serviceRequests.length === 0 && styles.emptyContainer,
-          { gap: verticalScale(10), paddingBottom: verticalScale(300) },
+          { gap: verticalScale(10), paddingBottom: verticalScale(300),   },
         ]}
         removeClippedSubviews
         maxToRenderPerBatch={10}
@@ -479,6 +473,7 @@ const isOnHold = !PROGRESS_STAGES.includes(normalizedStatus);
         initialNumToRender={10}
         windowSize={10}
       />
+      <CustomNavBar isLocal="Order" />
     </View>
   );
 }
@@ -487,13 +482,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     // marginBottom : verticalScale(100)
-    backgroundColor: "#F0EFF8",
-    paddingHorizontal: scale(8.8),
+    backgroundColor: "#FFF5EB",
+    // paddingHorizontal: scale(8.8),
   },
   headerContainer: {
-    // backgroundColor: "#FFFFFF",
+    backgroundColor: "#F6EBDE",
     paddingTop: 16,
-    paddingBottom: 12,
+    paddingBottom: verticalScale(20),
+    marginBottom : verticalScale(16),
+      paddingHorizontal: scale(10),
+    // width: scale(400),
+    // marginHorizontal: scale(-8.8),
   },
   tabCount: {
     fontWeight: "700",
@@ -516,6 +515,109 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 12,
     marginBottom: 16,
+  },
+  bookingCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: moderateScale(8),
+    paddingHorizontal: scale(11),
+    paddingVertical: verticalScale(18),
+    marginBottom: verticalScale(14),
+    borderWidth: 1,
+    borderColor: "#EFD5B7",
+      marginHorizontal: scale(10),
+  },
+
+  bookingTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  leftSection: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  serviceIconBox: {
+    width: scale(43),
+    height: scale(43),
+    borderRadius: moderateScale(8),
+    backgroundColor: "#864C2D1A",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: scale(12),
+  },
+
+  serviceTitle: {
+    fontSize: moderateScale(18),
+    fontWeight: "700",
+    color: "#864C2D",
+  },
+
+  serviceSubtitle: {
+    fontSize: moderateScale(14),
+    color: "#864C2D",
+    marginTop: verticalScale(2),
+  },
+
+  statusPill: {
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(7),
+    borderRadius: moderateScale(20),
+  },
+
+  statusText: {
+    fontSize: moderateScale(13),
+    fontWeight: "600",
+  },
+
+  dateTimeRow: {
+    flexDirection: "row",
+    marginTop: verticalScale(18),
+  },
+
+  dateItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: scale(18),
+  },
+
+  dateText: {
+    marginLeft: scale(6),
+    fontSize: moderateScale(13),
+    color: "#864C2D",
+  },
+
+  progressTrack: {
+    height: verticalScale(6),
+    backgroundColor: "#F1E3DD",
+    borderRadius: 20,
+    overflow: "hidden",
+    marginTop: verticalScale(18),
+  },
+
+  progressFill: {
+    height: "100%",
+    backgroundColor: "#FB8264",
+    borderRadius: scale(20),
+  },
+
+  bottomRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: verticalScale(14),
+  },
+
+  bottomStatus: {
+    fontSize: moderateScale(15),
+    color: "#000000B2",
+  },
+
+  priceText: {
+    fontSize: moderateScale(28),
+    fontWeight: "700",
+    color: "#864C2D",
   },
   card: {
     // backgroundColor: "#FFFFFF1A",
@@ -581,9 +683,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     // marginTop: verticalScale(12),
-    // borderWidth: 1,
-    // borderColor: "#fff",
-    backgroundColor: "#FFFFFF1A",
+    borderWidth: 1,
+    borderColor: "#F2D6B5",
+    backgroundColor: "#fff",
     paddingTop: verticalScale(19),
     paddingBottom: verticalScale(15),
     paddingHorizontal: scale(21),
@@ -606,7 +708,11 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     paddingVertical: verticalScale(8),
-    // borderRadius: moderateScale(12),
+    borderRadius: scale(8),
+    borderWidth: 1,
+    borderColor: "#F2D6B5",
+    backgroundColor: "#fff",
+    marginTop: verticalScale(10),
   },
   progressBar: {
     flexDirection: "row",
@@ -705,15 +811,17 @@ const styles = StyleSheet.create({
   },
   tabButton: {
     // flex: 1,
+    // flexGrow : 0.1,
+    // flexWrap : 'wrap',
     flexDirection: "row",
     // marginHorizontal: scale(3),
-    // borderRadius: moderateScale(30),
+    borderRadius: moderateScale(30),
     // borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     height: verticalScale(40.66),
     gap: scale(4),
-    paddingHorizontal: scale(12),
+    paddingHorizontal: scale(16),
   },
   tabButtonActive: {
     backgroundColor: "#153B93",

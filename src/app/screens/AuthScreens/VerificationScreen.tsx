@@ -14,6 +14,7 @@ import { useProfile } from "../../../hooks/useProfile";
 import { loginDirect, verifyOtp } from "../../../utils/authApi";
 import CustomView from "../../components/CustomView";
 import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
 
 const VerificationScreen = () => {
   const { setIsAuthenticated, setToken, health, setHealth } = useAuth();
@@ -28,18 +29,19 @@ const VerificationScreen = () => {
   } = useProfile();
   const [otp, setOtp] = React.useState(["", "", "", "", "", ""]);
   const inputRefs = React.useRef<Array<TextInput | null>>([]);
+  const navigation = useNavigation();
 
   const verifyOtpCode = async (code: string) => {
     // ✅ ADDED
     // console.log("otpdata : ", phoneNumber + code);
     const result = await loginDirect(); // ✅ ADDED
     // const result = await verifyOtp(phoneNumber, code); // ✅ ADDED
-console.log('result : ', result);
+    console.log("result : ", result);
 
     if (result && result.token?.token) {
       const jwtToken = result.token.token;
       const userData = result.user;
-      const health = userData.health
+      const health = userData.health;
       console.log("Verification successful");
       try {
         setToken(jwtToken); // from AuthContext
@@ -49,7 +51,7 @@ console.log('result : ', result);
         setUserId(userData._id);
         setIsAuthenticated(true);
         setPhoneNumber(result.user.phoneNumber);
-        setHealth(health)
+        setHealth(health);
       } catch (err) {
         console.error("Error saving token or user:", err);
       }
@@ -59,102 +61,112 @@ console.log('result : ', result);
     }
   };
   return (
-    // <ScreenWrapper>
-    //   </ScreenWrapper>
-    <View style={styles.container}>
-      <CustomView
-        radius={moderateScale(12)}
-        shadowStyle={{ marginVertical: verticalScale(65) }}
-      >
-        <View style={styles.box}>
-          <Text style={styles.title}>Enter verification</Text>
-          <Text style={styles.subText}>
-            We’ve sent a code to hello@technicianapp.com
-          </Text>
+    <ScreenWrapper style={{ backgroundColor: "#FFF5EB" }}>
+      <View style={styles.container}>
+        <CustomView
+          radius={moderateScale(12)}
+          shadowStyle={{ marginVertical: verticalScale(65) }}
+        >
+          <View style={styles.box}>
+            <Text style={styles.title}>Enter verification</Text>
+            <Text style={styles.subText}>
+              We’ve sent a code to hello@technicianapp.com
+            </Text>
 
-          <View style={styles.codeContainer}>
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <CustomView radius={moderateScale(8)}  key={i}>
-                <TextInput
-                 
-                  ref={(ref) => {
-                    inputRefs.current[i] = ref;
-                  }}
-                  style={styles.codeBox}
-                  maxLength={1}
-                  keyboardType="number-pad"
-                  value={otp[i]}
-                  autoFocus={i === 0}
-                  onChangeText={(val) => {
-                    const updated = [...otp];
-                    updated[i] = val;
-                    setOtp(updated);
+            <View style={styles.codeContainer}>
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <CustomView radius={moderateScale(8)} key={i} isGradient={false}>
+                  <TextInput
+                    ref={(ref) => {
+                      inputRefs.current[i] = ref;
+                    }}
+                    style={styles.codeBox}
+                    maxLength={1}
+                    keyboardType="number-pad"
+                    value={otp[i]}
+                    autoFocus={i === 0}
+                    onChangeText={(val) => {
+                      const updated = [...otp];
+                      updated[i] = val;
+                      setOtp(updated);
 
-                    // Auto-jump forward
-                    if (val && i < 5) {
-                      inputRefs.current[i + 1]?.focus();
-                    }
+                      // Auto-jump forward
+                      if (val && i < 5) {
+                        inputRefs.current[i + 1]?.focus();
+                      }
 
-                    // On last box, blur
-                    if (i === 5 && val) {
-                      inputRefs.current[i]?.blur();
-                    }
-                  }}
-                  onKeyPress={({ nativeEvent }) => {
-                    // Auto-jump backward
-                    if (
-                      nativeEvent.key === "Backspace" &&
-                      otp[i] === "" &&
-                      i > 0
-                    ) {
-                      inputRefs.current[i - 1]?.focus();
-                    }
-                  }}
-                />
-              </CustomView>
-            ))}
-          </View>
+                      // On last box, blur
+                      if (i === 5 && val) {
+                        inputRefs.current[i]?.blur();
+                      }
+                    }}
+                    onKeyPress={({ nativeEvent }) => {
+                      // Auto-jump backward
+                      if (
+                        nativeEvent.key === "Backspace" &&
+                        otp[i] === "" &&
+                        i > 0
+                      ) {
+                        inputRefs.current[i - 1]?.focus();
+                      }
+                    }}
+                  />
+                </CustomView>
+              ))}
+            </View>
 
-          <Text style={styles.resendText}>
-            Didn’t get a code?{" "}
-            <Text style={styles.linkText}>Click to resend.</Text>
-          </Text>
+            <Text style={styles.resendText}>
+              Didn’t get a code?{" "}
+              <Text style={styles.linkText}>Click to resend.</Text>
+            </Text>
 
-          <View style={styles.buttonRow}>
-            <TouchableOpacity onPress={() => {}}>
-              <CustomView
-                radius={moderateScale(50)}
-                boxStyle={{
-                  width: scale(96),
-                  height: verticalScale(36),
-                  alignItems: "center",
-                  justifyContent: "center",
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.goBack();
                 }}
               >
-                <Text>Cancel</Text>
+                <CustomView
+                  radius={moderateScale(8)}
+                  gradientColors={["#D2882C", "#D2882C"]}
+                  borderColor={"#fff"}
+                  shadowColor={"#ae814f"}
+                  boxStyle={{
+                    width: scale(96),
+                    height: verticalScale(37),
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text style={{ color: "#fff" }}>Cancel</Text>
+                </CustomView>
+              </TouchableOpacity>
+              <CustomView
+                radius={scale(8)}
+                gradientColors={["#729869", "#729869"]}
+                borderColor={"#E7ECF8"}
+                shadowColor={"#77966F"}
+              >
+                <TouchableOpacity
+                  onPress={() => verifyOtpCode(otp.join(""))}
+                  style={styles.verifyButton}
+                >
+                  <Text style={{ color: "#fff" }}>Verify</Text>
+                </TouchableOpacity>
               </CustomView>
-            </TouchableOpacity>
-           
-              
-             <TouchableOpacity onPress={() => verifyOtpCode(otp.join(""))}>
-                          <LinearGradient
-                            style={styles.verifyButton}
-                            colors={["#027CC7", "#004DBD"]}
-                          >
-                            <Text style={{ color: "#fff" }}>Verify</Text>
-                          </LinearGradient>
-                        </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </CustomView>
-    </View>
+        </CustomView>
+      </View>
+    </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    backgroundColor: "#F0EFF8",
+    backgroundColor: "#FFF5EB",
+    // borderWidth : 1
   },
   box: {
     width: scale(375),
@@ -172,7 +184,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: moderateScale(22),
     fontWeight: "600",
-    color: "#027CC7",
+    color: "#21416D",
     textAlign: "center",
   },
   subText: {
@@ -227,10 +239,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     // paddingVertical: verticalScale(10),
-    backgroundColor: "#027CC7",
-    borderRadius: moderateScale(50),
-    borderWidth: 1,
-    borderColor: "#027CC7",
+    // backgroundColor: "#027CC7",
+    borderRadius: moderateScale(4),
+    // borderWidth: 1,
+    // borderColor: "#027CC7",
     // marginRight: scale(8),
     width: scale(96),
     height: verticalScale(36),

@@ -288,6 +288,24 @@ export interface ProviderStats {
   totalTechnicians: number;
 }
 
+// export async function createConversationBooking(
+//   serviceId: string,
+//   payload: CreateConversationBookingPayload
+// ): Promise<ConversationBookingResponse> {
+//   try {
+//     const response = await axiosClient.post<ConversationBookingResponse>(
+//       `/users/app/book/${serviceId}`,
+//       payload
+//     );
+
+//     return response.data;
+//   } catch (error: any) {
+//   console.log("API ERROR:", error?.response || error);
+
+//   // 🔥 DO NOT wrap — just forward
+//   throw error;
+// }
+// }
 export async function createConversationBooking(
   serviceId: string,
   payload: CreateConversationBookingPayload

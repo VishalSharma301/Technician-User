@@ -168,7 +168,7 @@ export const handleCartApiError = (error: any): string => {
  *     const payload: AddToCartPayload = {
  *       userId: "66f8ac7b15cd72a1a4e51a6a",
  *       serviceId: "66f8b2e271f472c8823c8e94",
- *       zipcode: "140802",
+ *       zipcode: "147001",
  *       selectedOption: {
  *         optionId: "66f8b31e7e2c8d25ac932f10",
  *         name: "Top Load",

@@ -19,6 +19,7 @@ import CustomView from "../components/CustomView";
 import { newServiceDetails } from "../../utils/servicesApi";
 import Chatbot8 from "../components/CC8";
 import * as Location from "expo-location";
+import { useAddress } from "../../hooks/useAddress";
 
 type ServiceObject = {
   data: ServiceData;
@@ -27,6 +28,7 @@ type ServiceObject = {
 
 export default function CategoryScreen() {
   const { services } = useServices();
+  const {selectedAddress} = useAddress()
   const [showAll, setShowAll] = useState(false);
   const displayedServices = showAll ? services : services.slice(0, 12);
   const [visible, setVisible] = useState(false);
@@ -40,7 +42,7 @@ export default function CategoryScreen() {
   async function selectBrand(service: ServiceData) {
     // setVisible(true);
     // setSelectedService(service);
-    const clickedService = await newServiceDetails(service._id, "140802");
+    const clickedService = await newServiceDetails(service._id, selectedAddress.address.zipcode);
     if (clickedService) {
       console.log("service : ", clickedService);
 
@@ -153,7 +155,7 @@ console.log(text);
 
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F0EFF8" }}>
+    <View style={{ flex: 1, backgroundColor: "#FFF5EB" }}>
       <ScrollView style={styles.container}>
         {/* <Header /> */}
         <Text

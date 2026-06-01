@@ -10,14 +10,14 @@ export async function fetchServices({
   popular,
   category,
   isActive,
-  zipcode = 140802,
+  zipcode ,
 }: {
   page?: number;
   limit?: number;
   popular?: boolean;
   category?: string;
   isActive?: boolean;
-  zipcode?: string | number;
+  zipcode: string | number;
 }) {
   try {
     console.log("📡 Fetching services...");
@@ -254,7 +254,7 @@ export async function newServiceDetails(serviceId: string, zipcode: string) {
   try {
      console.log("API : ", `${BASE}/api/test/services/${serviceId}/get-details/conversation?zipcode=${zipcode}`);
     const response = await axios.get(
-      `${BASE}/api/test/services/${serviceId}/get-details/conversation`,
+      `${BASE}/api/users/services/${serviceId}/get-details/conversation`,
       {
         params: { zipcode },
         timeout: 10000,

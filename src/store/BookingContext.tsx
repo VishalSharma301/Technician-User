@@ -85,7 +85,7 @@ export default function BookingContextProvider({
           street: selectedAddress.address.street || "123 Street",
           city: selectedAddress.address.city || "Morinda",
           state: selectedAddress.address.state || "Punjab",
-          zipcode: selectedAddress.address.zipcode || "140802",
+          zipcode: selectedAddress.address.zipcode || "147001",
           coordinates: {
             lat: selectedAddress.address.coordinates.lat || 212.00,
             lon: selectedAddress.address.coordinates.lon || 212.00,

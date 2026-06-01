@@ -19,6 +19,8 @@ interface ProfileContext {
   setEmail: (name: string) => void;
   phoneNumber : string;
   setPhoneNumber: (phone: string) => void;
+  points : string;
+  setPoints: (points: string) => void;
   isNewUser: boolean ;
   setIsNewUser: (value: boolean) => void;
   picture : string,
@@ -38,8 +40,10 @@ export const ProfileContext = createContext<ProfileContext>({
   setLastName: () => {},
   email: "",
   setEmail: () => {},
-  phoneNumber : "9463786657",
+  phoneNumber : "",
   setPhoneNumber: () => {},
+  points : "",
+  setPoints: () => {},
   isNewUser: false,
   setIsNewUser: () => {},
   setPicture :()=>{},
@@ -57,6 +61,7 @@ export default function ProfileContextProvider({
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("9463786657");
+  const [points, setPoints] = useState("150");
   const [isNewUser, setIsNewUser] = useState(false);
   const [picture, setPicture] = useState('https://i.pravatar.cc/100');
   
@@ -125,7 +130,9 @@ export default function ProfileContextProvider({
     picture,
     setPicture,
     saveUserName,
-    clearProfile
+    clearProfile,
+    points,
+    setPoints
   };
 
   return (

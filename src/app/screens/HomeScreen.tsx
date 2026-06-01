@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   Image,
   ImageBackground,
+  TouchableHighlight,
+  Modal,
+  Alert,
 } from "react-native";
 import { Ionicons as Icon } from "@expo/vector-icons";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
@@ -39,6 +42,9 @@ import VerificationModal from "../components/VerificationModal";
 import { VerificationJob } from "../../constants/verification";
 import { useServiceRequests } from "../../store/ServiceRequestContext";
 import ReviewModal from "../components/ReviewModal";
+import { useWallet } from "../../store/WalletContext";
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
 
 const categories = ["Popular", "Emergency", "Seasonal", "Daily Use"];
 
@@ -71,8 +77,8 @@ type HomeJob = VerificationJob & {
 };
 
 const HomeScreen = () => {
-  const { setIsLoading } = useAuth();
-  const {} = useProfile();
+  const { setIsLoading , logout} = useAuth();
+  // const {points} = useProfile();
   const { selectedAddress, setZipcode } = useAddress();
   const [userAddresses] = useState([
     "123 Main Street, New York, NY 10001",
@@ -90,7 +96,8 @@ const HomeScreen = () => {
     mostBookedServices,
     servicesByCategory,
   } = useServices();
-
+  const { wallet } = useWallet();
+  const { firstName } = useProfile();
   const [pinVisible, setPinVisible] = useState(false);
   const [visible, setVisible] = useState(false);
   // const [selectedService, setSelectedService] = useState<ServiceData>();
@@ -98,7 +105,7 @@ const HomeScreen = () => {
     useState<ServiceObject>();
   const [activeTooltipId, setActiveTooltipId] = useState<string | null>(null);
   const [email, setEmail] = useState("");
-const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
 
   const categories = useMemo(() => {
     return servicesByCategory ? Object.keys(servicesByCategory) : [];
@@ -114,18 +121,21 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
   const [pendingServiceId, setPendingServiceId] = useState<string | null>(null);
 
+  const navigation = useNavigation()
+
   // console.log('categories : ', servicesByCategory);
+  console.log("services ::: ", services);
 
   const handleCloseReviewModal = () => {
-  setReviewVisible(false);
+    setReviewVisible(false);
 
-  // 👇 show reminder
-  setShowReminder(true);
+    // 👇 show reminder
+    setShowReminder(true);
 
-  setTimeout(() => {
-    setShowReminder(false);
-  }, 3000);
-};
+    setTimeout(() => {
+      setShowReminder(false);
+    }, 3000);
+  };
 
   useEffect(() => {
     if (!selectedCategory && categories.length > 0) {
@@ -134,7 +144,7 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
   }, [categories]);
 
   const zipcode = selectedAddress.address.zipcode;
-  // console.log("services fetched", services);
+  console.log("services fetched", wallet);
 
   const serviceOfTheWeek = useMemo(() => {
     return mostBookedServices.length > 0 ? mostBookedServices[0] : null;
@@ -147,8 +157,7 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
       try {
         const res = await getPendingVerifications();
 
-        console.log('[pendings /a/a//a/a//aa :',res);
-        
+        // console.log('[pendings /a/a//a/a//aa :',res);
 
         if (isMounted) {
           console.log("pending:", res);
@@ -174,8 +183,14 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
 
           setPendingServiceRequsest(allJobs || []);
         }
-      } catch (err) {
-        console.error("Failed to fetch pending verifications", err);
+      } catch (err : any) {
+        if (err.response?.status === 401) {
+            Alert.alert("Session Expired", "Your session has expired. Please log in again.", [
+              { text: "OK", onPress: () => logout() }
+            ]);
+          console.error("Failed to fetch pending verifications", err);
+          // logout();
+        }
       }
     };
 
@@ -253,61 +268,15 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
 
   // console.log(quickPickServices);
 
-  const ChangePinCode = () => {
-    const [pin, setPin] = useState("");
-    return (
-      <ImageBackground
-        source={require("../../../assets/bottomWrapper.png")}
-        style={{ width: "100%", alignSelf: "flex-start" }}
-        resizeMode="cover"
-      >
-        <View style={styles.card}>
-          <Text style={styles.title}>Change Pin Code</Text>
-
-          <View style={styles.inputContainer}>
-            <Icon
-              name="location-sharp"
-              size={moderateScale(16)}
-              color="#FF3B30"
-              style={{ marginRight: scale(6) }}
-            />
-
-            <TextInput
-              style={styles.input}
-              value={pin}
-              placeholder="Enter Pin Code"
-              keyboardType="numeric"
-              maxLength={6}
-              onChangeText={setPin}
-            />
-          </View>
-
-          <TouchableOpacity
-            style={styles.submitBtn}
-            onPress={() => {
-              console.log("pin", pin);
-
-              setZipcode(pin);
-
-              setPinVisible(false);
-            }}
-          >
-            <Text style={styles.submitText}>SUBMIT</Text>
-          </TouchableOpacity>
-        </View>
-      </ImageBackground>
-    );
-  };
-
   // async function serviceDetails(id: string) {
-  //   // const data =   await getServiceConversationDetails(id,'140802')
-  //   const data = await fetchServiceDetails(id, "140802");
+  //   // const data =   await getServiceConversationDetails(id,'147001')
+  //   const data = await fetchServiceDetails(id, "147001");
   //   console.log("data2", data);
   // }
 
   async function selectBrand(service: ServiceData) {
-    // const clickedService = await fetchServiceDetails(service._id, "140802");
-    const clickedService = await newServiceDetails(service._id, "140802");
+    // const clickedService = await fetchServiceDetails(service._id, "147001");
+    const clickedService = await newServiceDetails(service._id, selectedAddress.address.zipcode);
     if (clickedService) {
       console.log("service : ", clickedService);
 
@@ -316,64 +285,31 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
     }
   }
 
-  if (!services || categories.length === 0) {
-  return (
-    <ScreenWrapper>
-      <View style={styles.noServiceContainer}>
-        <Text style={styles.noServiceTitle}>
-          There is no provider available currently in your zipcode.
-        </Text>
-
-        <Text style={styles.noServiceSubtitle}>
-          Please leave your Email so we can inform you when services are
-          available in your area.
-        </Text>
-
-        {!emailSubmitted ? (
-          <View style={styles.emailRow}>
-            <TextInput
-              style={styles.emailInput}
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-            />
-
-            <TouchableOpacity
-              style={styles.emailBtn}
-              onPress={() => {
-                if (!email.trim()) return;
-                setEmailSubmitted(true);
-              }}
-            >
-              <Text style={styles.emailBtnText}>Submit</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <Text style={styles.emailAddedText}>
-            {email} has been added. We will inform you when services become
-            available in your area.
-          </Text>
-        )}
-      </View>
-    </ScreenWrapper>
-  );
-}
+  // if {
+  //   return <ScreenWrapper></ScreenWrapper>;
+  // }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F0EFF8" }}>
+    <View style={{ flex: 1, backgroundColor: "#FFF5EB" }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <VerificationModal
           visible={showVerificationModal}
           jobs={pendingServiceRequsest}
           onClose={() => setShowVerificationModal(false)}
         />
+        <ChangePinCode
+          visible={pinVisible}
+          onClose={() => setPinVisible(false)}
+          onSubmit={(pin) => {
+            setZipcode(pin);
+          }}
+        />
         {/* HEADER */}
-        <CustomView
-          width={scale(374.68)}
-          height={verticalScale(109)}
-          radius={scale(11.35)}
-          boxStyle={[
+        <View
+          // width={scale(374.68)}
+          // height={verticalScale(165)}
+
+          style={[
             {
               borderWidth: moderateScale(0.7),
               borderColor: "#fff",
@@ -383,345 +319,508 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
           ]}
         >
           <View style={styles.topBar}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Icon
-                name="location-outline"
-                size={moderateScale(18)}
-                color={"#1E1E1E"}
-              />
-              <Text style={styles.pinText}>
-                {selectedAddress.address.zipcode}
-              </Text>
-            </View>
-
-            <CustomView
-              height={verticalScale(28)}
-              width={scale(60)}
-              radius={scale(25)}
-              boxStyle={[styles.points]}
-            >
-              <Image
-                source={require("../../../assets/points.png")}
+            <TouchableOpacity onPress={() => setPinVisible(true)}>
+              <View
                 style={{
-                  width: scale(20),
-                  height: verticalScale(20),
-                  resizeMode: "contain",
+                  flexDirection: "row",
+                  alignItems: "center",
                 }}
-              />
-              {/* <Icon name="trophy" size={moderateScale(16)} color={"gold"} /> */}
-              <Text style={styles.pointsText}>100</Text>
-            </CustomView>
-          </View>
-        </CustomView>
-
-        {/* TOP CATEGORIES */}
-
-        <CustomView
-          height={verticalScale(95.68)}
-          radius={scale(11.35)}
-          width={scale(354.33)}
-          shadowStyle={{
-            marginVertical: verticalScale(12),
-            alignSelf: "center",
-            marginTop: verticalScale(-65),
-          }}
-          boxStyle={[styles.topCategoryRow]}
-        >
-          {categories.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => setSelectedCategory(item)}
+              >
+                <Icon
+                  name="location-outline"
+                  size={moderateScale(18)}
+                  color={"#1E1E1E"}
+                />
+                <Text style={styles.pinText}>
+                  {selectedAddress.address.zipcode}
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("CoinScreen")}>      
+            <LinearGradient
+              colors={["#729869", "#729869"]}
+              style={styles.points}
             >
-              <CustomView
-                height={verticalScale(79.97)}
-                width={scale(79.39)}
-                radius={scale(14.88)}
-                boxStyle={[styles.topCategoryCard]}
+              <Text style={{ color: "#fff", fontSize: moderateScale(12) }}>
+                POINTS
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: scale(4),
+                }}
               >
                 <Image
-                  source={
-                    // iconMap[item.icon as IconName] ||
-                    iconMap["default"]
-                  }
-                  style={styles.topCategoryImage}
+                  source={require("../../../assets/points.png")}
+                  style={{
+                    width: scale(20),
+                    height: verticalScale(20),
+                    resizeMode: "contain",
+                  }}
                 />
-                <Text numberOfLines={1} style={styles.topCategoryText}>
-                  {item}
-                </Text>
-              </CustomView>
+                {/* <Icon name="trophy" size={moderateScale(16)} color={"gold"} /> */}
+                <Text style={styles.pointsText}>{wallet?.credits}</Text>
+              </View>
+            </LinearGradient>
             </TouchableOpacity>
-          ))}
-        </CustomView>
-
-        {/* SERVICE FILTER CHIPS */}
-        {categories.length > 0 && (
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate("NotificationScreen")}>
+          <View style={{ marginTop: verticalScale(-6) }}>
+            <Text style={{ fontWeight: "bold", fontSize: moderateScale(14) }}>
+              Hi
+              <Text
+                style={{
+                  fontWeight: "bold",
+                  fontSize: moderateScale(14),
+                  color: "#729869",
+                }}
+              >
+                {" " + firstName}
+              </Text>
+            </Text>
+            <Text style={{ fontWeight: "400", fontSize: moderateScale(12) }}>
+              What can we fix for you?
+            </Text>
+          </View>
+          </TouchableOpacity>
           <CustomView
-            height={verticalScale(37.59)}
-            radius={scale(14.84)}
-            width={scale(370)}
-            boxStyle={styles.chipsRow}
-            shadowStyle={{ width: scale(371) }}
+            radius={scale(8)}
+            isGradient={false}
+            shadowColor={"#EAC9A3"}
+            shadowStyle={{ marginTop: verticalScale(16) }}
           >
-            {categories.map((item, index) => {
-              const chipLabels = [
-                "Installation",
-                "Service",
-                "Repair",
-                "Maintenance",
-              ];
-
-              return (
-                <TouchableOpacity
-                  key={index}
-                  style={
-                    {
-                      // borderWidth: 1,
-                      // flex: 1,
-                    }
-                  }
-                  onPress={() => setSelectedCategory(item)}
-                >
-                  <View
-                    style={[
-                      styles.chip,
-                      selectedCategory === item && {
-                        backgroundColor: "#DCECFE",
-                      },
-                      index == 3 && { borderRightWidth: 0 },
-                    ]}
-                  >
-                    <Image
-                      source={BAR_ICONS[index] || BAR_ICONS["0"]}
-                      style={{
-                        width: scale(22),
-                        height: verticalScale(22),
-                        resizeMode: "contain",
-                      }}
-                    />
-                    <Text numberOfLines={1} style={styles.chipText}>
-                      {chipLabels[index] ?? item}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
+            <View style={styles.searchContainer}>
+              <Icon
+                name="search-outline"
+                size={moderateScale(20)}
+                color="#000000ff"
+              />
+              <TextInput
+                placeholder="Search For Services"
+                placeholderTextColor="#00000080"
+                style={styles.searchInput}
+              />
+              <TouchableOpacity
+                style={{
+                  width: scale(34),
+                  height: scale(31),
+                  borderRadius: scale(4),
+                  backgroundColor: "#1D365D",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                // onPress={() => navigation.navigate("Notifications")}
+              >
+                <Text style={{ color: "#FFFFFF", fontWeight: "500" }}>Go</Text>
+              </TouchableOpacity>
+            </View>
           </CustomView>
-        )}
-
-        {/* SERVICES GRID */}
-        {selectedCategory &&
-          servicesByCategory?.[selectedCategory]?.length > 0 && (
-            <View
-              style={[
-                styles.grid,
-                servicesByCategory?.[selectedCategory]?.length > 3
-                  ? { marginBottom: verticalScale(10) }
-                  : { marginBottom: verticalScale(10) },
-              ]}
+        </View>
+        {/* TOP CATEGORIES */}
+        {!services || categories.length === 0 ? (
+          <View style={styles.noServiceContainer}>
+            <Text style={styles.noServiceTitle}>
+              There is no service in your area
+            </Text>
+            <CustomView
+              radius={scale(8)}
+              boxStyle={{
+                padding: scale(16),
+                paddingBottom: verticalScale(20),
+              }}
             >
-              {servicesByCategory[selectedCategory].map((item, index) => (
-                <View key={index}>
+              <Image
+                source={require("../../../assets/mail.png")}
+                style={{
+                  width: scale(76),
+                  height: verticalScale(76),
+                  resizeMode: "contain",
+                  alignSelf: "center",
+                }}
+              />
+              <Text style={styles.noServiceSubtitle}>
+                Please send us request for onboarding request in your area
+              </Text>
+
+              {!emailSubmitted ? (
+                <View style={styles.emailRow}>
+                  <CustomView radius={scale(8)}>
+                    <TextInput
+                      style={styles.emailInput}
+                      placeholder="Enter your email"
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                    />
+                  </CustomView>
+
                   <TouchableOpacity
-                    style={{ borderWidth: 0 }}
-                    onPress={() => selectBrand(item)}
-                    onLongPress={() => setActiveTooltipId(item._id)}
-                    onPressOut={() => setActiveTooltipId(null)}
-                    delayLongPress={300}
+                    style={styles.emailBtn}
+                    onPress={() => {
+                      if (!email.trim()) return;
+                      setEmailSubmitted(true);
+                    }}
                   >
-                    <CustomView
-                      height={verticalScale(95)}
-                      width={scale(119)}
-                      radius={scale(14)}
-                      key={index}
-                      boxStyle={styles.serviceCard}
-                    >
-                      <Image
-                        source={
-                          {uri : item.icon}
-                          // iconMap[item.icon as IconName] || iconMap["default"]
-                        }
-                        style={styles.serviceImage}
-                      />
-                      <Text numberOfLines={1} style={styles.serviceText}>
-                        {item.name}
-                      </Text>
-                    </CustomView>
+                    <Text style={styles.emailBtnText}>Submit</Text>
                   </TouchableOpacity>
                 </View>
-              ))}
-            </View>
-          )}
-
-        {/* HOW IT WORKS */}
-
-        {selectedCategory &&
-          servicesByCategory?.[selectedCategory]?.length < 7 && (
-            <CustomView
-              height={verticalScale(132.72)}
-              radius={scale(12)}
-              width={scale(374.68)}
-              shadowStyle={{ marginTop: verticalScale(21) }}
-              boxStyle={[
-                styles.howItWorks,
-                {
-                  alignSelf: "center",
-                  width: scale(374.68),
-                  height: verticalScale(132.72),
-                },
-              ]}
+              ) : (
+                <Text style={styles.emailAddedText}>
+                  {email} has been added. We will inform you when services
+                  become available in your area.
+                </Text>
+              )}
+            </CustomView>
+          </View>
+        ) : (
+          <>
+            {/* <CustomView
+              height={verticalScale(95.68)}
+              radius={scale(11.35)}
+              width={scale(354.33)}
+              shadowStyle={{
+                marginVertical: verticalScale(12),
+                alignSelf: "center",
+                marginTop: verticalScale(-65),
+              }}
+              boxStyle={[styles.topCategoryRow]}
             >
-              <Text style={styles.sectionTitle}>How it Work</Text>
-              <CustomView
-                height={verticalScale(91.71)}
-                width={scale(355.19)}
-                radius={scale(12)}
-                shadowStyle={{ overflow: "visible" }}
-                boxStyle={[
-                  styles.howItWorks,
-
-                  {
-                    flexDirection: "row",
-                    // justifyContent: "space-between",
-                    // paddingHorizontal: scale(9.16),
-                    overflow: "visible",
-                  },
-                ]}
-              >
-                {[
-                  {
-                    name: "Book Service",
-                    color: "#6488BD",
-                    secColor: "#7AA5F9",
-                    iconName: "1",
-                  },
-                  {
-                    name: "Meet Pro",
-                    color: "#896DCB",
-                    secColor: "#B292FF",
-                    iconName: "2",
-                  },
-                  {
-                    name: "Service",
-                    color: "#9CBE76",
-                    secColor: "#C3E2A2",
-                    iconName: "3",
-                  },
-                  {
-                    name: "Finished",
-                    color: "#82BFEC",
-                    secColor: "#B3DFFF",
-                    iconName: "4",
-                  },
-                ].map((item, index) => (
-                  <View
-                    key={index}
-                    style={{ borderWidth: 0, padding: scale(4) }}
+              {categories.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setSelectedCategory(item)}
+                >
+                  <CustomView
+                    height={verticalScale(79.97)}
+                    width={scale(79.39)}
+                    radius={scale(14.88)}
+                    boxStyle={[styles.topCategoryCard]}
                   >
-                    <View
-                      style={{
-                        width: scale(20.24),
-                        height: verticalScale(12.67),
-                        backgroundColor: item.color,
-                        borderRadius: moderateScale(3.86),
-                        borderWidth: moderateScale(1),
-                        borderColor: item.secColor,
-                        position: "absolute",
-                        top: verticalScale(3),
-                        left: scale(14.12),
-                        justifyContent: "center",
-                        alignItems: "center",
-                        zIndex: 99999,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: moderateScale(7.44),
-                          fontWeight: 600,
-                          alignSelf: "center",
-                          color: "#fff",
-                          lineHeight: verticalScale(10),
-                        }}
-                      >
-                        {index + 1}
-                      </Text>
-                    </View>
-                    <CustomView
-                      height={verticalScale(73.47)}
-                      width={scale(78.75)}
-                      radius={scale(9.11)}
+                    <Image
+                      source={
+                        // iconMap[item.icon as IconName] ||
+                        iconMap["default"]
+                      }
+                      style={styles.topCategoryImage}
+                    />
+                    <Text numberOfLines={1} style={styles.topCategoryText}>
+                      {item}
+                    </Text>
+                  </CustomView>
+                </TouchableOpacity>
+              ))}
+            </CustomView> */}
+
+            {/* SERVICE FILTER CHIPS */}
+            {/* {categories.length > 0 && (
+              <CustomView
+                height={verticalScale(37.59)}
+                radius={scale(14.84)}
+                width={scale(370)}
+                boxStyle={styles.chipsRow}
+                shadowStyle={{ width: scale(371) }}
+              >
+                {categories.map((item, index) => {
+                  const chipLabels = [
+                    "Installation",
+                    "Service",
+                    "Repair",
+                    "Maintenance",
+                  ];
+
+                  return (
+                    <TouchableOpacity
                       key={index}
-                      boxStyle={[
+                      style={
                         {
-                          borderWidth: moderateScale(1),
-                          borderColor: "#fff",
-                          justifyContent: "center",
-                          paddingHorizontal: scale(2.88),
-                          paddingVertical: verticalScale(2.8),
-                        },
-                      ]}
+                          // borderWidth: 1,
+                          // flex: 1,
+                        }
+                      }
+                      onPress={() => setSelectedCategory(item)}
                     >
                       <View
-                        style={{
-                          borderWidth: moderateScale(0.9),
-                          borderColor: item.color,
-                          height: "100%",
-                          borderRadius: scale(9.11),
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
+                        style={[
+                          styles.chip,
+                          selectedCategory === item && {
+                            backgroundColor: "#DCECFE",
+                          },
+                          index == 3 && { borderRightWidth: 0 },
+                        ]}
                       >
                         <Image
-                          source={HIW_ICONS[item.iconName]}
-                          style={[
-                            {
-                              width: scale(43.49),
-                              height: verticalScale(34),
-                              resizeMode: "center",
-                            },
-                          ]}
-                        />
-                        <Text
+                          source={BAR_ICONS[index] || BAR_ICONS["0"]}
                           style={{
-                            fontSize: moderateScale(7.44),
-                            fontWeight: 600,
+                            width: scale(22),
+                            height: verticalScale(22),
+                            resizeMode: "contain",
                           }}
-                        >
-                          {item.name}
+                        />
+                        <Text numberOfLines={1} style={styles.chipText}>
+                          {chipLabels[index] ?? item}
                         </Text>
                       </View>
-                    </CustomView>
-                  </View>
-                ))}
+                    </TouchableOpacity>
+                  );
+                })}
               </CustomView>
-            </CustomView>
-          )}
-        {/* SERVICE OF THE WEEK */}
-        <CustomView
-          width={scale(375)}
-          height={verticalScale(116)}
-          radius={scale(16.59)}
-          shadowStyle={{ marginTop: verticalScale(13) }}
-          boxStyle={[
-            {
-              borderWidth: moderateScale(0.7),
-              paddingVertical: verticalScale(7.85),
-              // paddingHorizontal: scale(8.96),
-              borderColor: "#fff",
+            )} */}
+            <View
+              style={{
+                // height: verticalScale(170),
+                // backgroundColor: "#c9d1db",
+                overflow: "hidden",
+                // marginHorizontal: scale(9),
+                alignItems: "center",
 
-              justifyContent: "center",
-            },
-          ]}
-        >
-          <Text style={styles.sectionTitle}>Service Of the Week</Text>
+                justifyContent: "center",
+                borderRadius: moderateScale(20),
+                marginTop: verticalScale(12),
+              }}
+            >
+              <Image
+                source={require("../../../assets/homeImg.png")}
+                style={{
+                  resizeMode: "stretch",
+                  height: verticalScale(182),
+                  width: scale(376),
+                }}
+              />
+            </View>
 
-          <ServiceOfTheWeek
-            onPressService={(serviceOfTheWeek) => selectBrand(serviceOfTheWeek)}
-          />
-        </CustomView>
-        {/* SERVICE OF THE WEEK */}
-        {selectedCategory &&
-          servicesByCategory?.[selectedCategory]?.length < 4 && (
-            <CustomView
+            {/* SERVICES GRID */}
+            <View
+              style={{
+                marginHorizontal: scale(9),
+                borderWidth: 0,
+                marginTop: verticalScale(0),
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  paddingHorizontal: scale(1),
+                  marginTop: verticalScale(14),
+                  alignItems: "center",
+                  // borderWidth : 1
+                }}
+              >
+                <Text
+                  style={{ fontSize: moderateScale(16), fontWeight: "600" }}
+                >
+                  Services Nearby
+                </Text>
+                <TouchableOpacity>
+                  <Text
+                    style={{ fontSize: moderateScale(12), fontWeight: "400" }}
+                  >
+                    See All
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {selectedCategory &&
+                servicesByCategory?.[selectedCategory]?.length > 0 && (
+                  <View
+                    style={[
+                      styles.grid,
+                      servicesByCategory?.[selectedCategory]?.length > 3
+                        ? { marginBottom: verticalScale(10) }
+                        : { marginBottom: verticalScale(10) },
+                    ]}
+                  >
+                    {servicesByCategory[selectedCategory].map((item, index) => (
+                      <View key={index}>
+                        <TouchableOpacity
+                          style={{ borderWidth: 0 }}
+                          onPress={() => selectBrand(item)}
+                          onLongPress={() => setActiveTooltipId(item._id)}
+                          onPressOut={() => setActiveTooltipId(null)}
+                          delayLongPress={300}
+                        >
+                          <CustomView
+                            height={verticalScale(95)}
+                            width={scale(119)}
+                            radius={scale(14)}
+                            key={index}
+                            boxStyle={styles.serviceCard}
+                            shadowColor={"#864c2d69"}
+                          >
+                            <Image
+                              source={
+                                {
+                                  uri:
+                                    item.icon ||
+                                    "https://picsum.photos/300/200  ",
+                                }
+                                // iconMap[item.icon as IconName] || iconMap["default"]
+                              }
+                              style={styles.serviceImage}
+                            />
+                            <Text numberOfLines={1} style={styles.serviceText}>
+                              {item.name}
+                            </Text>
+                          </CustomView>
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </View>
+                )}
+            </View>
+
+            {/* HOW IT WORKS */}
+
+            {selectedCategory &&
+              servicesByCategory?.[selectedCategory]?.length < 7 && (
+                <CustomView
+                  height={verticalScale(132.72)}
+                  radius={scale(12)}
+                  shadowColor={"#EAC9A3"}
+                  width={scale(374.68)}
+                  shadowStyle={{
+                    marginTop: verticalScale(21),
+                    marginHorizontal: scale(9),
+                  }}
+                  boxStyle={[
+                    styles.howItWorks,
+                    {
+                      alignSelf: "center",
+                      width: scale(374.68),
+                      height: verticalScale(132.72),
+                    },
+                  ]}
+                >
+                  <Text style={styles.sectionTitle}>How it Work</Text>
+                  <CustomView
+                    height={verticalScale(91.71)}
+                    width={scale(355.19)}
+                    radius={scale(12)}
+                    shadowStyle={{ overflow: "visible" }}
+                    shadowColor={"#EAC9A3"}
+                    boxStyle={[
+                      styles.howItWorks,
+
+                      {
+                        flexDirection: "row",
+                        // justifyContent: "space-between",
+                        // paddingHorizontal: scale(9.16),
+                        overflow: "visible",
+                      },
+                    ]}
+                  >
+                    {[
+                      {
+                        name: "Book Service",
+                        color: "#6488BD",
+                        secColor: "#7AA5F9",
+                        iconName: "1",
+                      },
+                      {
+                        name: "Meet Pro",
+                        color: "#896DCB",
+                        secColor: "#B292FF",
+                        iconName: "2",
+                      },
+                      {
+                        name: "Service",
+                        color: "#9CBE76",
+                        secColor: "#C3E2A2",
+                        iconName: "3",
+                      },
+                      {
+                        name: "Finished",
+                        color: "#82BFEC",
+                        secColor: "#B3DFFF",
+                        iconName: "4",
+                      },
+                    ].map((item, index) => (
+                      <View
+                        key={index}
+                        style={{ borderWidth: 0, padding: scale(4) }}
+                      >
+                        <View
+                          style={{
+                            width: scale(20.24),
+                            height: verticalScale(12.67),
+                            backgroundColor: item.color,
+                            borderRadius: moderateScale(3.86),
+                            borderWidth: moderateScale(1),
+                            borderColor: item.secColor,
+                            position: "absolute",
+                            top: verticalScale(3),
+                            left: scale(14.12),
+                            justifyContent: "center",
+                            alignItems: "center",
+                            zIndex: 99999,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontSize: moderateScale(7.44),
+                              fontWeight: 600,
+                              alignSelf: "center",
+                              color: "#fff",
+                              lineHeight: verticalScale(10),
+                            }}
+                          >
+                            {index + 1}
+                          </Text>
+                        </View>
+                        <CustomView
+                          height={verticalScale(73.47)}
+                          width={scale(78.75)}
+                          radius={scale(9.11)}
+                          key={index}
+                          shadowColor={"#EAC9A3"}
+                          boxStyle={[
+                            {
+                              borderWidth: moderateScale(1),
+                              borderColor: "#fff",
+                              justifyContent: "center",
+                              paddingHorizontal: scale(2.88),
+                              paddingVertical: verticalScale(2.8),
+                            },
+                          ]}
+                        >
+                          <View
+                            style={{
+                              borderWidth: moderateScale(0.9),
+                              borderColor: item.color,
+                              height: "100%",
+                              borderRadius: scale(9.11),
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: "#FFFFFF",
+                            }}
+                          >
+                            <Image
+                              source={HIW_ICONS[item.iconName]}
+                              style={[
+                                {
+                                  width: scale(43.49),
+                                  height: verticalScale(34),
+                                  resizeMode: "center",
+                                },
+                              ]}
+                            />
+                            <Text
+                              style={{
+                                fontSize: moderateScale(7.44),
+                                fontWeight: 600,
+                              }}
+                            >
+                              {item.name}
+                            </Text>
+                          </View>
+                        </CustomView>
+                      </View>
+                    ))}
+                  </CustomView>
+                </CustomView>
+              )}
+            {/* SERVICE OF THE WEEK */}
+            {/* <CustomView
               width={scale(375)}
               height={verticalScale(116)}
               radius={scale(16.59)}
@@ -744,8 +843,37 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
                   selectBrand(serviceOfTheWeek)
                 }
               />
-            </CustomView>
-          )}
+            </CustomView> */}
+            {/* SERVICE OF THE WEEK */}
+            {/* {selectedCategory &&
+              servicesByCategory?.[selectedCategory]?.length < 4 && (
+                <CustomView
+                  width={scale(375)}
+                  height={verticalScale(116)}
+                  radius={scale(16.59)}
+                  shadowStyle={{ marginTop: verticalScale(13) }}
+                  boxStyle={[
+                    {
+                      borderWidth: moderateScale(0.7),
+                      paddingVertical: verticalScale(7.85),
+                      // paddingHorizontal: scale(8.96),
+                      borderColor: "#fff",
+
+                      justifyContent: "center",
+                    },
+                  ]}
+                >
+                  <Text style={styles.sectionTitle}>Service Of the Week</Text>
+
+                  <ServiceOfTheWeek
+                    onPressService={(serviceOfTheWeek) =>
+                      selectBrand(serviceOfTheWeek)
+                    }
+                  />
+                </CustomView>
+              )} */}
+          </>
+        )}
       </ScrollView>
       {visible && (
         <View style={{ height: "100%", zIndex: 999999 }}>
@@ -757,12 +885,13 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
       )}
 
       {showReminder && (
-  <View style={styles.reminderBox}>
-    <Text style={styles.reminderText}>
-      🔔 We'll remind you after 1 hour. Your feedback helps technicians grow!
-    </Text>
-  </View>
-)}
+        <View style={styles.reminderBox}>
+          <Text style={styles.reminderText}>
+            🔔 We'll remind you after 1 hour. Your feedback helps technicians
+            grow!
+          </Text>
+        </View>
+      )}
       <ReviewModal
         visible={reviewVisible}
         onClose={handleCloseReviewModal}
@@ -773,69 +902,163 @@ const [emailSubmitted, setEmailSubmitted] = useState(false);
   );
 };
 
+type ChangePinCodeProps = {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (pin: string) => void;
+};
+
+const ChangePinCode = ({ visible, onClose, onSubmit }: ChangePinCodeProps) => {
+  const [pin, setPin] = useState("");
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <CustomView
+          radius={scale(12)}
+          shadowColor={"#936140c2"}
+          gradientColors={["#FFF5EA", "#FFF5EA"]}
+        >
+          <View style={styles.card}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text style={styles.title}>Change Pin Code</Text>
+              <TouchableOpacity onPress={onClose}>
+                <Icon name="close-circle-outline" size={20} />
+              </TouchableOpacity>
+            </View>
+
+            <CustomView
+              radius={scale(8)}
+              shadowStyle={{ marginBottom: verticalScale(18) }}
+              isGradient={false}
+            >
+              <View style={styles.inputContainer}>
+                <Icon
+                  name="location-sharp"
+                  size={moderateScale(16)}
+                  color="#656565"
+                  style={{ marginRight: scale(6) }}
+                />
+
+                <TextInput
+                  style={styles.input}
+                  value={pin}
+                  placeholder="Enter Pin Code"
+                  keyboardType="numeric"
+                  maxLength={6}
+                  onChangeText={setPin}
+                />
+              </View>
+            </CustomView>
+
+            <TouchableOpacity
+              // style={styles.submitBtn}
+              onPress={() => {
+                console.log("pin", pin);
+                onSubmit(pin); // send data up
+                onClose(); // close modal
+              }}
+            >
+              <CustomView
+                radius={moderateScale(8)}
+                gradientColors={["#729869", "#729869"]}
+                shadowColor={"#77966F"}
+                boxStyle={{
+                  paddingVertical: verticalScale(8),
+                  alignItems: "center",
+                }}
+                shadowStyle={{ marginVertical: verticalScale(10) }}
+              >
+                <Text style={styles.submitText}>SUBMIT</Text>
+              </CustomView>
+            </TouchableOpacity>
+          </View>
+        </CustomView>
+      </View>
+    </Modal>
+  );
+};
+
 export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {
-    padding: scale(9),
+    // padding: scale(9),
   },
   noServiceContainer: {
-  flex: 1,
-  justifyContent: "center",
-  alignItems: "center",
-  paddingHorizontal: scale(25),
-},
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: scale(9),
+    // paddingHorizontal: scale(25),
+  },
 
-noServiceTitle: {
-  fontSize: moderateScale(16),
-  fontWeight: "600",
-  textAlign: "center",
-  marginBottom: verticalScale(10),
-},
+  noServiceTitle: {
+    fontSize: moderateScale(16),
+    fontWeight: "600",
+    // textAlign: "left",
+    marginBottom: verticalScale(10),
+    alignSelf: "flex-start",
+    marginTop: verticalScale(20),
+    marginLeft: scale(6),
+  },
 
-noServiceSubtitle: {
-  fontSize: moderateScale(13),
-  textAlign: "center",
-  color: "#555",
-  marginBottom: verticalScale(20),
-},
+  noServiceSubtitle: {
+    fontSize: moderateScale(14),
+    textAlign: "center",
+    color: "#00000080",
+    marginBottom: verticalScale(20),
+  },
 
-emailRow: {
-  flexDirection: "row",
-  alignItems: "center",
-},
+  emailRow: {
+    // flexDirection: "row",
+    alignItems: "center",
+  },
 
-emailInput: {
-  flex: 1,
-  height: verticalScale(42),
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: moderateScale(8),
-  paddingHorizontal: scale(10),
-  backgroundColor: "#fff",
-},
+  emailInput: {
+    // flex: 1,
+    height: verticalScale(47),
+    width: scale(339),
+    // borderWidth: 1,
+    // borderColor: "#ccc",
+    // borderRadius: moderateScale(8),
+    paddingHorizontal: scale(10),
+    // backgroundColor: "#fff",
+  },
 
-emailBtn: {
-  marginLeft: scale(8),
-  backgroundColor: "#027CC7",
-  paddingHorizontal: scale(16),
-  height: verticalScale(42),
-  borderRadius: moderateScale(8),
-  justifyContent: "center",
-  alignItems: "center",
-},
+  emailBtn: {
+    // marginLeft: scale(8),
+    backgroundColor: "#027CC7",
+    paddingHorizontal: scale(16),
+    height: verticalScale(42),
+    borderRadius: moderateScale(40),
+    justifyContent: "center",
+    alignItems: "center",
+    width: scale(335),
+    marginTop: verticalScale(14),
+  },
 
-emailBtnText: {
-  color: "#fff",
-  fontWeight: "600",
-},
+  emailBtnText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
 
-emailAddedText: {
-  marginTop: verticalScale(10),
-  fontSize: moderateScale(13),
-  textAlign: "center",
-  color: "#027CC7",
-},
+  emailAddedText: {
+    marginTop: verticalScale(10),
+    fontSize: moderateScale(13),
+    textAlign: "center",
+    color: "#027CC7",
+  },
   pinContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -848,36 +1071,52 @@ emailAddedText: {
     fontWeight: "600",
     marginRight: scale(5),
   },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    // backgroundColor: "transparent",
 
+    paddingHorizontal: scale(12),
+    height: verticalScale(47),
+    // borderWidth: 0.8,
+    // borderColor: "#ffffff98",
+    // borderRadius: moderateScale(12),
+  },
+  searchInput: {
+    flex: 1,
+    paddingHorizontal: scale(10),
+    fontSize: moderateScale(14),
+    fontWeight: "500",
+  },
   categoriesContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: verticalScale(8),
     gap: scale(3.93),
   },
-    reminderBox: {
-  position: "absolute",
-  // bottom: 500,
-  top  :verticalScale(650),
-  left: 20,
-  right: 20,
+  reminderBox: {
+    position: "absolute",
+    // bottom: 500,
+    top: verticalScale(650),
+    left: 20,
+    right: 20,
 
-  backgroundColor: "#000",
-  borderLeftWidth: 4,
-  // borderLeftColor: "#2196f3",
-  padding: 16,
-  borderRadius: 16,
+    backgroundColor: "#000",
+    borderLeftWidth: 4,
+    // borderLeftColor: "#2196f3",
+    padding: 16,
+    borderRadius: 16,
 
-  elevation: 5,
-  shadowColor: "#000",
-  shadowOpacity: 0.2,
-  shadowRadius: 10,
-},
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+  },
 
-reminderText: {
-  fontSize: moderateScale(13),
-  color: "#fff",
-},
+  reminderText: {
+    fontSize: moderateScale(13),
+    color: "#fff",
+  },
   categoryButton: {
     backgroundColor: "#F1F1F1",
     borderRadius: moderateScale(23.6),
@@ -970,46 +1209,50 @@ reminderText: {
     marginTop: verticalScale(12),
     marginLeft: scale(1),
   },
-
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   card: {
-    width: "100%",
+    width: scale(375),
     paddingVertical: verticalScale(20),
     paddingHorizontal: scale(18),
-    // backgroundColor: "#FFFFFF10",
+    // backgroundColor: "#FFFFFF",
     // borderRadius: moderateScale(14),
-    alignSelf: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 8,
-    elevation: 4,
+    // alignSelf: "center",
+    // shadowColor: "#000",
+    // shadowOpacity: 0.08,
+    // shadowOffset: { width: 0, height: 3 },
+    // shadowRadius: 8,
+    // elevation: 4,
   },
   title: {
     fontSize: moderateScale(18),
     fontWeight: "600",
-    color: "#027CC7",
+    color: "#656565",
     marginBottom: verticalScale(12),
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#D0D0D0",
-    backgroundColor: "#FFFFFF",
+    // borderWidth: 1,
+    // borderColor: "#D0D0D0",
+    // backgroundColor: "#FFFFFF",
     height: verticalScale(45),
-    borderRadius: moderateScale(10),
+    // borderRadius: moderateScale(10),
     paddingHorizontal: scale(12),
-    marginBottom: verticalScale(18),
   },
   input: {
     flex: 1,
     fontSize: moderateScale(14),
-    color: "#000",
+    color: "#656565",
   },
   submitBtn: {
-    backgroundColor: "#027CC7",
+    backgroundColor: "#1D365D",
     height: verticalScale(42),
-    borderRadius: moderateScale(10),
+    borderRadius: moderateScale(100),
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1022,26 +1265,32 @@ reminderText: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: verticalScale(12),
+
+    // marginBottom: verticalScale(12),
+    // borderWidth : 1
   },
 
   points: {
-    flexDirection: "row",
+    // flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    padding: scale(6),
-    borderRadius: scale(12),
-    borderWidth: moderateScale(0.7),
-    borderColor: "#fff",
+    // backgroundColor: "#fff",
+    padding: scale(6.5),
+    borderRadius: scale(8),
+    // borderWidth: moderateScale(0.7),
+    // borderColor: "#fff",
     justifyContent: "center",
+    width: scale(87),
+    gap: scale(4),
   },
 
   pointsText: {
-    // marginLeft: scale(6),
+    marginLeft: scale(4),
     // alignSelf : 'center',
-    fontSize: moderateScale(12),
+    fontSize: moderateScale(14),
+    fontWeight: "700",
     // borderWidth : 1,
-    lineHeight: verticalScale(13),
+    // lineHeight: verticalScale(13),
+    color: "#fff",
   },
 
   topCategoryRow: {
@@ -1120,6 +1369,7 @@ reminderText: {
     justifyContent: "flex-start",
     marginTop: verticalScale(14),
     gap: scale(5),
+    // borderWidth: 1,
   },
 
   serviceCard: {

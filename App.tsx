@@ -26,6 +26,7 @@ import AddressContextProvider from "./src/store/AddressContext";
 import BookingContextProvider from "./src/store/BookingContext";
 import { TransitionProvider } from "./src/store/TransitionContext";
 import TransitionOverlay from "./src/app/components/NavAnimation";
+import { WalletProvider } from "./src/store/WalletContext";
 
 function Navigator() {
   const {
@@ -95,16 +96,18 @@ export default function App() {
           <ServicesContextProvider>
             <AddressContextProvider>
               <CartContextProvider>
-                <BookingContextProvider>
-                  <ServiceRequestsProvider>
-                    <TransitionProvider>
-                      <SafeAreaView style={{ flex: 1 }}>
-                        <Navigator />
-                        <TransitionOverlay /> 
-                      </SafeAreaView>
-                    </TransitionProvider>
-                  </ServiceRequestsProvider>
-                </BookingContextProvider>
+                <WalletProvider>
+                  <BookingContextProvider>
+                    <ServiceRequestsProvider>
+                      <TransitionProvider>
+                        <SafeAreaView style={{ flex: 1 }}>
+                          <Navigator />
+                          {/* <TransitionOverlay /> */}
+                        </SafeAreaView>
+                      </TransitionProvider>
+                    </ServiceRequestsProvider>
+                  </BookingContextProvider>
+                </WalletProvider>
               </CartContextProvider>
             </AddressContextProvider>
           </ServicesContextProvider>

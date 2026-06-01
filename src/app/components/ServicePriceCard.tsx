@@ -4,341 +4,557 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Image,
   ImageBackground,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
 import { scale, verticalScale, moderateScale } from "../../utils/scaling";
-import { InsetShadowBox } from "./InsetShadow";
-import CustomView from "./CustomView";
 import { LinearGradient } from "expo-linear-gradient";
+import CustomView from "./CustomView";
+import { iconMap } from "../../utils/iconMap";
 
 type Props = {
   initialQty?: number;
-  unitPrice: number;
-  originalPrice: number;
-  discountPercent: number;
+  basePrice: number; // 👈 replaces unitPrice / originalPrice / discountPercent
+  quantityPricing: Array<{
+    quantity: number;
+    label: string;
+    avgDiscountPct: number;
+    displayPrice: number;
+  }>;
   onConfirm: (qty: number) => void;
   onCancel: () => void;
+  serviceName?: string;
+  serviceType?: string;
+  brand?: string;
+  features?: string[];
+  icon?: string;
+  acType?: string;
 };
 
 export default function ServicePriceCard({
   initialQty = 1,
-  unitPrice,
-  originalPrice,
-  discountPercent,
+  basePrice,
+  // unitPrice,
+  // originalPrice,
+  quantityPricing,
   onConfirm,
   onCancel,
+  serviceName,
+  brand,
+  acType,
+  features = [
+    "Comprehensive AC Maintenance",
+    "Refrigerant level and cooling assessment",
+    "Cleaning of air filters",
+    "Complete performance evaluation",
+    "Refrigerant level and cooling assessment",
+    "Air filter cleaning",
+    "Total performance evaluation",
+    "Thorough AC Maintenance",
+  ],
+  icon,
 }: Props) {
   const [qty, setQty] = useState(initialQty);
 
-const discountedUnitPrice =
-  unitPrice * (1 - discountPercent / 100);
+  const getTieredPrice = (q: number) => {
+    if (q === 1) return { total: basePrice, discountPct: 0 };
+    if (q === 2) {
+      const tier = quantityPricing.find((t) => t.quantity === 2);
+      if (tier)
+        return { total: tier.displayPrice, discountPct: tier.avgDiscountPct };
+      return { total: basePrice * 2, discountPct: 0 };
+    }
+    if (q === 3) {
+      const tier = quantityPricing.find((t) => t.quantity === 3);
+      if (tier)
+        return { total: tier.displayPrice, discountPct: tier.avgDiscountPct };
+      return { total: basePrice * 3, discountPct: 0 };
+    }
+    // 3+
+    const tier = quantityPricing.find((t) => t.label === "3+");
+    const pct = tier?.avgDiscountPct ?? 0;
+    return { total: q * basePrice * (1 - pct / 100), discountPct: pct };
+  };
 
-const totalPrice = qty * discountedUnitPrice;
+  const { total: totalPrice, discountPct: discountPercent } =
+    getTieredPrice(qty);
+  const savedAmount = qty * basePrice - totalPrice;
+  const originalPrice = qty * basePrice; // for the strikethrough
 
-const savedAmount =
-  qty * unitPrice - totalPrice;
+  // const discountedUnitPrice = unitPrice * (1 - discountPercent / 100);
+  // const totalPrice = qty * discountedUnitPrice;
+  // const savedAmount = qty * unitPrice - totalPrice;
 
   const increase = () => setQty((q) => q + 1);
   const decrease = () => setQty((q) => (q > 1 ? q - 1 : q));
 
   return (
-    // <View style={{ borderWidth: 2, borderColor: "#DB5B00", borderRadius: scale(24), }}>
-    <ImageBackground
-      source={require("../../../assets/priceBG.png")}
-      style={{
-        height: verticalScale(512),
-        width: scale(350),
-        marginLeft: scale(5),
-        alignItems: "center",
-        justifyContent: "center",
-        padding: scale(25),
-      }}
-      resizeMode="stretch"
-    >
-      {/* Quantity Stepper */}
-      <View style={{ position: "absolute", top: verticalScale(-27) }}>
-        <LinearGradient
-          colors={["#ffffff", "#F0B68D"]}
-          locations={[0, 0.2]}
+    <View style={styles.wrapper}>
+      {/* ── Header ── */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          {/* "AC MAINTENANCE" label */}
+          <Text style={styles.acLabel}>{serviceName}</Text>
+          <Text style={styles.serviceName}>Complete Service Pack</Text>
+
+          {/* Tags */}
+          <View style={styles.tagRow}>
+            <CustomView
+              radius={moderateScale(8)}
+              gradientColors={["#D7DB9E", "#D7DB9E"]}
+              shadowColor={"#EAC9A3"}
+              borderColor={"#fff"}
+              boxStyle={{
+                alignItems: "center",
+              }}
+            >
+              <View style={styles.outlineTag}>
+                <Text style={styles.outlineTagText}>{acType}</Text>
+              </View>
+            </CustomView>
+            <CustomView
+              radius={moderateScale(8)}
+              gradientColors={["#FFDCB3", "#FFDCB3"]}
+              shadowColor={"#EAC9A3"}
+              borderColor={"#fff"}
+              boxStyle={{
+                alignItems: "center",
+              }}
+            >
+              <View style={styles.outlineTag}>
+                <Text style={styles.outlineTagText}>{brand}</Text>
+              </View>
+            </CustomView>
+          </View>
+        </View>
+
+        {/* Snowflake icon box */}
+        <CustomView radius={12} gradientColors={['#FFF5EA','#FBE8D1']}>
+        <View style={styles.snowflakeBox}>
+          <Image
+            source={{ uri: icon }}
+            style={styles.snowflakeEmoji}
+            resizeMode="contain"
+          />
+        </View>
+        </CustomView>
+      </View>
+
+      {/* ── Price Card (blue gradient) ── */}
+      <ImageBackground
+        source={require("../../../assets/ServiceBG.png")}
+        style={styles.priceCard}
+        resizeMode="stretch"
+      >
+        {/* <LinearGradient
+          colors={["#1D365D", "#1D365D"]}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={{
-            height: verticalScale(55),
-            width: scale(145),
-            borderRadius: scale(30),
-            borderWidth: 1,
-            borderColor: "#DB5B00",
-            justifyContent: "center",
-            paddingHorizontal: scale(8),
-            paddingVertical: verticalScale(5),
-          }}
-        >
+          end={{ x: 1, y: 1 }}
+          style={styles.priceCard}
+        > */}
+        {/* Discount badge */}
+        {/* <View style={styles.discountBadge}>
+            
+          </View> */}
+
+        {/* Total label */}
+        <View style={{ borderWidth: 0, flexDirection: "row" }}>
+          <Text style={styles.totalLabel}>Total Price</Text>
+          <Text style={styles.oldPriceText}>₹{basePrice * qty}</Text>
+        </View>
+
+        {/* Price + Stepper row */}
+        <View style={styles.priceStepperRow}>
+          <View>
+            <Text style={styles.priceText}>₹{Math.round(totalPrice)}</Text>
+            <Text style={styles.discountBadgeText}>
+              {discountPercent || 0}% Off
+            </Text>
+          </View>
+
+          {/* Quantity Stepper */}
           <View style={styles.stepper}>
             <TouchableOpacity style={styles.stepBtn} onPress={decrease}>
-              <Text style={styles.stepText}>−</Text>
+              <Text style={styles.stepBtnText}>−</Text>
             </TouchableOpacity>
-
-            <Text style={styles.qty}>{qty}</Text>
-
+            <Text style={styles.qtyText}>{qty}</Text>
             <TouchableOpacity style={styles.stepBtn} onPress={increase}>
-              <Text style={styles.stepText}>+</Text>
+              <Text style={styles.stepBtnText}>+</Text>
             </TouchableOpacity>
           </View>
-        </LinearGradient>
-      </View>
-      <View style={styles.container}>
-        {/* Tags */}
-        <View style={styles.tagRow}>
-          <View style={styles.blueTag}>
-            <Text style={styles.tagText}>Split</Text>
-          </View>
-          <View style={styles.orangeTag}>
-            <Text style={styles.tagText}>Samsung</Text>
-          </View>
         </View>
 
-        {/* Discount */}
-        <View style={styles.discountTag}>
-          <Text style={styles.discountText}>{discountPercent}% Off</Text>
+        {/* Savings badge */}
+        <View style={styles.savingsBadge}>
+          <Text style={styles.savingsText}>
+            You save ₹{Math.round(savedAmount)} on this Order
+          </Text>
         </View>
+        {/* </LinearGradient> */}
+      </ImageBackground>
 
-        {/* Price */}
-        <Text style={styles.price}>₹{totalPrice}</Text>
-
-        <View style={styles.saveRow}>
-          <Text style={styles.saveText}>You save ₹{savedAmount}</Text>
-          <Text style={styles.oldPrice}>₹{originalPrice * qty}</Text>
-        </View>
-
-        {/* Feature List */}
-        <View style={styles.listBox}>
-          {[
-            "Comprehensive AC Maintenance",
-            "Refrigerant level and cooling assessment",
-            "Cleaning of air filters",
-            "Complete performance evaluation",
-            "Thorough AC Maintenance",
-          ].map((item, index) => (
-            <View key={index} style={styles.listItem}>
-              <View style={styles.checkIcon}>
-                <Feather name="check" size={12} color="#fff" />
-              </View>
-              <Text style={styles.listText}>{item}</Text>
+      {/* ── Feature List ── */}
+      <View style={styles.featureList}>
+        {features.map((item, index) => (
+          <View key={index} style={styles.featureItem}>
+            <View style={styles.checkCircle}>
+              <Text style={styles.checkIcon}>✓</Text>
             </View>
-          ))}
+            <Text style={styles.featureText}>{item}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* ── Visiting Charges Banner ── */}
+      <View style={styles.visitingBanner}>
+        <View style={styles.visitingLeft}>
+          {/* <Text style={styles.visitingPlantIcon}>🌿</Text> */}
+          {/* <Image style={{width :scale(18), height: scale(18)}} source={iconMap['rupee']}/> */}
+          <Text style={styles.visitingBoldLabel}>Visiting Charges:</Text>
+          <Text style={styles.visitingPrice}>₹150</Text>
         </View>
+        <View style={styles.visitingRight}>
+          <Text style={styles.visitingMuted}>Adjusted if service is taken</Text>
+        </View>
+      </View>
 
-        {/* Actions */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity onPress={onCancel}>
-            <CustomView
-              radius={scale(25)}
-              width={scale(144)}
-              boxStyle={styles.cancelBtn}
-              gradientColors={["#FDEDE2", "#FDEDE2"]}
-            >
-              <Text style={styles.cancelText}>Cancel</Text>
-            </CustomView>
-          </TouchableOpacity>
+      {/* ── Action Buttons ── */}
+      <View style={styles.actionRow}>
+        <TouchableOpacity onPress={onCancel} style={{ width: "49%" }}>
+          <CustomView
+            radius={moderateScale(8)}
+            gradientColors={["#D2882C", "#D2882C"]}
+            shadowColor={"#AA5F00"}
+            borderColor={"#fff"}
+            boxStyle={{
+              paddingVertical: verticalScale(10),
+              // height : verticalScale(45),
+              alignItems: "center",
+            }}
+            
+          >
+            <Text style={styles.cancelText}>Cancel</Text>
+          </CustomView>
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.confirmBtn}
-            onPress={() => onConfirm(qty)}
+        <TouchableOpacity
+          style={{ width: "49%" }}
+          onPress={() => onConfirm(qty)}
+        >
+          <CustomView
+            radius={moderateScale(8)}
+            gradientColors={["#729869", "#729869"]}
+            shadowColor={"#77966F"}
+            boxStyle={{
+              paddingVertical: verticalScale(10),
+              alignItems: "center",
+            }}
+            // shadowStyle={{ marginVertical: verticalScale(10) }}
           >
             <Text style={styles.confirmText}>Confirm</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Visiting Charges */}
-        <Text style={styles.note}>
-          Visiting Charges: <Text style={styles.bold}>150</Text>{" "}
-          <Text style={styles.gray}>
-            (Adjusted in final bill if service is taken)
-          </Text>
-        </Text>
+          </CustomView>
+        </TouchableOpacity>
       </View>
-    </ImageBackground>
-    // </View>
+    </View>
   );
 }
+const TEXT_COLOR = "#936140";
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#FFF6EF",
-    // borderRadius: scale(24),
-    // padding: scale(16),
-    // borderWidth : 1,
-    height: " 100%",
-    paddingVertical: verticalScale(3),
-    marginTop: verticalScale(5),
-    // borderWidth : 1
+  wrapper: {
+    backgroundColor: "#FFF5EB",
+    borderRadius: scale(8),
+    padding: scale(18),
+    width: scale(350),
+    borderWidth: moderateScale(1),
+    borderColor: "#F2D6B5",
+    // shadowColor: "#000",
+    // shadowOffset: { width: 0, height: 4 },
+    // shadowOpacity: 0.08,
+    // shadowRadius: 12,
+    // elevation: 4,
   },
 
-  stepper: {
+  /* Header */
+  header: {
     flexDirection: "row",
-    // alignSelf: "center",
-    backgroundColor: "#DB5B00",
-    borderRadius: scale(30),
-    // paddingHorizontal: scale(14),
-    paddingVertical: verticalScale(6),
-    // marginBottom: verticalScale(10),
-    alignItems: "center",
-    gap: scale(16),
-    justifyContent: "center",
-    borderWidth: moderateScale(1.5),
-    borderColor: "#fff",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: verticalScale(14),
   },
-  stepBtn: {
-    backgroundColor: "#fff",
-    width: scale(26),
-    height: scale(26),
-    borderRadius: scale(13),
-    alignItems: "center",
-    justifyContent: "center",
+  headerLeft: {
+    flex: 1,
   },
-  stepText: {
-    fontSize: moderateScale(18),
-    fontWeight: "700",
-    color: "#DB5B00",
-  },
-  qty: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: moderateScale(16),
-  },
-
-  tagRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: scale(8),
-    // borderWidth : 1
-  },
-  blueTag: {
-    backgroundColor: "#027CC7",
-    borderRadius: scale(14),
-    paddingHorizontal: scale(10),
-    paddingVertical: verticalScale(3),
-  },
-  orangeTag: {
-    backgroundColor: "#DB5B00",
-    borderRadius: scale(14),
-    paddingHorizontal: scale(10),
-    paddingVertical: verticalScale(3),
-  },
-  tagText: {
-    color: "#fff",
-    fontSize: moderateScale(11),
-    fontWeight: "600",
-  },
-
-  discountTag: {
-    alignSelf: "center",
-    marginTop: verticalScale(8),
-    backgroundColor: "#027CC7",
-    borderRadius: scale(6),
-    paddingHorizontal: scale(8),
-    paddingVertical: verticalScale(2),
-  },
-  discountText: {
-    color: "#fff",
+  acLabel: {
     fontSize: moderateScale(11),
     fontWeight: "700",
+    color: "#519679",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: verticalScale(4),
   },
-
-  price: {
-    textAlign: "center",
-    fontSize: moderateScale(36),
+  serviceName: {
+    fontSize: moderateScale(22),
     fontWeight: "800",
-    color: "#000",
-    marginTop: verticalScale(6),
-  },
+    color: TEXT_COLOR,
 
-  saveRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: scale(10),
     marginBottom: verticalScale(10),
   },
-  saveText: {
-    backgroundColor: "#027CC7",
-    color: "#fff",
-    paddingHorizontal: scale(8),
-    paddingVertical: verticalScale(2),
-    borderRadius: scale(6),
-    fontSize: moderateScale(11),
-    fontWeight: "600",
-  },
-  oldPrice: {
-    textDecorationLine: "line-through",
-    color: "#DB5B00",
-    fontWeight: "700",
-  },
-
-  listBox: {
-    backgroundColor: "#FFE7D6",
-    borderRadius: scale(16),
-    padding: scale(12),
-    borderWidth: 1,
-    borderColor: "#DB5B00",
-  },
-  listItem: {
+  tagRow: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: verticalScale(6),
     gap: scale(8),
   },
-  checkIcon: {
-    width: scale(18),
-    height: scale(18),
-    borderRadius: scale(9),
-    backgroundColor: "#DB5B00",
+  outlineTag: {
+    // borderWidth: moderateScale(0.7),
+    // borderColor: "#045BD826",
+    borderRadius: scale(4),
+    paddingHorizontal: scale(14),
+    paddingVertical: verticalScale(4),
+    // backgroundColor: "#DDE6F3",
+  },
+  outlineTagText: {
+    fontSize: moderateScale(12),
+    color: "#656565",
+    fontWeight: "600",
+  },
+
+  /* Snowflake box — blue rounded square */
+  snowflakeBox: {
+    width: scale(48),
+    height: scale(48),
+    // borderRadius: scale(14),
+    // backgroundColor: "#258ECF",
+    alignItems: "center",
+    justifyContent: "center",
+    // marginLeft: scale(10),
+  },
+  snowflakeEmoji: {
+    // fontSize: moderateScale(22),
+    height: scale(36),
+    width: scale(36),
+    resizeMode: "contain",
+  },
+
+  /* Price Card — blue gradient */
+  priceCard: {
+    borderRadius: scale(8),
+    paddingVertical: scale(26),
+    paddingHorizontal: scale(16),
+    marginBottom: verticalScale(16),
+    overflow: "hidden",
+    height: verticalScale(190),
+  },
+  discountBadge: {
+    position: "absolute",
+    top: scale(14),
+    right: scale(14),
+    backgroundColor: "#96AEA4",
+    borderRadius: scale(8),
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(4),
+    borderWidth: moderateScale(1),
+    borderColor: "#E7ECF8",
+  },
+  discountBadgeText: {
+    color: "#fff",
+    fontSize: moderateScale(13),
+    fontWeight: "700",
+  },
+  totalLabel: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: moderateScale(13),
+    fontWeight: "500",
+    marginBottom: verticalScale(2),
+  },
+  priceStepperRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: verticalScale(12),
+  },
+  priceText: {
+    fontSize: moderateScale(42),
+    fontWeight: "800",
+    color: "#fff",
+    lineHeight: moderateScale(48),
+  },
+  oldPriceText: {
+    fontSize: moderateScale(15),
+    color: "#FF0000",
+    textDecorationLine: "line-through",
+    fontWeight: "700",
+    marginLeft: scale(22),
+    marginTop: verticalScale(7),
+  },
+
+  /* Stepper */
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#34A4FB33",
+    borderRadius: scale(30),
+    paddingHorizontal: scale(6),
+    paddingVertical: verticalScale(5),
+    gap: scale(12),
+    borderWidth: moderateScale(1),
+    borderColor: "#E7ECF8",
+  },
+  stepBtn: {
+    // backgroundColor: "#34A4FB33",
+    width: scale(30),
+    height: scale(30),
+    borderRadius: scale(15),
+    alignItems: "center",
+    justifyContent: "center",
+    // borderColor: "#3b99d449",
+    // borderWidth: moderateScale(1),
+  },
+  stepBtnText: {
+    fontSize: moderateScale(20),
+    fontWeight: "700",
+    color: "#fff",
+    lineHeight: moderateScale(22),
+  },
+  qtyText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: moderateScale(18),
+    minWidth: scale(22),
+    textAlign: "center",
+  },
+
+  /* Savings */
+  savingsBadge: {
+    backgroundColor: "#00FFE133",
+    borderRadius: scale(100),
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(6),
+    alignSelf: "stretch",
+    alignItems: "center",
+    borderBottomWidth: moderateScale(0.7),
+    // borderColor : '#fff'
+    // shadowColor: "#fff",
+    // shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.5,
+    // shadowRadius: 4,
+    //  elevation: 3,
+  },
+  savingsText: {
+    color: "#fff",
+    fontSize: moderateScale(12.5),
+    fontWeight: "600",
+  },
+
+  /* Feature list */
+  featureList: {
+    marginBottom: verticalScale(14),
+    paddingHorizontal: scale(2),
+  },
+  featureItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: verticalScale(10),
+    gap: scale(10),
+  },
+  checkCircle: {
+    width: scale(15),
+    height: scale(15),
+    borderRadius: scale(10),
+    backgroundColor: "#864C2D",
     alignItems: "center",
     justifyContent: "center",
   },
-  listText: {
-    fontSize: moderateScale(13),
-    color: "#000",
+  checkIcon: {
+    color: "#fff",
+    fontSize: moderateScale(9),
+    fontWeight: "800",
+    lineHeight: moderateScale(13),
+  },
+  featureText: {
+    fontSize: moderateScale(13.5),
+    color: TEXT_COLOR,
+    fontWeight: "600",
     flex: 1,
   },
 
+  /* Visiting charges — horizontal layout */
+  visitingBanner: {
+    backgroundColor: "#fff",
+    borderRadius: scale(12),
+    paddingHorizontal: scale(14),
+    paddingVertical: verticalScale(10),
+    marginBottom: verticalScale(16),
+    // flexDirection: "row",
+    // justifyContent: "space-between",
+    alignItems: "center",
+    height: verticalScale(68.3),
+    borderWidth: moderateScale(1),
+    borderColor: "#F2D6B5",
+  },
+  visitingLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: scale(6),
+    // borderWidth : 1,
+    alignSelf: "flex-start",
+  },
+  visitingPlantIcon: {
+    fontSize: moderateScale(16),
+  },
+  visitingBoldLabel: {
+    fontSize: moderateScale(13.5),
+    fontWeight: "700",
+    color: TEXT_COLOR,
+  },
+  visitingRight: {
+    // borderWidth : 1,
+    alignSelf: "flex-end",
+    marginTop: verticalScale(6),
+    // gap: verticalScale(5),
+  },
+  visitingPrice: {
+    fontSize: moderateScale(15),
+    fontWeight: "800",
+    color: TEXT_COLOR,
+    alignSelf: "center",
+    marginLeft: "35%",
+  },
+  visitingMuted: {
+    fontSize: moderateScale(11),
+    color: "#729869",
+    fontWeight: "600",
+    fontStyle: "italic",
+  },
+
+  /* Action buttons */
   actionRow: {
     flexDirection: "row",
     gap: scale(12),
-    marginTop: verticalScale(14),
   },
   cancelBtn: {
-    // flex: 1,
-    // backgroundColor: "#",
-    // borderRadius: scale(30),
-    paddingVertical: verticalScale(10),
-    alignItems: "center",
+    flex: 1,
     borderWidth: moderateScale(0.7),
-    borderColor: "#FFFFFF",
+    borderColor: "#027CC736",
+    borderRadius: scale(4),
+    paddingVertical: verticalScale(12.5),
+    alignItems: "center",
+    backgroundColor: "#FFF5EB",
   },
   cancelText: {
+    fontSize: moderateScale(15),
     fontWeight: "600",
+    color: "#fff",
   },
   confirmBtn: {
     flex: 1,
-    backgroundColor: "#DB5B00",
-    borderRadius: scale(30),
-    paddingVertical: verticalScale(10),
+    backgroundColor: "#1D365D",
+    borderRadius: scale(4),
+    paddingVertical: verticalScale(12.5),
     alignItems: "center",
-    borderWidth: moderateScale(0.7),
-    borderColor: "#FF6A00",
+    justifyContent: "center",
   },
   confirmText: {
     color: "#fff",
+    fontSize: moderateScale(15),
     fontWeight: "700",
   },
-
-  note: {
-    marginTop: verticalScale(10),
-    fontSize: moderateScale(12),
-    color: "#DB5B00",
-    textAlign: "center",
-  },
-  bold: { fontWeight: "700" },
-  gray: { color: "#555" },
 });

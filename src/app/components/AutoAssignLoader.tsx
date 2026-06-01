@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { View, Text, StyleSheet, Animated, Easing } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
+import { verticalScale } from "../../utils/scaling";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -352,8 +353,9 @@ export default function AutoAssignLoader({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: "#F0F9FF",
+    // flex: 1,
+    height: verticalScale(450),
+    // backgroundColor: "#F0F9FF",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -363,12 +365,15 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     padding: 28,
     alignItems: "center",
+    justifyContent : 'center',
     gap: 14,
-    shadowColor: "#0EA5E9",
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    // shadowColor: "#0EA5E9",
+    // shadowOpacity: 0.15,
+    // shadowRadius: 20,
+    // shadowOffset: { width: 0, height: 8 },
+    // elevation: 8,
+    // borderWidth : 1,
+    height: verticalScale(450),
   },
   centerCircle: {
     position: "absolute",

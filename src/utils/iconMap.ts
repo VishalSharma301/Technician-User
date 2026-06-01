@@ -4,7 +4,7 @@
 
 import { ImageSourcePropType } from "react-native";
 
-export type IconName = "aaa" | "ac_icon" | "ac_install_icon" | "ac_repair" | "ac_repair_icon" | "AddCharge" | "addNew" | "appliances" | "battery_replace_icon" | "catering_help_icon" | "ceiling_fan_icon" | "cleaning" | "clock" | "drill" | "drywall" | "electricity" | "exhaust_fan_icon" | "fencing" | "fridge_deep_servicing_icon" | "geyser_installation_icon" | "home" | "hvac" | "inverter_installation_icon" | "landMark" | "leak_repair-icon" | "location" | "mcb_replacement_icon" | "moving" | "office" | "other" | "packing_unpacking_icon" | "painting" | "plumbing" | "price" | "review" | "roof" | "service_time" | "setting" | "solar_panel_icon" | "ss" | "switchboard_repair_icon" | "trophy" | "visitCharge" | "water" | "wm_icon" | "xx" | "xxxx" | "yoga_session_icon" | "zip" | "default";
+export type IconName = "aaa" | "ac_icon" | "ac_install_icon" | "ac_repair" | "ac_repair_icon" | "AddCharge" | "addNew" | "appliances" | "battery_replace_icon" | "catering_help_icon" | "ceiling_fan_icon" | "cleaning" | "clock" | "close" | "drill" | "drywall" | "electricity" | "exhaust_fan_icon" | "fencing" | "fridge_deep_servicing_icon" | "geyser_installation_icon" | "home" | "hvac" | "inverter_installation_icon" | "landMark" | "leak_repair-icon" | "location" | "mcb_replacement_icon" | "moving" | "office" | "other" | "packing_unpacking_icon" | "painting" | "Payment" | "plumbing" | "price" | "refresh" | "review" | "roof" | "rupee" | "Service time" | "service_time" | "setting" | "solar_panel_icon" | "ss" | "switchboard_repair_icon" | "trophy" | "visitCharge" | "water" | "wm_icon" | "xx" | "xxxx" | "yoga_session_icon" | "Zip code" | "zip" | "default";
 
 export const iconMap: Record<IconName, ImageSourcePropType> = {
   "aaa": require("../../assets/Icons/aaa.png"),
@@ -20,6 +20,7 @@ export const iconMap: Record<IconName, ImageSourcePropType> = {
   "ceiling_fan_icon": require("../../assets/Icons/ceiling_fan_icon.png"),
   "cleaning": require("../../assets/Icons/cleaning.png"),
   "clock": require("../../assets/Icons/clock.png"),
+  "close": require("../../assets/Icons/close.png"),
   "drill": require("../../assets/Icons/drill.png"),
   "drywall": require("../../assets/Icons/drywall.png"),
   "electricity": require("../../assets/Icons/electricity.png"),
@@ -39,10 +40,14 @@ export const iconMap: Record<IconName, ImageSourcePropType> = {
   "other": require("../../assets/Icons/other.png"),
   "packing_unpacking_icon": require("../../assets/Icons/packing_unpacking_icon.png"),
   "painting": require("../../assets/Icons/painting.png"),
+  "Payment": require("../../assets/Icons/Payment.png"),
   "plumbing": require("../../assets/Icons/plumbing.png"),
   "price": require("../../assets/Icons/price.png"),
+  "refresh": require("../../assets/Icons/refresh.png"),
   "review": require("../../assets/Icons/review.png"),
   "roof": require("../../assets/Icons/roof.png"),
+  "rupee": require("../../assets/Icons/rupee.png"),
+  "Service time": require("../../assets/Icons/Service time.png"),
   "service_time": require("../../assets/Icons/service_time.png"),
   "setting": require("../../assets/Icons/setting.png"),
   "solar_panel_icon": require("../../assets/Icons/solar_panel_icon.png"),
@@ -55,6 +60,7 @@ export const iconMap: Record<IconName, ImageSourcePropType> = {
   "xx": require("../../assets/Icons/xx.png"),
   "xxxx": require("../../assets/Icons/xxxx.png"),
   "yoga_session_icon": require("../../assets/Icons/yoga_session_icon.png"),
+  "Zip code": require("../../assets/Icons/Zip code.png"),
   "zip": require("../../assets/Icons/zip.png"),
   "default": require("../../assets/Icons/default.png"),
 };

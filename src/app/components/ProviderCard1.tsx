@@ -5,13 +5,15 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  FlatList,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { ConversationBookingResponse } from "../../utils/bookingApi";
 import AutoAssignLoader from "./AutoAssignLoader";
+import CustomView from "./CustomView";
+import { moderateScale, scale, verticalScale } from "../../utils/scaling";
+import { useProfile } from "../../hooks/useProfile";
 
 export default function ProviderCard({
   res,
@@ -23,10 +25,12 @@ export default function ProviderCard({
   );
   const [loading, setLoading] = useState(true);
   const [showFullDescription, setShowFullDescription] = useState(false);
-const MAX_LENGTH = 180; // tweak based on your UI
+  const MAX_LENGTH = 180;
+  const { firstName } = useProfile();
 
   const provider = res?.data?.provider;
   const providerProfile = res?.providerProfile;
+  const badges = providerProfile?.badges || [];
   const providerStats = res?.providerStats;
   const ratings = providerProfile?.ratings;
 
@@ -37,6 +41,7 @@ const MAX_LENGTH = 180; // tweak based on your UI
   const jobSuccess = providerProfile?.jobSuccessScore || 0;
   const teamSize = providerProfile?.teamSize || 0;
   const jobsDone = providerStats?.totalCompletedJobs || 0;
+  const responseTime = providerProfile?.about.responseTime || "N/A";
 
   const avgRating = ratings?.averageRating || 0;
   const totalReviews = ratings?.totalReviews || 0;
@@ -52,298 +57,465 @@ const MAX_LENGTH = 180; // tweak based on your UI
     const timer = setTimeout(() => {
       setLoading(false);
     }, 5000);
-
     return () => clearTimeout(timer);
   }, []);
 
   const reviews = ratings?.recentReviews || [];
 
-  // const reviews = [
-  //   {
-  //     id: "1",
-  //     name: "Gurpreet S.",
-  //     rating: 5,
-  //     text: "Very professional, fixed my AC quickly. Reasonable price.",
-  //     date: "2 days ago",
-  //   },
-  //   {
-  //     id: "2",
-  //     name: "Neha V.",
-  //     rating: 4,
-  //     text: "Geyser service was good, but response took a bit longer.",
-  //     date: "1 week ago",
-  //   },
-  // ];
-
-  const renderStars = (count: number) => {
-    return "★".repeat(count) + "☆".repeat(5 - count);
-  };
+  const renderStars = (count: number) =>
+    "★".repeat(count) + "☆".repeat(5 - count);
 
   if (loading) {
-    return <AutoAssignLoader onFinish={() => setLoading(false)} name={name}/>;
+    return <AutoAssignLoader onFinish={() => setLoading(false)} name={name} />;
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.logoBox}>
-            <Text style={{ fontSize: 28 }}>🔧</Text>
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Text style={styles.providerName}>{name}</Text>
-
-            <View style={styles.locationRow}>
-              <Ionicons name="location-sharp" size={14} color="#2870b0" />
-              <Text style={styles.locationText}>
-                {res.data.address.city}, {res.data.address.state}
-              </Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ backgroundColor: "#FFF5EB" }}
+      >
+        {/* ── HEADER ── */}
+       
+          <View style={styles.header}>
+            <View style={styles.logoBox}>
+              <Text style={{ fontSize: 28 }}>🔧</Text>
             </View>
 
-            <View style={styles.badgeRow}>
-              <View style={styles.successChip}>
-                <Ionicons name="trophy" size={12} color="#0e6245" />
-                <Text style={styles.successText}>
-                  Job success {jobSuccess}%
+            <View style={{ flex: 1 }}>
+              {/* Name + verified */}
+              <View style={styles.nameRow}>
+                <Text style={styles.providerName}>{name}</Text>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={18}
+                  color="#2870b0"
+                  style={{ marginLeft: 6, marginTop: 2 }}
+                />
+              </View>
+
+              {/* Location */}
+              <View style={styles.locationRow}>
+                <Ionicons name="location-sharp" size={14} color="#2870b0" />
+                <Text style={styles.locationText}>
+                  {providerProfile.about.serviceArea},{" "}
+                  {providerProfile.about.zipcode}
                 </Text>
               </View>
 
-              <View style={styles.topRatedChip}>
-                <Ionicons name="star" size={12} color="#a45f15" />
-                <Text style={styles.topRatedText}>TOP RATED</Text>
+              {/* Badges */}
+              <View style={styles.badgeRow}>
+                {badges.map((badge: any) => (
+                  <View style={styles.topRatedChip} key={badge._id}>
+                    <Ionicons name="ribbon-outline" size={13} color="#fff" />
+                    <Text style={styles.topRatedText}> {badge.name}</Text>
+                  </View>
+                ))}
               </View>
             </View>
           </View>
-        </View>
+        
 
-        {/* TEAM STATS */}
-        <View style={styles.teamStats}>
-          <Text style={styles.statText}>👥 Team size: {teamSize}</Text>
-          <Text style={styles.statText}>📋 Jobs done: {jobsDone}</Text>
-        </View>
-
-        {/* TABS */}
-        <View style={styles.tabs}>
-          {["about", "services", "ratings"].map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tabItem, activeTab === tab && styles.activeTab]}
-              onPress={() => setActiveTab(tab as any)}
-            >
-              <Text
+        {/* ── JOB SUCCESS SCORE ── */}
+        {/* <CustomView radius={8}>
+          <View style={styles.successSection}>
+            <View style={styles.successLabelRow}>
+              <Text style={styles.successLabel}>Job Success Score</Text>
+              <Text style={styles.successPercent}>{jobSuccess}%</Text>
+            </View>
+            <View style={styles.progressBg}>
+              <View
                 style={[
-                  styles.tabText,
-                  activeTab === tab && styles.activeTabText,
+                  styles.progressFill,
+                  { width: `${jobSuccess}%` as any },
                 ]}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+              />
+            </View>
+          </View>
+        </CustomView> */}
+
+        {/* ── STAT CARDS ── */}
+        <View style={styles.statRow}>
+          <StatCard value={`0${teamSize}`} label="Team Size" color="#D9B298" />
+          <View style={styles.statDivider} />
+          <StatCard value={`0${jobsDone}`} label="Jobs done" color="#AB9DA8" />
+          <View style={styles.statDivider} />
+          <StatCard
+            value={responseTime}
+            label="Response Time"
+            color="#94C2B8"
+            isBlue
+          />
         </View>
 
-        {/* PANELS */}
+        {/* ── TABS ── */}
+        <CustomView
+          radius={14}
+          isGradient={false}
+          borderColor={'#F3DEC8'}
+          shadowStyle={{
+            width: scale(328),
+            position: "relative",
+            top: verticalScale(10),
+            zIndex: 9999,
+            left: scale(16),
+          }}
+          width={scale(328)}
+        >
+          <View style={styles.tabs}>
+            <TabItem
+              id="about"
+              label="About"
+              icon="information-circle-outline"
+              active={activeTab === "about"}
+              onPress={() => setActiveTab("about")}
+            />
+            <TabItem
+              id="services"
+              label="Services"
+              icon="briefcase-outline"
+              active={activeTab === "services"}
+              onPress={() => setActiveTab("services")}
+            />
+            <TabItem
+              id="ratings"
+              label="Rating"
+              icon="star-outline"
+              active={activeTab === "ratings"}
+              onPress={() => setActiveTab("ratings")}
+            />
+          </View>
+        </CustomView>
+        {/* ── ABOUT PANEL ── */}
         {activeTab === "about" && (
           <View style={styles.panel}>
-            <View style={styles.descriptionCard}>
-              <Text style={styles.descriptionTitle}>About {name}</Text>
+            {/* About card */}
+           
+              <View style={styles.aboutCard}>
+                <View style={styles.aboutCardHeader}>
+                  <Text style={styles.aboutCardTitle}>About {name}</Text>
+                  <View style={styles.sinceChip}>
+                    <Ionicons name="time-outline" size={12} color="#fff" />
+                    <Text style={styles.sinceText}>
+                      {" "}
+                      Since {providerProfile?.about.foundedYear || "2010"}
+                    </Text>
+                  </View>
+                </View>
 
-             <View>
-  <Text style={styles.descriptionText}>
-    <Text style={{ fontWeight: "600" }}>Company description: </Text>
-
-    {showFullDescription
-      ? description
-      : description.slice(0, MAX_LENGTH)}
-
-    {description.length > MAX_LENGTH && (
-      <Text
-        style={{ color: "#1d4e7c", fontWeight: "600" }}
-        onPress={() => setShowFullDescription(prev => !prev)}
-      >
-        {showFullDescription ? "   Read less" : "...  Read more"}
-      </Text>
-    )}
-  </Text>
-</View>
-
-              <View style={styles.badgeRowWrap}>
-                <View style={styles.greenBadge}>
-                  <Text style={styles.greenBadgeText}>
-                    ✔ 100% background checked
+                {/* Description */}
+                <Text style={styles.descriptionText}>
+                  <Text style={{ fontWeight: "600" }}>
+                    Company description:{" "}
                   </Text>
-                </View>
-
-                <View style={styles.grayBadge}>
-                  <Text style={styles.grayBadgeText}>● since 2010</Text>
-                </View>
-              </View>
-            </View>
-            <AboutRow
-              icon="map-pin"
-              label="Zip code"
-              value={res.data.address.zipcode}
-            />
-            <AboutRow
-              icon="hourglass-half"
-              label="Service done in"
-              value={providerProfile?.about.serviceDoneIn}
-            />
-
-            <AboutRow
-              icon="calendar"
-              label="Founded · GST"
-              value={`${providerProfile?.about.foundedYear} · ${providerProfile?.about.gstNumber}`}
-            />
-
-            <AboutRow
-              icon="stopwatch"
-              label="Response"
-              value={providerProfile?.about.responseTime}
-            />
-
-            <AboutRow
-              icon="globe"
-              label="Website"
-              value={providerProfile?.about.website || "Not available"}
-            />
-
-            <AboutRow
-              icon="map-marker-alt"
-              label="Service area"
-              value={providerProfile?.about.serviceArea}
-            />
-
-            {/* Certified + Background checked chips */}
-            <View style={styles.aboutRow}>
-              <FontAwesome5 name="shield-alt" size={16} color="#1f4970" />
-              <View
-                style={{
-                  marginLeft: 12,
-                  flexDirection: "row",
-                  flexWrap: "wrap",
-                }}
-              >
-                <View style={styles.chip}>
-                  <Text style={styles.chipText}>Certified</Text>
-                </View>
-
-                <View style={[styles.chip, { marginLeft: 8 }]}>
-                  <Text style={styles.chipText}>Background checked</Text>
-                </View>
-              </View>
-            </View>
-
-            <AboutRow icon="globe" label="Website" value="abc@hhh.com" />
-            <AboutRow
-              icon="envelope"
-              label="Email"
-              value={providerProfile?.about.email}
-            />
-
-            {/* Payment */}
-            <View style={styles.aboutRow}>
-              <FontAwesome5 name="credit-card" size={16} color="#1f4970" />
-              <View style={{ marginLeft: 12 }}>
-                <Text style={styles.label}>Payment</Text>
-
-                <View style={{ flexDirection: "row", marginTop: 6 }}>
-                  {providerProfile?.about.acceptedPayments?.map(
-                    (payment: string) => (
-                      <View key={payment} style={styles.paymentChip}>
-                        <Text>{payment}</Text>
-                      </View>
-                    ),
+                  {showFullDescription
+                    ? description
+                    : description.slice(0, MAX_LENGTH)}
+                  {description.length > MAX_LENGTH && (
+                    <Text
+                      style={{ color: "#1d4e7c", fontWeight: "600" }}
+                      onPress={() => setShowFullDescription((p) => !p)}
+                    >
+                      {showFullDescription ? "  Read less" : "...  Read more"}
+                    </Text>
                   )}
-                </View>
-              </View>
-            </View>
+                </Text>
 
-            {/* Languages */}
-            <View style={styles.aboutRow}>
-              <FontAwesome5 name="language" size={16} color="#1f4970" />
-              <View style={{ marginLeft: 12 }}>
-                <Text style={styles.label}>We speak</Text>
-
-                <View style={{ flexDirection: "row", marginTop: 6 }}>
-                  {providerProfile?.about.languages?.map((lang: string) => (
-                    <View key={lang} style={styles.languageChip}>
-                      <Text>{lang}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {activeTab === "services" && (
-          <View style={styles.panel}>
-            {providerProfile?.services?.byCategory &&
-              Object.entries(providerProfile.services.byCategory).map(
-                ([category, services]: any) => (
-                  <ServiceSection
-                    key={category}
-                    title={category}
-                    items={services.map((s: any) => s.name)}
+                {/* Trust badges */}
+                <View style={styles.trustRow}>
+                  <TrustChip
+                    icon="refresh-circle-outline"
+                    label="Background checked"
+                    color="#DAB298"
+                    textColor="#fff"
                   />
-                ),
-              )}
+                  <TrustChip
+                    icon="shield-checkmark-outline"
+                    label="Certified"
+                    color="#96AEA4"
+                    textColor="#fff"
+                  />
+                </View>
+              </View>
+            
+            {/* Business Information */}
+            
+              <SectionCard title="Business Information">
+                <View style={styles.infoGrid}>
+                  <InfoCell
+                    label="Founded"
+                    value={`${providerProfile?.about.foundedYear || "N/A"}`}
+                  />
+                  <InfoCell
+                    label="GST"
+                    value={providerProfile?.about.gstNumber || "N/A"}
+                    badge="Verified"
+                    badgeColor="#ADA7E5"
+                    badgeTextColor="#fff"
+                  />
+                  <InfoCell
+                    label="Phone no"
+                    value={providerProfile?.about.phone || "N/A"}
+                    badge={providerProfile?.about.phone}
+                    badgeColor="#fde8e8"
+                    badgeTextColor="#c0392b"
+                    isPhone
+                  />
+                  <InfoCell
+                    label="Email"
+                    value={providerProfile?.about.email || "N/A"}
+                  />
+                  <InfoCell
+                    label="Website"
+                    value={providerProfile?.about.website || "N/A"}
+                    fullWidth
+                  />
+                </View>
+              </SectionCard>
+           
+
+            {/* Service Details */}
+           
+              <SectionCard title="Service Details">
+                <View style={styles.infoGrid}>
+                  <InfoCell
+                    label="Service done in"
+                    value={providerProfile?.about.serviceDoneIn || "N/A"}
+                    badge={providerProfile?.about.serviceDoneIn}
+                    badgeColor="#C2A19B"
+                    badgeTextColor="#fff"
+                    hasClockIcon
+                  />
+                  <InfoCell
+                    label="Response"
+                    value={providerProfile?.about.responseTime || "N/A"}
+                  />
+                  <InfoCell
+                    label="Service area"
+                    value={providerProfile?.about.serviceArea || "N/A"}
+                  />
+                  <InfoCell
+                    label="Working Hour"
+                    value="9am - 6pm"
+                    badge="9am - 6pm"
+                    badgeColor="#AB9DA8"
+                    badgeTextColor="#fff"
+                    hasClockIcon
+                  />
+
+                  {/* Payment Methods */}
+                  
+                    <View style={[styles.infoCellWrap, {width : scale(164)}]}>
+                      <Text style={styles.infoCellLabel}>Payment Methods</Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          flexWrap: "wrap",
+                          marginTop: verticalScale(0),
+                          gap: 6,
+                        }}
+                      >
+                        {(providerProfile?.about.acceptedPayments || []).map(
+                          (p, index) => (
+                            <View
+                              key={p}
+                              style={[
+                                styles.methodChip,
+                                {
+                                  backgroundColor:
+                                    index === 0 ? "#9DA9DA" : "#96AEA4",
+                                },
+                              ]}
+                            >
+                              <Ionicons
+                                name="wallet-outline"
+                                size={13}
+                                color="#fff"
+                              />
+                              <Text style={styles.methodChipText}> {p}</Text>
+                            </View>
+                          ),
+                        )}
+                      </View>
+                    </View>
+                 
+
+                  {/* Languages */}
+                 
+                    <View style={[styles.infoCellWrap,{width : scale(164)}]}>
+                      <Text style={styles.infoCellLabel}>
+                        Regional Language
+                      </Text>
+                      <Text style={styles.infoCellValue}>
+                        {(providerProfile?.about.languages || []).join(", ") ||
+                          "N/A"}
+                      </Text>
+                    </View>
+                
+                </View>
+              </SectionCard>
+            
           </View>
         )}
 
-        {activeTab === "ratings" && (
-          <View style={styles.panel}>
-            {/* Rating Header */}
-            <View style={styles.ratingHeader}>
-              <View style={styles.averageBox}>
-                <Text style={styles.avgNumber}>{providerStats.rating}</Text>
-                <Text style={styles.avgStars}>★★★★☆</Text>
-                <Text style={styles.reviewCount}>247 reviews</Text>
-              </View>
-
-              <View style={{ flex: 1 }}>
-                <RatingBar label="5★" percent={ratingDistribution[5]} />
-                <RatingBar label="4★" percent={ratingDistribution[4]} />
-                <RatingBar label="3★" percent={ratingDistribution[3]} />
-                <RatingBar label="2★" percent={ratingDistribution[2]} />
-                <RatingBar label="1★" percent={ratingDistribution[1]} />
-              </View>
+        {/* ── SERVICES PANEL ── */}
+        {activeTab === "services" && (
+          <CustomView
+            radius={16}
+            shadowStyle={{ marginBottom: verticalScale(12) }}
+          >
+            <View
+              style={[styles.panel, { paddingHorizontal: 16, paddingTop: 22 }]}
+            >
+              {providerProfile?.services?.byCategory &&
+                Object.entries(providerProfile.services.byCategory).map(
+                  ([category, services]: any) => (
+                    <ServiceSection
+                      key={category}
+                      title={category}
+                      items={services.map((s: any) => s.name)}
+                    />
+                  ),
+                )}
             </View>
-
-            {/* Reviews */}
-            {reviews.map((item: any) => (
-              <View key={item.reviewId} style={styles.reviewItem}>
-                <Text style={styles.reviewAuthor}>
-                  {item.userName}{" "}
-                  <Text style={{ color: "#f5b342" }}>
-                    {renderStars(Math.round(item.averageRating))}
-                  </Text>
-                </Text>
-
-                <Text style={styles.reviewText}>{item.feedback}</Text>
-
-                <Text style={styles.reviewDate}>
-                  {new Date(item.createdAt).toDateString()}
-                </Text>
-              </View>
-            ))}
-          </View>
+          </CustomView>
         )}
+
+        {/* ── RATINGS PANEL ── */}
+        {activeTab === "ratings" && (
+          <CustomView
+            radius={16}
+            shadowStyle={{ marginBottom: verticalScale(12) }}
+          >
+            <View
+              style={[styles.panel, { paddingHorizontal: 16, paddingTop: 22 }]}
+            >
+              <View style={styles.ratingHeader}>
+                <View style={styles.averageBox}>
+                  <Text style={styles.avgNumber}>{providerStats.rating}</Text>
+                  <Text style={styles.avgStars}>★★★★☆</Text>
+                  <Text style={styles.reviewCount}>{totalReviews} reviews</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <RatingBar label="5★" percent={ratingDistribution[5]} />
+                  <RatingBar label="4★" percent={ratingDistribution[4]} />
+                  <RatingBar label="3★" percent={ratingDistribution[3]} />
+                  <RatingBar label="2★" percent={ratingDistribution[2]} />
+                  <RatingBar label="1★" percent={ratingDistribution[1]} />
+                </View>
+              </View>
+
+              {reviews.map((item: any) => (
+                <View key={item.reviewId} style={styles.reviewItem}>
+                  <Text style={styles.reviewAuthor}>
+                    {item.userName}{" "}
+                    <Text style={{ color: "#f5b342" }}>
+                      {renderStars(Math.round(item.averageRating))}
+                    </Text>
+                  </Text>
+                  <Text style={styles.reviewText}>{item.feedback}</Text>
+                  <Text style={styles.reviewDate}>
+                    {new Date(item.createdAt).toDateString()}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </CustomView>
+        )}
+
+        <View style={{ height: 70 }} />
       </ScrollView>
+
+      {/* ── BOTTOM BAR ── */}
+      <View style={styles.bottomBar}>
+        <Text style={styles.bottomBarText}>
+          Hi {firstName}, We will contact you shortly
+        </Text>
+      </View>
     </SafeAreaView>
   );
 }
-const AboutRow = ({ icon, label, value }: any) => (
-  <View style={styles.aboutRow}>
-    <FontAwesome5 name={icon} size={16} color="#1f4970" />
-    <View style={{ marginLeft: 12 }}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+
+/* ─── Sub-components ─── */
+
+const StatCard = ({ value, label, color, isBlue }: any) => (
+  
+    <View style={styles.statCard}>
+      <Text style={[styles.statValue, { color }]}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
     </View>
+  
+);
+
+const TabItem = ({ id, label, icon, active, onPress }: any) => (
+  <TouchableOpacity
+    style={[styles.tabItem, active && styles.activeTab]}
+    onPress={onPress}
+  >
+    <Ionicons name={icon} size={16} color={active ? "#1d4e7c" : "#936140"} />
+    <Text style={[styles.tabText, active && styles.activeTabText]}>
+      {" "}
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
+
+const TrustChip = ({ icon, label, color, textColor }: any) => (
+  <View style={[styles.trustChip, { backgroundColor: color }]}>
+    <Ionicons name={icon} size={14} color={textColor} />
+    <Text style={[styles.trustChipText, { color: textColor }]}> {label}</Text>
   </View>
+);
+
+const SectionCard = ({ title, children }: any) => (
+  <View style={styles.sectionCard}>
+    <Text style={styles.sectionCardTitle}>{title}</Text>
+    {children}
+  </View>
+);
+
+const InfoCell = ({
+  label,
+  value,
+  badge,
+  badgeColor,
+  badgeTextColor,
+  isPhone,
+  hasClockIcon,
+  fullWidth,
+}: any) => (
+
+    <View style={[styles.infoCellWrap, { width: fullWidth ? "100%" : "49%", marginBottom: verticalScale(2)}]}>
+      <Text style={styles.infoCellLabel}>{label}</Text>
+      {badge ? (
+        <View style={[styles.infoBadge, { backgroundColor: badgeColor }]}>
+          {hasClockIcon && (
+            <Ionicons name="time-outline" size={12} color={badgeTextColor} />
+          )}
+          {isPhone && (
+            <Ionicons name="time-outline" size={12} color={badgeTextColor} />
+          )}
+          <Text style={[styles.infoBadgeText, { color: badgeTextColor }]}>
+            {isPhone
+              ? value
+              : hasClockIcon
+                ? value
+                : label === "GST"
+                  ? "✔ Verified"
+                  : badge}
+          </Text>
+        </View>
+      ) : (
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={styles.infoCellValue}
+        >
+          {value}
+        </Text>
+      )}
+    </View>
+
 );
 
 const ServiceSection = ({ title, items }: any) => (
@@ -363,272 +535,381 @@ const RatingBar = ({ label, percent }: any) => (
   <View style={styles.barRow}>
     <Text style={styles.barLabel}>{label}</Text>
     <View style={styles.barBg}>
-      <View style={[styles.barFill, { width: `${percent}%` }]} />
+      <View style={[styles.barFill, { width: `${percent}%` as any }]} />
     </View>
     <Text style={styles.barPercent}>{percent}%</Text>
   </View>
 );
 
+/* ─── Styles ─── */
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#fff" },
+  safe: { flex: 1, backgroundColor: "#FFF5EB" },
 
+  /* Header */
   header: {
     flexDirection: "row",
-    padding: 20,
-    backgroundColor: "#fff",
+    padding: scale(18),
+    paddingBottom: verticalScale(13),
+    marginBottom : verticalScale(8)
   },
-
   logoBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: "#0a3350",
+    width: scale(72),
+    height: scale(72),
+    borderRadius: scale(18),
+    backgroundColor: "#0a1f3c",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
+    marginRight: scale(14),
   },
-
+  nameRow: { flexDirection: "row", alignItems: "center" },
   providerName: {
-    fontSize: 22,
+    fontSize: moderateScale(20),
     fontWeight: "700",
     color: "#0c2b44",
   },
-
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: verticalScale(4),
   },
-
   locationText: {
-    marginLeft: 6,
+    marginLeft: scale(4),
     color: "#4b657f",
+    fontSize: moderateScale(13),
   },
-
   badgeRow: {
     flexDirection: "row",
-    marginTop: 8,
+    flexWrap: "wrap",
+    marginTop: verticalScale(8),
+    gap: scale(6),
   },
-
-  successChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#e2f0e8",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-
-  successText: { marginLeft: 4, fontSize: 12 },
-
   topRatedChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#feeed7",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
+    backgroundColor: "#C702B3",
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(5),
+    borderRadius: scale(4),
   },
-
-  topRatedText: { marginLeft: 4, fontSize: 12 },
-
-  teamStats: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    backgroundColor: "#f2f8ff",
-    marginHorizontal: 20,
-    marginVertical: 10,
-    padding: 12,
-    borderRadius: 30,
-  },
-
-  statText: { fontWeight: "600" },
-
-  tabs: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderColor: "#e4ebf3",
-  },
-
-  tabItem: {
-    flex: 1,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-
-  tabText: { color: "#62748b", fontWeight: "600" },
-
-  activeTab: {
-    borderBottomWidth: 3,
-    borderColor: "#1d4e7c",
-  },
-
-  activeTabText: {
-    color: "#1d4e7c",
-  },
-
-  panel: {
-    padding: 20,
-    backgroundColor: "#fff",
-  },
-
-  aboutRow: {
-    flexDirection: "row",
-    marginBottom: 16,
-  },
-  descriptionCard: {
-    backgroundColor: "#f1f6fb",
-    padding: 16,
-    borderRadius: 18,
-    marginBottom: 20,
-  },
-
-  descriptionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 8,
-    color: "#1a3852",
-  },
-
-  descriptionText: {
-    fontSize: 14,
-    color: "#2b4e6e",
-    lineHeight: 20,
-  },
-
-  badgeRowWrap: {
-    flexDirection: "row",
-    marginTop: 12,
-  },
-
-  greenBadge: {
-    backgroundColor: "#e2f0e8",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-
-  greenBadgeText: {
-    fontSize: 12,
-    color: "#0e6245",
+  topRatedText: {
+    fontSize: moderateScale(12),
+    color: "#fff",
     fontWeight: "600",
   },
 
-  grayBadge: {
-    backgroundColor: "#e9edf2",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginLeft: 8,
+  /* Job Success */
+  successSection: {
+    paddingHorizontal: scale(20),
+    paddingBottom: verticalScale(16),
   },
-
-  grayBadgeText: {
-    fontSize: 12,
-    color: "#3d4f63",
+  successLabelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: verticalScale(6),
   },
-
-  chip: {
-    backgroundColor: "#e9f0f8",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+  successLabel: {
+    fontSize: moderateScale(12),
+    fontWeight: "500",
+    color: "#1a3852",
   },
-
-  chipText: {
-    fontSize: 12,
-    color: "#15456b",
-  },
-
-  paymentChip: {
-    backgroundColor: "#faf2ea",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-
-  languageChip: {
-    backgroundColor: "#e3ecf5",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  label: { fontWeight: "600", color: "#657e9c" },
-
-  value: { color: "#0d2d48", marginTop: 2 },
-
-  serviceTitle: {
+  successPercent: {
+    fontSize: moderateScale(12),
     fontWeight: "700",
-    fontSize: 16,
-    marginBottom: 10,
+    color: "#2870b0",
+  },
+  progressBg: {
+    height: verticalScale(5),
+    backgroundColor: "#e2eaf3",
+    borderRadius: scale(10),
+  },
+  progressFill: {
+    height: verticalScale(5),
+    backgroundColor: "#2870b0",
+    borderRadius: scale(10),
   },
 
-  serviceWrap: {
+  /* Stat cards */
+  statRow: {
+    flexDirection: "row",
+    // marginTop: verticalScale(1),
+    paddingVertical: verticalScale(8),
+    justifyContent: "space-between",
+    paddingHorizontal: scale(4),
+    borderWidth : 1,
+    borderColor : '#F2D6B5',
+    borderRadius : scale(8),
+    backgroundColor : '#fff',
+    marginBottom: verticalScale(22),
+  },
+  statCard: {
+    flex: 1,
+    alignItems: "center",
+    width: scale(110),
+    paddingVertical: verticalScale(7),
+  },
+  statValue: {
+    fontSize: moderateScale(16),
+    fontWeight: "700",
+  },
+  statLabel: {
+    fontSize: moderateScale(12),
+    color: "#864C2D",
+    fontWeight: '700',
+    marginTop: verticalScale(2),
+  },
+  statDivider: {
+    width: scale(1),
+    backgroundColor: "#e4ebf3",
+    marginVertical: verticalScale(4),
+  },
+
+  /* Tabs */
+  tabs: {
+    flexDirection: "row",
+  },
+  tabItem: {
+    flex: 1,
+    paddingVertical: verticalScale(4),
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    borderRadius: scale(10),
+  },
+  tabText: {
+    color: "#936140",
+    fontWeight: "600",
+    fontSize: moderateScale(13),
+  },
+  activeTab: {
+    backgroundColor: "#F3DEC8",
+    borderRadius: scale(10),
+  },
+  activeTabText: { color: "#1d4e7c" },
+
+  /* Panel */
+  panel: { padding: 0, borderWidth: 0 },
+
+  /* About card */
+  aboutCard: {
+    padding: scale(16),
+    marginBottom: verticalScale(12),
+    borderRadius: scale(8),
+    backgroundColor : '#FFF5EB',
+    borderWidth : moderateScale(1),
+    borderColor : '#F2D6B5',
+  },
+  aboutCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: verticalScale(10),
+  },
+  aboutCardTitle: {
+    fontSize: moderateScale(15),
+    fontWeight: "700",
+    color: "#864C2D",
+  },
+  sinceChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#94C2B8",
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(4),
+    borderRadius: scale(4),
+  },
+  sinceText: {
+    fontSize: moderateScale(12),
+    color: "#fff",
+    fontWeight: "600",
+  },
+  descriptionText: {
+    fontSize: moderateScale(13.5),
+    color: "#936140",
+    lineHeight: verticalScale(20),
+  },
+  trustRow: {
+    flexDirection: "row",
+    marginTop: verticalScale(12),
+    gap: scale(8),
+  },
+  trustChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(6),
+    borderRadius: scale(4),
+  },
+  trustChipText: {
+    fontSize: moderateScale(12),
+    fontWeight: "600",
+  },
+
+  /* Section card */
+  sectionCard: {
+    paddingVertical: verticalScale(14),
+    paddingHorizontal: scale(10),
+    borderRadius: scale(8),
+    backgroundColor : '#FFF5EB',
+    borderWidth : moderateScale(1),
+    borderColor : '#F2D6B5',
+    marginBottom : verticalScale(12)
+  },
+  sectionCardTitle: {
+    fontSize: moderateScale(15),
+    fontWeight: "700",
+    color: "#1a3852",
+    marginBottom: verticalScale(14),
+  },
+
+  /* Info grid */
+  infoGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    gap: scale(6),
+  },
+  infoCellWrap: {
+    width: "100%",
+    paddingRight: scale(8),
+    height: verticalScale(58),
+    paddingLeft: scale(8),
+    paddingTop: verticalScale(4),
+    borderWidth : 1,
+    borderColor : '#F2D6B5',
+    backgroundColor : '#fff',
+    borderRadius : scale(8)
+  },
+  infoCellLabel: {
+    fontSize: moderateScale(12),
+    color: "#936140",
+    marginBottom: verticalScale(3),
+  },
+  infoCellValue: {
+    fontSize: moderateScale(12),
+    fontWeight: "500",
+    color: "#864C2D",
+  },
+  infoBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: scale(10),
+    paddingVertical: verticalScale(3),
+    borderRadius: scale(4),
+    alignSelf: "flex-start",
+    gap: scale(4),
+  },
+  infoBadgeText: {
+    fontSize: moderateScale(12),
+    fontWeight: "600",
+  },
+  methodChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#182028",
+    paddingHorizontal: scale(13),
+    paddingVertical: verticalScale(2),
+    borderRadius: scale(4),
+  },
+  methodChipText: {
+    fontSize: moderateScale(12),
+    color: "#fff",
+    fontWeight: "600",
   },
 
+  /* Services */
+  serviceTitle: {
+    fontWeight: "700",
+    fontSize: moderateScale(15),
+    marginBottom: verticalScale(10),
+    color: "#1a3852",
+  },
+  serviceWrap: { flexDirection: "row", flexWrap: "wrap" },
   serviceChip: {
     backgroundColor: "#f4f9ff",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
+    paddingHorizontal: scale(14),
+    paddingVertical: verticalScale(8),
+    borderRadius: scale(20),
+    marginRight: scale(8),
+    marginBottom: verticalScale(8),
   },
 
+  /* Ratings */
   ratingHeader: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: verticalScale(20),
   },
-
   averageBox: {
     backgroundColor: "#1d4e7c",
-    padding: 16,
-    borderRadius: 20,
+    padding: scale(16),
+    borderRadius: scale(20),
     alignItems: "center",
-    marginRight: 16,
+    marginRight: scale(16),
   },
-
-  avgNumber: { fontSize: 26, fontWeight: "800", color: "#fff" },
-
+  avgNumber: {
+    fontSize: moderateScale(26),
+    fontWeight: "800",
+    color: "#fff",
+  },
   avgStars: { color: "#ffcd7e" },
-
-  reviewCount: { color: "#fff", fontSize: 12 },
-
+  reviewCount: {
+    color: "#fff",
+    fontSize: moderateScale(12),
+  },
   barRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: verticalScale(6),
   },
-
-  barLabel: { width: 35 },
-
+  barLabel: {
+    width: scale(35),
+    fontSize: moderateScale(12),
+  },
   barBg: {
     flex: 1,
-    height: 8,
+    height: verticalScale(8),
     backgroundColor: "#e2eaf3",
-    borderRadius: 20,
-    marginHorizontal: 6,
+    borderRadius: scale(20),
+    marginHorizontal: scale(6),
   },
-
   barFill: {
-    height: 8,
+    height: verticalScale(8),
     backgroundColor: "#ffb443",
-    borderRadius: 20,
+    borderRadius: scale(20),
   },
-
-  barPercent: { width: 40 },
-
+  barPercent: {
+    width: scale(40),
+    fontSize: moderateScale(12),
+    color: "#7893af",
+  },
   reviewItem: {
-    borderTopWidth: 1,
+    borderTopWidth: scale(1),
     borderColor: "#e5edf5",
-    paddingVertical: 12,
+    paddingVertical: verticalScale(12),
+  },
+  reviewAuthor: { fontWeight: "600" },
+  reviewText: {
+    marginVertical: verticalScale(4),
+    color: "#2b4e6e",
+  },
+  reviewDate: {
+    fontSize: moderateScale(12),
+    color: "#7893af",
   },
 
-  reviewAuthor: { fontWeight: "600" },
-
-  reviewText: { marginVertical: 4 },
-
-  reviewDate: { fontSize: 12, color: "#7893af" },
+  /* Bottom bar */
+  bottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#864C2D",
+    paddingVertical: verticalScale(6),
+    borderRadius : scale(100),
+    marginHorizontal : scale(16),
+    alignItems: "center",
+  },
+  bottomBarText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: moderateScale(14),
+  },
 });

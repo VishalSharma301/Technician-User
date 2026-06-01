@@ -32,11 +32,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import ServicePriceCard from "./ServicePriceCard";
 import { InsetShadowBox } from "./InsetShadow";
 import ReviewDetailCard from "./ReviewDetailCard1";
-import ProviderCard from "./ProviderCard1";
 import QuantityPriceCard from "./QuantityPriceCard";
 import { iconMap, IconName } from "../../utils/iconMap";
 import { useAuth } from "../../hooks/useAuth";
 import { BlurView } from "expo-blur";
+import ProviderCard from "./ProviderCard1";
+import { useWallet } from "../../store/WalletContext";
+import { useWalletPayment } from "../../hooks/useWalletPayment";
+import { SvgUri } from "react-native-svg";
 
 /* ---------------- TYPES ---------------- */
 
@@ -70,6 +73,8 @@ export default function Chatbot8({
   const { userId, firstName } = useProfile();
   const { addresses, setAddresses, setSelectedAddress, selectedAddress } =
     useAddress();
+  const { wallet } = useWallet();
+  const { payPartial, paymentError } = useWalletPayment();
 
   const steps = serviceObject.conversation.steps;
   const service = serviceObject.service;
@@ -119,12 +124,91 @@ export default function Chatbot8({
   const scrollToBottom = () =>
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
 
-  const ORIGINAL_UNIT_PRICE = 500;
-  const DISCOUNT_PERCENT = 25;
-  const unitPrice =
-    ORIGINAL_UNIT_PRICE - (ORIGINAL_UNIT_PRICE * DISCOUNT_PERCENT) / 100;
+  // AFTER
+  const ORIGINAL_UNIT_PRICE = selectedBrand?.displayPrice || service.basePrice;
 
-  const totalPrice = quantity ? quantity * unitPrice : 0;
+  const getQuantityPricing = () => {
+    if (!selectedBrand || !quantity)
+      return {
+        totalPrice: 0,
+        unitPrice: ORIGINAL_UNIT_PRICE,
+        discountPercent: 0,
+      };
+
+    if (quantity === 1) {
+      return {
+        totalPrice: ORIGINAL_UNIT_PRICE,
+        unitPrice: ORIGINAL_UNIT_PRICE,
+        discountPercent: 0,
+      };
+    }
+
+    if (quantity === 2) {
+      const doubleTier = selectedBrand.quantityPricing?.find(
+        (q: any) => q.quantity === 2,
+      );
+      if (doubleTier) {
+        return {
+          totalPrice: doubleTier.displayPrice,
+          unitPrice: doubleTier.displayPrice / 2,
+          discountPercent: doubleTier.avgDiscountPct ?? 0,
+        };
+      }
+      return {
+        totalPrice: ORIGINAL_UNIT_PRICE * 2,
+        unitPrice: ORIGINAL_UNIT_PRICE,
+        discountPercent: 0,
+      };
+    }
+    if (quantity === 3) {
+      const tripleTier = selectedBrand.quantityPricing?.find(
+        (q: any) => q.quantity === 3,
+      );
+      if (tripleTier) {
+        return {
+          totalPrice: tripleTier.displayPrice,
+          unitPrice: tripleTier.displayPrice / 3,
+          discountPercent: tripleTier.avgDiscountPct ?? 0,
+        };
+      }
+      return {
+        totalPrice: ORIGINAL_UNIT_PRICE * 2,
+        unitPrice: ORIGINAL_UNIT_PRICE,
+        discountPercent: 0,
+      };
+    }
+
+    // quantity >= 3 — use avgDiscountPct from the "3+" tier
+    const threePlusTier = selectedBrand.quantityPricing?.find(
+      (q: any) => q.label === "3+",
+    );
+    if (threePlusTier) {
+      const discountPercent = threePlusTier.avgDiscountPct ?? 0;
+      const discountedUnit = ORIGINAL_UNIT_PRICE * (1 - discountPercent / 100);
+      return {
+        totalPrice: quantity * discountedUnit,
+        unitPrice: discountedUnit,
+        discountPercent,
+      };
+    }
+
+    return {
+      totalPrice: ORIGINAL_UNIT_PRICE * quantity,
+      unitPrice: ORIGINAL_UNIT_PRICE,
+      discountPercent: 0,
+    };
+  };
+
+  const {
+    totalPrice,
+    unitPrice,
+    discountPercent: DISCOUNT_PERCENT,
+  } = getQuantityPricing();
+  // const DISCOUNT_PERCENT = 0;
+  // const unitPrice =
+  //   ORIGINAL_UNIT_PRICE - (ORIGINAL_UNIT_PRICE * DISCOUNT_PERCENT) / 100;
+
+  // const totalPrice = quantity ? quantity * unitPrice : 0;
 
   const templateVars: any = {
     customerName: firstName,
@@ -469,7 +553,7 @@ export default function Chatbot8({
     setManualQty("");
     setManualQtyActive(false);
     setNotesInputActive(false);
-
+    setShowPostBookingMessage(false);
     // 📦 BOOKING RESPONSE
     setResponse(null);
 
@@ -483,8 +567,82 @@ export default function Chatbot8({
 
   /* ---------------- BOOKING ---------------- */
 
+  // const handleBooking = async () => {
+  //   try {
+  //     const payload: CreateConversationBookingPayload = {
+  //       userId,
+  //       zipcode: selectedAddress.address.zipcode,
+  //       selectedOption: {
+  //         optionId: selectedOption._id,
+  //         name: selectedOption.name,
+  //         price: selectedOption.singlePrice,
+  //       },
+  //       quantity,
+  //       address: selectedAddress.address,
+  //       notes,
+  //       preferredDate: new Date().toISOString().split("T")[0],
+  //       preferredTime: "10:00 AM",
+  //       paymentMethod: "cash",
+  //     };
+
+  //     const res = await createConversationBooking(service.id, payload);
+
+  //     console.log("response : ", res);
+
+  //     setResponse(res);
+
+  //     // ✅ only set success if no error
+  //     setBookingCompleted(true);
+  //     setShowReview(false);
+  //     setTimeout(() => {
+  //       setShowPostBookingMessage(true);
+  //     }, 4000);
+  //   } catch (err: any) {
+  //     console.error("Booking failed:", err);
+
+  //     let errorMessage = "Something went wrong. Please try again.";
+
+  //     // ✅ Axios/API error handling
+  //     if (err?.response) {
+  //       const status = err.response.status;
+
+  //       if (status === 400) {
+  //         errorMessage =
+  //           err.response.data?.message || "Invalid booking details.";
+  //       } else if (status === 401) {
+  //         errorMessage = "You are not authorized. Please login again.";
+  //       } else if (status === 404) {
+  //         errorMessage = "Service not found.";
+  //       } else if (status === 500) {
+  //         errorMessage = "Server error. Please try again later.";
+  //       }
+  //     }
+
+  //     // ✅ Network error
+  //     else if (err?.request) {
+  //       errorMessage = "Network error. Please check your internet connection.";
+  //     }
+
+  //     // ✅ Optional: validation errors (frontend)
+  //     if (!selectedAddress) {
+  //       errorMessage = "Please select an address.";
+  //     } else if (!selectedOption) {
+  //       errorMessage = "Please select a service option.";
+  //     }
+
+  //     // 🔥 Show to user (choose one)
+  //     Alert.alert("Booking Failed", errorMessage);
+  //     // OR if you use toast:
+  //     // showToast(errorMessage);
+
+  //     // ❌ DO NOT mark booking completed
+  //     setBookingCompleted(false);
+  //   }
+  // };
+
   const handleBooking = async () => {
     try {
+      // Step 1 — book the service with cash as payment method
       const payload: CreateConversationBookingPayload = {
         userId,
         zipcode: selectedAddress.address.zipcode,
@@ -502,56 +660,59 @@ export default function Chatbot8({
       };
 
       const res = await createConversationBooking(service.id, payload);
+      console.log("ressssssdadadsdasds", res);
 
-      console.log("response : ", res);
+      // Step 2 — if user has wallet credits, apply partial pay automatically
+      const walletCredits = wallet?.credits ?? 0;
 
+      if (walletCredits > 0 && res) {
+        const walletAmount = Math.min(walletCredits, totalPrice);
+
+        Alert.alert(
+          "using points",
+          `Applying ₹${walletAmount} from your wallet towards this booking.`,
+        );
+
+        const partialResult = await payPartial(res?.data._id, walletAmount);
+        console.log(partialResult);
+
+        if (partialResult) {
+          Alert.alert(
+            "Payment Applied",
+            `₹${partialResult.walletPaid} paid from wallet.\n` +
+              `Pay ₹${totalPrice - walletAmount} via cash to the technician.`,
+          );
+        }
+      }
       setResponse(res);
-
-      // ✅ only set success if no error
       setBookingCompleted(true);
       setShowReview(false);
-      setTimeout(() => {
-        setShowPostBookingMessage(true);
-      }, 6000);
+      setTimeout(() => setShowPostBookingMessage(true), 4000);
     } catch (err: any) {
       console.error("Booking failed:", err);
 
       let errorMessage = "Something went wrong. Please try again.";
 
-      // ✅ Axios/API error handling
       if (err?.response) {
         const status = err.response.status;
-
-        if (status === 400) {
+        if (status === 400)
           errorMessage =
             err.response.data?.message || "Invalid booking details.";
-        } else if (status === 401) {
+        else if (status === 401)
           errorMessage = "You are not authorized. Please login again.";
-        } else if (status === 404) {
-          errorMessage = "Service not found.";
-        } else if (status === 500) {
+        else if (status === 404) errorMessage = "Service not found.";
+        else if (status === 500)
           errorMessage = "Server error. Please try again later.";
-        }
-      }
-
-      // ✅ Network error
-      else if (err?.request) {
+      } else if (err?.request) {
         errorMessage = "Network error. Please check your internet connection.";
       }
 
-      // ✅ Optional: validation errors (frontend)
-      if (!selectedAddress) {
-        errorMessage = "Please select an address.";
-      } else if (!selectedOption) {
+      if (!selectedAddress) errorMessage = "Please select an address.";
+      else if (!selectedOption)
         errorMessage = "Please select a service option.";
-      }
 
-      // 🔥 Show to user (choose one)
       Alert.alert("Booking Failed", errorMessage);
-      // OR if you use toast:
-      // showToast(errorMessage);
-
-      // ❌ DO NOT mark booking completed
+      Alert.alert("Payment Failed", paymentError?.message);
       setBookingCompleted(false);
     }
   };
@@ -622,31 +783,55 @@ export default function Chatbot8({
     <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <View style={styles.topHeader}>
         <View style={styles.headerLeft}>
-          <View style={styles.appIconPlaceholder}>
-            <Image
-              source={iconMap[service.icon as IconName] || iconMap["default"]}
-              style={{
-                width: scale(32),
-                height: scale(32),
-                resizeMode: "contain",
-                alignSelf: "center",
-              }}
-            />
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={styles.appIconPlaceholder}>
+              <Image
+                // source={iconMap[service.icon as IconName] || iconMap["default"]}
+                source={{ uri: service.icon }}
+                style={{
+                  width: scale(36),
+                  height: scale(36),
+                  resizeMode: "contain",
+                  alignSelf: "center",
+                  backgroundColor: "#fff",
+                  borderRadius: scale(50),
+                }}
+              />
+            </View>
+            <View style={{ borderWidth: 0, width: scale(240) }}>
+              <Text style={styles.headerTitle}>{service.name} Booking</Text>
+              <Text style={styles.headerSubtitle}>{service.description}</Text>
+            </View>
           </View>
-          <View>
-            <Text style={styles.headerTitle}>{service.name} Booking</Text>
-            <Text style={styles.headerSubtitle}>{service.description}</Text>
-          </View>
-        </View>
-        <View
-          style={{
-            flexDirection: "row",
-            marginTop: verticalScale(8),
-            gap: scale(6),
-          }}
-        >
-          <TouchableOpacity onPress={onClose}>
-            <CustomView
+          <View
+            style={{
+              flexDirection: "row",
+              marginTop: verticalScale(8),
+              gap: scale(6),
+              borderWidth: 1,
+              height: verticalScale(30),
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: scale(10),
+              borderRadius: scale(25),
+              borderColor: "#fff",
+              width: scale(70),
+              // flex : 1
+              // justifyContent : 'space-between'
+            }}
+          >
+            <TouchableOpacity onPress={restartBot}>
+              <Image
+                source={iconMap["refresh"]}
+                style={{ height: verticalScale(16), width: scale(16) }}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onClose}>
+              <Image
+                source={iconMap["close"]}
+                style={{ height: verticalScale(16), width: scale(16) }}
+              />
+              {/* <CustomView
               width={scale(100)}
               height={verticalScale(30)}
               radius={scale(25)}
@@ -658,23 +843,9 @@ export default function Chatbot8({
               }}
             >
               <Text>Close</Text>
-            </CustomView>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={restartBot}>
-            <View
-              style={{
-                width: scale(100),
-                height: verticalScale(30),
-                borderRadius: scale(25),
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: moderateScale(0.7),
-                borderColor: "#fff",
-              }}
-            >
-              <Text style={{ color: "#fff" }}>Refresh</Text>
-            </View>
-          </TouchableOpacity>
+            </CustomView> */}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -722,29 +893,69 @@ export default function Chatbot8({
           /* BOT CARD */
           return (
             <ZoomBlurEntrance key={m.id} delay={300}>
-              <View style={{ alignItems: "flex-start" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: scale(8),
+                  alignItems: "center",
+                  marginBottom: verticalScale(8),
+                  // borderWidth : 1
+                }}
+              >
+                <View
+                  style={{
+                    height: scale(32),
+                    width: scale(32),
+                    borderWidth: 1,
+                    borderRadius: scale(32),
+                    borderColor: "#DFDFDF",
+                    backgroundColor: "#fff",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text style={{ fontSize: 16 }}>👨‍🔧</Text>
+                </View>
                 <Text
                   style={{
                     marginBottom: verticalScale(7),
                     fontSize: moderateScale(14),
+                    color : '#864C2D'
                   }}
                 >
                   {"AI - AC Service Assistant"}
                 </Text>
+              </View>
+              {/* <CustomView
+                radius={scale(8)}
+                shadowStyle={{ marginBottom: verticalScale(16) }}
+              > */}
+              <View
+                style={{
+                  alignItems: "flex-start",
+                  marginBottom: verticalScale(16),
+                  borderWidth: 1,
+                  borderColor: "#F2D6B5",
+                  borderRadius: scale(8),
+                  backgroundColor: "#FFF5EB",
+                }}
+              >
                 <View
                   style={{
                     padding: scale(14),
                     alignSelf: "flex-start",
-                    marginBottom: verticalScale(16),
+                    // marginBottom: verticalScale(16),
+                    // borderWidth : 1
                   }}
                 >
                   <MessageTitle
+                    text="Agent"
                     steps={steps}
                     renderTemplate={renderTemplate}
                     stepIndex={m.stepIndex}
                     style={{
                       position: "absolute",
-                      top: verticalScale(10),
+                      top: verticalScale(5),
                       left: scale(30),
                       elevation: 1,
                       zIndex: 999,
@@ -752,122 +963,130 @@ export default function Chatbot8({
                   />
                   <View style={{ flexDirection: "row" }}>
                     {/* Bot bubble */}
-                    <CustomView
-                      width={scale(280)}
-                      shadowStyle={{
-                        backgroundColor: "#E3E3E3",
-                        marginTop: verticalScale(12),
-                        justifyContent: "center",
-                        alignSelf: "flex-start",
-                        // alignItems : 'center',
-                      }}
-                      isGradient={false}
-                      radius={scale(12.4)}
-                      boxStyle={[styles.botBubble]}
-                    >
+                    
+                      <View style={styles.botBubble}>
                       {m.text === "__DOTS__" ? (
                         <TypingDots />
                       ) : (
-                        <Text style={{ fontSize: moderateScale(16) }}>
-                          {!response ? m.text : "Your Service Is Booked!"}
+                        <Text
+                          style={{
+                            fontSize: moderateScale(16),
+                            lineHeight: moderateScale(24),
+                            letterSpacing: 0.3,
+                            color: "#5D6479",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {!response && !showPostBookingMessage
+                            ? m.text
+                            : response && !showPostBookingMessage
+                              ? m.text
+                              : "Your Service Is Booked!"}
                         </Text>
                       )}
-                    </CustomView>
+                      </View>
+                   
                   </View>
                   <View
-                    style={{
-                      flexWrap: "wrap",
-                      flexDirection: "row",
-                      marginTop: verticalScale(10),
-                      gap: scale(4),
-                      // borderWidth: 2,
-                      alignItems: "center",
-                      justifyContent: "flex-start",
-                    }}
+                    style={[
+                      {
+                        flexWrap: "wrap",
+                        flexDirection: "row",
+                        marginTop: verticalScale(10),
+                        gap: scale(4),
+                        // borderWidth: 2,
+                        alignItems: "center",
+                        justifyContent: "flex-start",
+                      },
+                    ]}
                   >
                     {/* CUSTOM QUESTION CARD */}
 
                     {isCustomQuestionMessage && !isBotTyping && (
                       <CustomView
-                        width={scale(330)}
+                        // width={scale(330)}
                         shadowStyle={{
-                          backgroundColor: "#E3E3E3",
+                          // backgroundColor: "#E3E3E3",
                           marginTop: verticalScale(12),
                         }}
-                        isGradient={false}
+                        // isGradient={false}
                         radius={scale(12.4)}
                         boxStyle={[styles.botBubble, { gap: verticalScale(5) }]}
                       >
+                        {health && health <= 99 && (
+                          <>
+                            <CustomView
+                              height={verticalScale(45)}
+                              radius={scale(4)}
+                              boxStyle={styles.infoRow}
+                              width={scale(310)}
+                              shadowStyle={{ alignSelf: "flex-start" }}
+                            >
+                              <Image
+                                source={iconMap["Payment"]}
+                                style={styles.icon2}
+                              />
+                              <Text style={styles.infoLabel}>Payment </Text>
+                              <Text
+                                style={[
+                                  styles.infoValue,
+                                  {
+                                    borderRadius: scale(4),
+                                    fontWeight: "400",
+                                    backgroundColor:
+                                      health >= 60 ? "#4CAF50" : "#F44336",
+                                    padding: scale(3),
+                                    color: "#fff",
+                                  },
+                                ]}
+                              >
+                                {health > 60
+                                  ? "After Service"
+                                  : "Advance Payment"}
+                              </Text>
+                            </CustomView>
+                          </>
+                        )}
+
                         {/* ZIP */}
                         <CustomView
                           height={verticalScale(45)}
-                          radius={scale(50)}
-                          boxStyle={styles.infoRow}
-                          width={scale(310)}
-                          shadowStyle={{ alignSelf: "flex-start" }}
-                        >
-                          <Image source={iconMap["zip"]} style={styles.icon} />
-                          <Text style={styles.infoLabel}>Zip code</Text>
-                          <Text style={styles.infoValue}>
-                            {selectedAddress?.address?.zipcode}
-                          </Text>
-                        </CustomView>
-
-                        {/* SERVICE TIME */}
-                        <CustomView
-                          height={verticalScale(45)}
-                          radius={scale(50)}
+                          radius={scale(4)}
                           boxStyle={styles.infoRow}
                           width={scale(310)}
                           shadowStyle={{ alignSelf: "flex-start" }}
                         >
                           <Image
-                            source={iconMap["service_time"]}
-                            style={styles.icon}
+                            source={iconMap["Zip code"]}
+                            style={styles.icon2}
+                          />
+                          <Text style={styles.infoLabel}>Zip code</Text>
+                          <View style={styles.pill}>
+                            <Text style={styles.infoValue}>
+                              {selectedAddress?.address?.zipcode}
+                            </Text>
+                          </View>
+                        </CustomView>
+
+                        {/* SERVICE TIME */}
+                        <CustomView
+                          height={verticalScale(45)}
+                          radius={scale(4)}
+                          boxStyle={styles.infoRow}
+                          width={scale(310)}
+                          shadowStyle={{ alignSelf: "flex-start" }}
+                        >
+                          <Image
+                            source={iconMap["Service time"]}
+                            style={styles.icon2}
                           />
                           <Text style={styles.infoLabel}>Service Time</Text>
-                          <Text style={styles.infoValue}>
-                            Service within {service.estimatedTime}
-                          </Text>
+                          <View style={styles.pill}>
+                            <Text style={styles.infoValue}>
+                              Service in {service.estimatedTime}
+                            </Text>
+                          </View>
                         </CustomView>
-                        {health && health <= 50 && (
-                          <>
-                            <CustomView
-                              height={verticalScale(45)}
-                              radius={scale(50)}
-                              boxStyle={styles.infoRow}
-                              width={scale(310)}
-                              shadowStyle={{ alignSelf: "flex-start" }}
-                            >
-                              <Image
-                                source={iconMap["service_time"]}
-                                style={styles.icon}
-                              />
-                              <Text style={styles.infoLabel}>
-                                Current Account Health{" "}
-                              </Text>
-                              <Text style={styles.infoValue}>{health}</Text>
-                            </CustomView>
-                            <CustomView
-                              height={verticalScale(45)}
-                              radius={scale(50)}
-                              boxStyle={styles.infoRow}
-                              width={scale(310)}
-                              shadowStyle={{ alignSelf: "flex-start" }}
-                            >
-                              <Image
-                                source={iconMap["service_time"]}
-                                style={styles.icon}
-                              />
-                              <Text style={styles.infoLabel}>
-                                Payment Mode{" "}
-                              </Text>
-                              <Text style={styles.infoValue}>
-                                Advance Payment
-                              </Text>
-                            </CustomView>
-                          </>
-                        )}
 
                         {/* ACTION BUTTONS */}
                         <View style={styles.actionRow}>
@@ -880,7 +1099,7 @@ export default function Chatbot8({
                           >
                             <CustomView
                               height={verticalScale(45)}
-                              radius={scale(40)}
+                              radius={scale(4)}
                               boxStyle={[styles.optionBtn]}
                               width={scale(150)}
                               // shadowStyle={{flex : 1}}
@@ -897,10 +1116,10 @@ export default function Chatbot8({
                           >
                             <CustomView
                               height={verticalScale(45)}
-                              radius={scale(50)}
+                              radius={scale(4)}
                               boxStyle={[styles.optionBtn]}
                               width={scale(150)}
-                              gradientColors={["#027CC7", "#027CC7"]}
+                              gradientColors={["#5E6B7C", "#2F3F54"]}
                               shadowStyle={{ flex: 1 }}
                             >
                               <Text style={styles.confirmText}>Confirm</Text>
@@ -921,7 +1140,9 @@ export default function Chatbot8({
 
                         return (
                           <CustomView
-                            gradientColors={["#ffffff", "#f5f4f6"]}
+                          isGradient={false}
+                          shadowColor={'#ffffff00'}
+                            // gradientColors={["#ffffff", "#f5f4f6"]}
                             height={
                               isAddressStep
                                 ? verticalScale(50)
@@ -954,7 +1175,7 @@ export default function Chatbot8({
                                 maxWidth: "100%",
                               },
                             ]}
-                            width={isCapacitySelection ? scale(104) : undefined}
+                            width={isCapacitySelection ? scale(120) : undefined}
                             shadowStyle={[
                               !isAddressStep &&
                                 !isBrandStep && {
@@ -964,11 +1185,11 @@ export default function Chatbot8({
                                   maxWidth: "100%",
                                 },
                               isCapacitySelection && {
-                                width: scale(104),
+                                width: scale(120),
                                 alignSelf: "flex-start",
                                 flexGrow: 1,
                                 flexBasis: "20%", // allows 2 per row when text is small
-                                maxWidth: "30%",
+                                maxWidth: "33%",
                               },
                               isBrandStep && {
                                 flexGrow: 1,
@@ -1004,21 +1225,41 @@ export default function Chatbot8({
                                     height: "100%",
                                     paddingHorizontal: scale(6),
                                   },
+                                  // isCapacitySelection && {width : scale(120)},
                                 ]}
                               >
+                                {/* <SvgUri
+                                    width={scale(38)}
+                                    height={scale(38)}
+                                    uri={o.value.icon}
+                                    style={[
+                                      styles.icon,
+                                      isBrandStep && {
+                                        width: scale(60),
+                                        height: verticalScale(30),
+                                        // borderWidth: 1,
+                                      },
+                                    ]}
+                                  /> */}
                                 <Image
                                   // source={ iconMap["service_time"]}
                                   source={
                                     isBrandStep
                                       ? { uri: o.value.logo }
-                                      : iconMap["service_time"]
+                                      : { uri: o.value.icon }
                                   }
+                                  // source={
+                                  //   isBrandStep
+                                  //     ? { uri: o.value.logo }
+                                  //     : iconMap["service_time"]
+                                  // }
                                   style={[
                                     styles.icon,
                                     isBrandStep && {
-                                      width: 60,
-                                      height: 40,
-                                      borderWidth: 0,
+                                      width: scale(60),
+                                      height: verticalScale(30),
+                                      // borderWidth: 1,
+                                      resizeMode: "contain",
                                     },
                                   ]}
                                 />
@@ -1026,7 +1267,8 @@ export default function Chatbot8({
                                   style={[
                                     {
                                       fontSize: moderateScale(14),
-                                      fontWeight: "400",
+                                      color: "#5D6479",
+                                      fontWeight: "600",
                                       textAlign: "center",
                                       // borderWidth: 1,
                                       width: isAddressStep ? undefined : "100%",
@@ -1047,8 +1289,8 @@ export default function Chatbot8({
                   {isLatestBotMessage && isFinalStep && !isBotTyping && (
                     <View
                       style={{
-                        marginTop: verticalScale(50),
-                        borderWidth: 0,
+                        marginTop: verticalScale(12),
+                        // borderWidth: 1,
                         marginLeft: scale(-14),
                         width: scale(368),
                       }}
@@ -1067,16 +1309,17 @@ export default function Chatbot8({
                             if (isBotTyping) return;
                             handleBooking();
                           }}
+                          onEdit={() => restartBot()}
                         />
                       )}
                       <View
                         style={{
                           paddingLeft: scale(7),
-                          borderTopWidth: moderateScale(0.4),
+                          // borderTopWidth: moderateScale(0.4),
                           paddingTop: verticalScale(20),
                           borderColor: "#BFBFBF",
                           borderRadius: scale(12),
-                          marginTop: verticalScale(-40),
+                          marginTop: verticalScale(-20),
                           // borderWidth : 1
                         }}
                       >
@@ -1089,27 +1332,68 @@ export default function Chatbot8({
                   {isLatestBotMessage && isQuantityStep && !isBotTyping && (
                     <View style={{ marginTop: verticalScale(50) }}>
                       <ServicePriceCard
-                        originalPrice={ORIGINAL_UNIT_PRICE}
-                        discountPercent={DISCOUNT_PERCENT}
-                        unitPrice={ORIGINAL_UNIT_PRICE} // 👈 PASS ORIGINAL, NOT DISCOUNTED
+                        serviceName={service.name}
+                        acType={selectedOption?.name || ""}
+                        brand={selectedBrand?.name || ""}
+                        icon={service.icon}
+                        basePrice={ORIGINAL_UNIT_PRICE}
+                        quantityPricing={selectedBrand?.quantityPricing ?? []}
                         onConfirm={(qty) => {
-                          const discountedUnitPrice =
-                            ORIGINAL_UNIT_PRICE * (1 - DISCOUNT_PERCENT / 100);
-
-                          const finalPrice = qty * discountedUnitPrice;
-
+                          const { total: qtyTotal, discountPct: qtyDiscount } =
+                            (() => {
+                              if (qty === 1)
+                                return {
+                                  total: ORIGINAL_UNIT_PRICE,
+                                  discountPct: 0,
+                                };
+                              if (qty === 2) {
+                                const t = selectedBrand?.quantityPricing?.find(
+                                  (q: any) => q.quantity === 2,
+                                );
+                                return t
+                                  ? {
+                                      total: t.displayPrice,
+                                      discountPct: t.avgDiscountPct ?? 0,
+                                    }
+                                  : {
+                                      total: ORIGINAL_UNIT_PRICE * 2,
+                                      discountPct: 0,
+                                    };
+                              }
+                              if (qty === 3) {
+                                const t = selectedBrand?.quantityPricing?.find(
+                                  (q: any) => q.quantity === 3,
+                                );
+                                return t
+                                  ? {
+                                      total: t.displayPrice,
+                                      discountPct: t.avgDiscountPct ?? 0,
+                                    }
+                                  : {
+                                      total: ORIGINAL_UNIT_PRICE * 3,
+                                      discountPct: 0,
+                                    };
+                              }
+                              const t = selectedBrand?.quantityPricing?.find(
+                                (q: any) => q.label === "3+",
+                              );
+                              const pct = t?.avgDiscountPct ?? 0;
+                              return {
+                                total:
+                                  qty * ORIGINAL_UNIT_PRICE * (1 - pct / 100),
+                                discountPct: pct,
+                              };
+                            })();
                           setQuantity(qty);
-
                           pushQuantityPriceMessage({
                             quantity: qty,
-                            price: finalPrice,
+                            price: qtyTotal,
                             originalPrice: qty * ORIGINAL_UNIT_PRICE,
-                            discountPercent: DISCOUNT_PERCENT,
+                            discountPercent: qtyDiscount,
                           });
-
                           setCurrentStepIndex((s) => s + 1);
                         }}
-                        onCancel={() => {}}
+                        onCancel={() => restartBot()}
                       />
                     </View>
                   )}
@@ -1141,18 +1425,37 @@ export default function Chatbot8({
                   )}
 
                   {/* ADDRESS FORM */}
+                  {/* {isLatestBotMessage && showAddressForm && (
+                      <AddressComponent
+                        onAddressSaved={(addr: any) => {
+                          setAddresses((p) => [...p, addr]);
+                          setSelectedAddress(addr);
+                          setShowAddressForm(false);
+                          setCurrentStepIndex((s) => s + 1);
+                        }}
+                      />
+                    )} */}
+
                   {isLatestBotMessage && showAddressForm && (
                     <AddressComponent
                       onAddressSaved={(addr: any) => {
+                        // ✅ 1. Add the new address to the global list
                         setAddresses((p) => [...p, addr]);
-                        setSelectedAddress(addr);
+
+                        // ✅ 2. Hide the form — the option buttons re-render
+                        //       with the new address included via resolveOptionsFromStep,
+                        //       so the user can now tap it to select and advance.
                         setShowAddressForm(false);
-                        setCurrentStepIndex((s) => s + 1);
+
+                        // ❌ DO NOT call setSelectedAddress(addr) here
+                        // ❌ DO NOT call setCurrentStepIndex((s) => s + 1) here
+                        // The user must explicitly tap the address chip to do both.
                       }}
                     />
                   )}
                 </View>
               </View>
+              {/* </CustomView> */}
             </ZoomBlurEntrance>
           );
         })}
@@ -1212,9 +1515,11 @@ export default function Chatbot8({
                   radius={scale(12.4)}
                   boxStyle={[styles.botBubble]}
                 >
+                  <View>
                   <Text style={{ fontSize: moderateScale(15) }}>
                     Do you want to book the service again?
                   </Text>
+                  </View>
                 </CustomView>
               </View>
               <View
@@ -1231,22 +1536,26 @@ export default function Chatbot8({
                 >
                   <CustomView
                     height={verticalScale(36)}
+                    gradientColors={["#729869", "#729869"]}
+            shadowColor={"#77966F"}
                     radius={scale(40)}
                     width={scale(140)}
-                    boxStyle={styles.optionBtn}
+                    boxStyle={[styles.optionBtn,{borderColor : '#E7ECF8'}]}
                   >
-                    <Text>✅ Yes</Text>
+                    <Text style={{color : '#fff'}}>✅ Yes</Text>
                   </CustomView>
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => setPostBookingStage(true)}>
                   <CustomView
                     height={verticalScale(36)}
+                    gradientColors={["#D2882C", "#D2882C"]}
+            shadowColor={"#AA5F00"}
                     radius={scale(40)}
                     width={scale(140)}
                     boxStyle={styles.optionBtn}
                   >
-                    <Text>❌ No</Text>
+                    <Text style={{color : '#fff'}}>❌ No</Text>
                   </CustomView>
                 </TouchableOpacity>
               </View>
@@ -1377,7 +1686,7 @@ function MessageTitle({
         },
         style,
       ]}
-      colors={!user ? ["#FF0000", "#990000"] : ["#077DC6", "#055d94"]}
+      colors={!user ? ["#FB8264", "#FB8264"] : ["#077DC6", "#055d94"]}
     >
       <Text
         style={{
@@ -1458,6 +1767,7 @@ const UserMessage = ({
             steps={steps}
             renderTemplate={renderTemplate}
             stepIndex={m.stepIndex}
+            text="Customer"
             user
             style={{
               position: "absolute",
@@ -1469,7 +1779,7 @@ const UserMessage = ({
             }}
           />
           <CustomView
-            radius={scale(25)}
+            radius={scale(8)}
             height={verticalScale(50)}
             gradientColors={["#B8D3E959", "#B8D3E959"]}
             boxStyle={{
@@ -1482,7 +1792,13 @@ const UserMessage = ({
               borderColor: "#fff",
             }}
           >
-            <Text style={{ fontSize: moderateScale(15), color: "#000" }}>
+            <Text
+              style={{
+                fontSize: moderateScale(15),
+                color: TEXT_COLOR,
+                fontWeight: "600",
+              }}
+            >
               {m.text}
             </Text>
           </CustomView>
@@ -1629,36 +1945,50 @@ const ZoomBlurEntrance = ({
 
 /* ---------------- STYLES ---------------- */
 
+const TEXT_COLOR = "#5D6479";
+
 const styles = StyleSheet.create({
   confirmCard: {
     padding: scale(14),
   },
   icon: {
     width: scale(40),
-    height: scale(35),
-    resizeMode: "center",
-    borderWidth: 0,
+    height: scale(30),
+  },
+  icon2: {
+    width: scale(25),
+    height: scale(25),
+    resizeMode: "contain",
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: scale(14),
-    gap: scale(10),
+    paddingHorizontal: scale(6),
+    gap: scale(4),
   },
 
   infoLabel: {
     flex: 1,
-    fontSize: moderateScale(14),
-    color: "#333",
-    fontWeight: "500",
+    fontSize: moderateScale(16),
+    color: TEXT_COLOR,
+    fontWeight: "600",
   },
 
   infoValue: {
     fontSize: moderateScale(14),
-    color: "#000",
+    color: TEXT_COLOR,
     fontWeight: "600",
   },
-
+  pill: {
+    backgroundColor: "#DDE6F3",
+    borderRadius: scale(4),
+    paddingHorizontal: scale(14),
+    paddingVertical: verticalScale(4),
+    minWidth: scale(70),
+    alignItems: "center",
+    borderWidth: moderateScale(0.7),
+    borderColor: "#045BD826",
+  },
   actionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1675,7 +2005,7 @@ const styles = StyleSheet.create({
   },
 
   cancelText: {
-    color: "#333",
+    color: TEXT_COLOR,
     fontWeight: "500",
   },
 
@@ -1699,11 +2029,16 @@ const styles = StyleSheet.create({
     borderColor: "#EFEFEF",
   },
   topHeader: {
-    backgroundColor: "#0A7BC2",
+    backgroundColor: "#F6EBDE",
     padding: scale(14),
     justifyContent: "space-between",
   },
-  headerLeft: { flexDirection: "row", alignItems: "center" },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 0,
+    justifyContent: "space-between",
+  },
   appIconPlaceholder: {
     width: scale(38),
     height: scale(38),
@@ -1712,14 +2047,15 @@ const styles = StyleSheet.create({
     marginRight: scale(10),
     paddingTop: verticalScale(2),
   },
-  headerTitle: { color: "#fff", fontWeight: "700" },
-  headerSubtitle: { color: "#EAF6FF", fontSize: 11 },
+  headerTitle: { color: "#864C2D", fontWeight: "700" },
+  headerSubtitle: { color: "#936140", fontSize: 11 },
   close: { color: "#fff", fontSize: 18 },
 
   wrapper: {
     flex: 1,
     padding: scale(10),
-    backgroundColor: "#ffffff",
+    // backgroundColor: "#ffffff",
+    backgroundColor: "#FFF5EB",
     paddingBottom: 150,
   },
   bubble: { padding: scale(12), borderRadius: scale(10) },
@@ -1728,6 +2064,10 @@ const styles = StyleSheet.create({
     paddingTop: verticalScale(14),
     paddingBottom: verticalScale(7),
     justifyContent: "center",
+    borderWidth : 1,
+    borderColor : '#EFD5B7',
+    backgroundColor : '#fff',
+    borderRadius : scale(8)
   },
   userBubble: {},
   optionBtn: {
@@ -1735,11 +2075,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+    borderColor :'#F2D6B5'
   },
   notesBox: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: verticalScale(10),
+    // borderWidth : 1
   },
   input: {
     flex: 1,
@@ -1747,6 +2089,8 @@ const styles = StyleSheet.create({
     borderRadius: scale(8),
     padding: scale(10),
     backgroundColor: "#fff",
+    borderColor: "#ccc",
+    height: verticalScale(100),
   },
   sendBtn: {
     marginLeft: scale(8),

@@ -87,6 +87,7 @@ export interface UpdateUserPayload {
   firstName?: string;
   lastName?: string;
   zipcode?: string;
+  email?: string;
   profilePicture?: string;
 }
 

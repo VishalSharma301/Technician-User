@@ -26,7 +26,7 @@ type loginScreenNavigationProp = StackNavigationProp<
 
 const LoginScreen = () => {
   const [isSignup, setIsSignup] = useState(false);
-  const [isOtpLogin, setIsOtpLogin] = useState(false);
+  const [isOtpLogin, setIsOtpLogin] = useState(true);
   const navigation = useNavigation<loginScreenNavigationProp>();
   const { phoneNumber, setPhoneNumber } = useProfile();
   const [countryCode, setCountryCode] = useState<string>("+91");
@@ -80,7 +80,7 @@ const LoginScreen = () => {
         flexGrow: 1,
         // justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#F0EFF8",
+        backgroundColor: "#FFF5EB",
       }}
     >
       <View style={styles.container}>
@@ -90,110 +90,116 @@ const LoginScreen = () => {
           resizeMode="contain"
         />
 
-          <CustomView radius={moderateScale(12)}>
-            <View style={styles.box}>
-              <Text style={styles.title}>
-                {isOtpLogin ? "Login with OTP" : isSignup ? "Sign Up" : "Login"}
-              </Text>
-              <Text style={styles.subText}>
-                {isOtpLogin
-                  ? "Enter your phone number to receive an OTP"
-                  : isSignup
+        <CustomView radius={moderateScale(12)}>
+          <View style={styles.box}>
+            <Text style={styles.title}>
+              {isOtpLogin ? "Login with OTP" : isSignup ? "Sign Up" : "Login"}
+            </Text>
+            <Text style={styles.subText}>
+              {isOtpLogin
+                ? "Enter your phone number to receive an OTP"
+                : isSignup
                   ? "Create a new account"
                   : "Welcome Back"}
-              </Text>
+            </Text>
 
-              {/* Inputs */}
-              {isOtpLogin ? (
-                <>
+            {/* Inputs */}
+            {isOtpLogin ? (
+              <>
+                <AuthInput
+                  iconName="phone-outline"
+                  placeholder="Enter Phone Number"
+                  keyboardType="phone-pad"
+                  title={isOtpLogin ? "Phone Number" : "Email or Phone"}
+                  onChangeText={setPhoneNumberInput}
+                  maxLength={10}
+                  autoFocus={true}
+                />
+              </>
+            ) : (
+              <>
+                <AuthInput
+                  iconName="email-outline"
+                  placeholder="Email or Phone"
+                  title="Email or Phone"
+                />
+
+                {isSignup && (
                   <AuthInput
-                    iconName="phone-outline"
-                    placeholder="Enter Phone Number"
-                    keyboardType="phone-pad"
-                    title="Email or Phone"
-                    onChangeText={setPhoneNumberInput}
-                    maxLength={10}
-                    autoFocus={true}
+                    iconName="account-outline"
+                    placeholder="User Name"
+                    title="User Name"
                   />
-                </>
-              ) : (
-                <>
-                  <AuthInput
-                    iconName="email-outline"
-                    placeholder="Email or Phone"
-                    title="Email or Phone"
-                  />
+                )}
 
-                  {isSignup && (
-                    <AuthInput
-                      iconName="account-outline"
-                      placeholder="User Name"
-                      title="User Name"
-                    />
-                  )}
+                <AuthInput
+                  iconName="lock-outline"
+                  placeholder="Enter Your Password"
+                  secureTextEntry
+                  title="Password"
+                />
 
+                {isSignup && (
                   <AuthInput
-                    iconName="lock-outline"
-                    placeholder="Enter Your Password"
+                    iconName="lock-check-outline"
+                    placeholder="Confirm Password"
                     secureTextEntry
-                    title="Password"
+                    title="Confirm Password"
                   />
+                )}
+              </>
+            )}
 
-                  {isSignup && (
-                    <AuthInput
-                      iconName="lock-check-outline"
-                      placeholder="Confirm Password"
-                      secureTextEntry
-                      title="Confirm Password"
-                    />
-                  )}
-                </>
-              )}
-
-              {/* Forgot Password */}
-              {!isSignup && !isOtpLogin && (
-                <TouchableOpacity
-                  onPress={() => navigation.navigate("ResetPasswordScreen")}
-                >
-                  <Text style={styles.forgotText}>Forgot Password?</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* Main Button */}
-              <TouchableOpacity onPress={handleAuthAction}>
-                <LinearGradient
-                  style={styles.button}
-                  colors={["#027CC7", "#004DBD"]}
-                >
-                  <Text style={styles.buttonText}>
-                    {isOtpLogin ? "Send OTP" : isSignup ? "Sign Up" : "Login"}
-                  </Text>
-                </LinearGradient>
+            {/* Forgot Password */}
+            {!isSignup && !isOtpLogin && (
+              <TouchableOpacity
+                onPress={() => navigation.navigate("ResetPasswordScreen")}
+              >
+                <Text style={styles.forgotText}>Forgot Password?</Text>
               </TouchableOpacity>
+            )}
 
-              {/* OR */}
-              {!isSignup && (
-                <>
-                  {!isOtpLogin && (
-                    <>
-                      <Text style={styles.orText}>Or</Text>
+            {/* Main Button */}
+            <CustomView
+              radius={scale(12)}
+              gradientColors={["#729869", "#729869"]}
+              borderColor={"#E7ECF8"}
+              shadowColor={"#77966F"}
+            >
+              <TouchableOpacity
+                onPress={handleAuthAction}
+                style={styles.button}
+              >
+                <Text style={styles.buttonText}>
+                  {isOtpLogin ? "Send OTP" : isSignup ? "Sign Up" : "Login"}
+                </Text>
+              </TouchableOpacity>
+            </CustomView>
 
-                      <TouchableOpacity onPress={toggleOtpLogin}>
+            {/* OR */}
+            {!isSignup && (
+              <>
+                {!isOtpLogin && (
+                  <>
+                    <Text style={styles.orText}>Or</Text>
+
+                    <TouchableOpacity onPress={toggleOtpLogin}>
                       <CustomView
                         radius={moderateScale(50)}
+                        gradientColors={['#729869','#729869']}
                         boxStyle={{
                           paddingVertical: verticalScale(8),
                           alignItems: "center",
                         }}
-                        shadowStyle={{marginVertical : verticalScale(10)}}
+                        shadowStyle={{ marginVertical: verticalScale(10) }}
                       >
-                          <Text style={styles.otpText}>Login With OTP</Text>
+                        <Text style={styles.otpText}>Login With OTP</Text>
                       </CustomView>
-                        </TouchableOpacity>
-                    </>
-                  )}
+                    </TouchableOpacity>
+                  </>
+                )}
 
-                  {isOtpLogin && (
+                {/* {isOtpLogin && (
                     <TouchableOpacity
                       onPress={toggleOtpLogin}
                     >
@@ -210,33 +216,33 @@ const LoginScreen = () => {
                       </Text>
                       </CustomView>
                     </TouchableOpacity>
-                  )}
-                </>
-              )}
+                  )} */}
+              </>
+            )}
 
-              {/* Footer */}
-              {!isOtpLogin && (
-                <View style={{ flexDirection: "row", justifyContent: "center" }}>
-                  <Text style={styles.footerText}>
-                    {isSignup
-                      ? "Already have an Account? "
-                      : "Don’t have an Account? "}
+            {/* Footer */}
+            {!isOtpLogin && (
+              <View style={{ flexDirection: "row", justifyContent: "center" }}>
+                <Text style={styles.footerText}>
+                  {isSignup
+                    ? "Already have an Account? "
+                    : "Don’t have an Account? "}
+                </Text>
+                <TouchableOpacity
+                  onPress={toggleSignup}
+                  style={{ alignItems: "center", justifyContent: "center" }}
+                >
+                  <Text style={styles.linkText}>
+                    {isSignup ? "Login" : "Sign Up"}
                   </Text>
-                  <TouchableOpacity
-                    onPress={toggleSignup}
-                    style={{ alignItems: "center", justifyContent: "center" }}
-                  >
-                    <Text style={styles.linkText}>
-                      {isSignup ? "Login" : "Sign Up"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
+                </TouchableOpacity>
+              </View>
+            )}
 
-              {/* Social Login */}
-              {!isSignup && (
-                <>
-                  {/* <View style={styles.iconRow}>
+            {/* Social Login */}
+            {!isSignup && (
+              <>
+                {/* <View style={styles.iconRow}>
                       <Image
                         style={styles.socialIcon}
                         source={require("../../../assets/google.png")}
@@ -251,28 +257,27 @@ const LoginScreen = () => {
                       />
                     </View> */}
 
-                  <Text style={styles.policyText}>
-                    By Continuing, you agree to our{"\n"}
-                    <BorderText>Terms of Service</BorderText> {"      "}
-                    <BorderText>Privacy Policy</BorderText> {"      "}
-                    <BorderText>Content Policy</BorderText>
-                  </Text>
-                </>
-              )}
-            </View>
-          </CustomView>
+                <Text style={styles.policyText}>
+                  By Continuing, you agree to our{"\n"}
+                  <BorderText>Terms of Service</BorderText> {"      "}
+                  <BorderText>Privacy Policy</BorderText> {"      "}
+                  <BorderText>Content Policy</BorderText>
+                </Text>
+              </>
+            )}
+          </View>
+        </CustomView>
       </View>
     </ScrollView>
   );
 };
 
-function BorderText({children}: {children: React.ReactNode}) {
+function BorderText({ children }: { children: React.ReactNode }) {
   return (
-    <View >
-
-    <Text style={styles.linkText2}>{children}</Text>
+    <View>
+      <Text style={styles.linkText2}>{children}</Text>
     </View>
-  )
+  );
 }
 
 export default LoginScreen;
@@ -283,8 +288,8 @@ const styles = StyleSheet.create({
     paddingVertical: verticalScale(40),
   },
   logo: {
-    width: scale(245),
-    height: verticalScale(95),
+    width: scale(154),
+    height: verticalScale(120),
     resizeMode: "center",
     marginBottom: verticalScale(40),
   },
@@ -316,12 +321,12 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   button: {
-    backgroundColor: "#027CC7",
-    borderRadius: moderateScale(50),
+    // backgroundColor: "#027CC7",
+    // borderRadius: moderateScale(4),
     paddingVertical: verticalScale(10),
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: verticalScale(10),
+    // marginVertical: verticalScale(10),
     height: verticalScale(48),
   },
   buttonText: {
@@ -354,9 +359,9 @@ const styles = StyleSheet.create({
     color: "#000",
     fontWeight: "500",
     fontSize: moderateScale(8),
-    borderBottomWidth : moderateScale(0.7) ,
-    borderColor : '#000',
-    borderStyle : 'dashed'
+    borderBottomWidth: moderateScale(0.7),
+    borderColor: "#000",
+    borderStyle: "dashed",
   },
   iconRow: {
     flexDirection: "row",
@@ -375,5 +380,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#000",
     textAlign: "center",
+    marginTop: verticalScale(10),
+    lineHeight: moderateScale(20),
+    // gap : 6
   },
 });

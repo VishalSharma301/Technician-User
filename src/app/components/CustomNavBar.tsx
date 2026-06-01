@@ -12,7 +12,7 @@ import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { useCart } from "../../hooks/useCart";
 import CustomView from "./CustomView";
-import { useTransition } from "../../store/TransitionContext";
+// import { useTransition } from "../../store/TransitionContext";
 
 const TAB_ACCENTS: Record<string, string> = {
   HomeStack: "#0583D0",
@@ -23,25 +23,31 @@ const TAB_ACCENTS: Record<string, string> = {
 };
 
 type Props = Partial<BottomTabBarProps> & {
-  isLocal?: "Home" | "Category";
+  isLocal?: "Home" | "Category" | "Order" | "Profile"; // to indicate if it's used as a local nav bar inside a screen
 };
 
 export default function CustomNavBar({ state, navigation, isLocal }: Props) {
   const nav = navigation ?? useNavigation();
-  const { triggerTransition } = useTransition(); // ← ADD
+  // const { triggerTransition } = useTransition(); // ← ADD
 
   const handleNavigate = (routeName: string) => {
-    triggerTransition(
-      routeName,
-      TAB_ACCENTS[routeName] ?? "#0583D0",
-      () => nav?.navigate(routeName), // actual navigation happens inside callback
-    );
+    nav?.navigate(routeName);
+    // triggerTransition(
+    //   routeName,
+    //   TAB_ACCENTS[routeName] ?? "#0583D0",
+    //   () => nav?.navigate(routeName), // actual navigation happens inside callback
+    // );
   };
 
   // 🔥 Hide ONLY when used as GLOBAL nav bar AND HomeScreen is active
   if (!isLocal && state) {
     const currentRoute = state.routes[state.index].name;
-    if (currentRoute === "HomeStack" || currentRoute === "CategoryScreen") {
+    if (
+      currentRoute === "HomeStack" ||
+      currentRoute === "CategoryScreen" ||
+      currentRoute === "OrderStack" ||
+      currentRoute === "ProfileStack"
+    ) {
       return null;
     }
   }
@@ -71,7 +77,7 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
         <Text
           style={[
             styles.navText,
-            { color: state?.index === 0 ? "#0583D0" : "#707070" },
+            { color: isLocal === "Home" ? "#0583D0" : "#707070" },
           ]}
         >
           Home
@@ -111,7 +117,7 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
         <Text
           style={[
             styles.navText,
-            { color: state?.index === 3 ? "#0583D0" : "#707070" },
+            { color: isLocal === "Category" ? "#0583D0" : "#707070" },
           ]}
         >
           Category
@@ -126,12 +132,12 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
         <Icon
           name="document-text-outline"
           size={moderateScale(20)}
-          color={state?.index === 4 ? "#0583D0" : "#707070"}
+          color={isLocal === "Order" ? "#0583D0" : "#707070"}
         />
         <Text
           style={[
             styles.navText,
-            { color: state?.index === 4 ? "#0583D0" : "#707070" },
+            { color: isLocal === "Order" ? "#0583D0" : "#707070" },
           ]}
         >
           Order
@@ -140,19 +146,19 @@ export default function CustomNavBar({ state, navigation, isLocal }: Props) {
       {/* Cart */}
       <TouchableOpacity
         onPress={() => {
-          handleNavigate("CartScreen");
+          handleNavigate("ProfileStack");
         }}
         style={styles.navItem}
       >
         <Icon
           name="person-outline"
           size={moderateScale(20)}
-          color={state?.index === 2 ? "#0583D0" : "#707070"}
+          color={isLocal === "Profile" ? "#0583D0" : "#707070"}
         />
         <Text
           style={[
             styles.navText,
-            { color: state?.index === 2 ? "#0583D0" : "#707070" },
+            { color: isLocal === "Profile" ? "#0583D0" : "#707070" },
           ]}
         >
           Profile

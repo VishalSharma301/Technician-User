@@ -261,9 +261,9 @@ export default function TransitionOverlay() {
           <Text style={[styles.labelSub, { color: labelSub }]}>
             {isSuccess ? '✦  Ready' : 'Opening'}
           </Text>
-          <Text style={[styles.labelMain, { color: labelMain }]}>
+          {/* <Text style={[styles.labelMain, { color: labelMain }]}>
             {pageName}
-          </Text>
+          </Text> */}
         </View>
       ) : null}
     </Animated.View>

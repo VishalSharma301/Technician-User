@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext } from "react";
 import {
   View,
   Text,
@@ -6,789 +6,286 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Switch,
-  ViewStyle,
-  Modal,
-  TextInput,
-  Alert,
-  ActivityIndicator,
 } from "react-native";
 import { MaterialCommunityIcons as Icon } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { moderateScale, scale, verticalScale } from "../../utils/scaling";
-import { AuthContext } from "../../store/AuthContext";
-import { ProfileContext } from "../../store/ProfileContext";
-import CustomView from "../components/CustomView";
-import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
-import { ProfileStackParamList } from "../../constants/navigation";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { updateProfile } from "../../utils/verificationApis";
-import { useAddress } from "../../hooks/useAddress";
-import { getProfileData, saveProfileData } from "../../utils/setAsyncStorage";
+import { ProfileStackParamList } from "../../constants/navigation";
+import { ProfileContext } from "../../store/ProfileContext";
+import { AuthContext } from "../../store/AuthContext";
+import CustomNavBar from "../components/CustomNavBar";
 
-type CCViewProps = {
-  children: React.ReactNode;
-  style?: ViewStyle;
+type Nav = StackNavigationProp<ProfileStackParamList>;
+
+const C = {
+  bg: "#FFF8F2",
+  card: "#FFFFFF",
+  border: "#EFD5B7",
+  brown: "#864C2D",
+  brownLight: "#864C2D1A",
+  txt: "#864C2D",
+  txt2: "#864C2D",
+  txt3: "#4D4D4D",
 };
-type ProfileScreenNavigationProp = StackNavigationProp<ProfileStackParamList>;
 
-function CCView({ children, style }: CCViewProps) {
+/* ── Reusable menu row ── */
+type MenuItemProps = {
+  icon: string;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+  last?: boolean;
+};
+
+function MenuItem({ icon, iconBg, iconColor, title, subtitle, onPress, last }: MenuItemProps) {
   return (
-    <CustomView
-      radius={scale(8)}
-      shadowStyle={[{ marginBottom: verticalScale(8) }, style]}
+    <TouchableOpacity
+      style={[styles.menuItem, !last && styles.menuItemBorder]}
+      onPress={onPress}
+      activeOpacity={0.7}
     >
-      {children}
-    </CustomView>
+      <View style={[styles.menuIcon, { backgroundColor: C.brownLight }]}>
+        <Icon name={icon as any} size={moderateScale(20)} color={C.brown} />
+      </View>
+      <View style={styles.menuTxt}>
+        <Text style={styles.menuTitle}>{title}</Text>
+        <Text style={styles.menuSub}>{subtitle}</Text>
+      </View>
+      <Icon name="chevron-right" size={moderateScale(20)} color={C.txt3} />
+    </TouchableOpacity>
   );
 }
 
 export default function ProfileScreen() {
-  const { logout, token } = useContext(AuthContext);
-  const { selectedAddress } = useAddress();
-  const {
-    firstName,
-    lastName,
-    email,
-    phoneNumber,
-    picture,
-    setEmail,
-    setFirstName,
-    setLastName,
-    gender,
-    setGender
-  } = useContext(ProfileContext);
-  const [showAddressModal, setShowAddressModal] = useState(false);
-  const [showGenderModal, setShowGenderModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  // const [editFirstName, setEditFirstName] = useState(firstName);
-  // const [editLastName, setEditLastName] = useState(lastName);
-  // const [editEmail, setEditEmail] = useState(email);
-  const navigation = useNavigation<ProfileScreenNavigationProp>();
-
-
-useEffect(() => {
-  const loadGender = async () => {
-    const profile = await getProfileData();
-    if (profile?.gender) {
-      setGender(profile.gender);
-    }
-  };
-
-  loadGender();
-}, []);
-console.log(phoneNumber);
-
-
-  const handleUpdateProfile = async () => {
-    try {
-      setLoading(true);
-
-      const payload = {
-        firstName: firstName,
-        lastName: lastName,
-        zipcode: selectedAddress.address.zipcode || "",
-      };
-
-      const res = await updateProfile(payload, token);
-      setShowEditModal(false);
-      console.log("User updated:", res);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const navigation = useNavigation<Nav>();
+  const { firstName, lastName, phoneNumber, picture } = useContext(ProfileContext);
+  const { logout } = useContext(AuthContext);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Top Header */}
-        <View style={styles.topHeader}>
-          <TouchableOpacity style={styles.backRow}>
-            <Icon name="chevron-left" size={moderateScale(22)} />
-            <Text style={styles.backText}>Back</Text>
-          </TouchableOpacity>
-
+    <SafeAreaView style={styles.safe}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Header ── */}
+        {/* <View style={styles.header}>
+          <View style={{ width: scale(48) }} />
           <Text style={styles.headerTitle}>Profile</Text>
           <TouchableOpacity
             onPress={() => navigation.navigate("AccountHealthScreen")}
+            style={{ width: scale(48), alignItems: "flex-end" }}
           >
-            <Icon name="cog-outline" size={moderateScale(22)} />
+            <Icon name="cog-outline" size={moderateScale(22)} color={C.txt2} />
           </TouchableOpacity>
-        </View>
+        </View> */}
 
-        {/* Avatar Section */}
+        {/* ── Avatar ── */}
         <View style={styles.avatarSection}>
-          <View style={styles.avatarWrapper}>
-            <Image source={{ uri: picture }} style={styles.avatar} />
-            <TouchableOpacity style={styles.editAvatarBtn}>
-              <Icon name="pencil" size={moderateScale(12)} color="#fff" />
-            </TouchableOpacity>
+          <View style={styles.avatarWrap}>
+            {picture ? (
+              <Image source={{ uri: picture }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                <Icon name="account-outline" size={moderateScale(38)} color="#fff" />
+              </View>
+            )}
           </View>
-
           <Text style={styles.name}>
             {firstName} {lastName}
           </Text>
-          <Text style={styles.role}>HVAC Technician</Text>
+          <View style={styles.infoRow}>
+            <Icon name="phone-outline" size={moderateScale(14)} color={C.txt2} />
+            <Text style={styles.infoText}>{phoneNumber || "+91 98765 43210"}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Icon name="map-marker-outline" size={moderateScale(14)} color={C.txt2} />
+            <Text style={styles.infoText}>Sector 17, Chandigarh</Text>
+          </View>
         </View>
 
-        {/* Professional Information */}
-        <CCView>
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Professional Information</Text>
-              <TouchableOpacity onPress={() => setShowEditModal(true)}>
-                <Icon name="pencil-outline" size={moderateScale(18)} />
-              </TouchableOpacity>
-            </View>
-
-            <CCView>
-              <View style={styles.fieldBox}>
-                <Icon name="account-outline" size={18} color="#386CD0" />
-                <Text style={styles.fieldText}>
-                  {firstName} {lastName}
-                </Text>
-              </View>
-            </CCView>
-            <CCView>
-              <View style={styles.fieldBox}>
-                <Icon name="email-outline" size={18} color="#386CD0" />
-                <Text style={styles.fieldText}>{email}</Text>
-              </View>
-            </CCView>
-
-            <CCView>
-              <View style={styles.fieldBox}>
-                <Icon name="phone-outline" size={18} color="#386CD0" />
-                <Text style={styles.fieldText}>{phoneNumber}</Text>
-              </View>
-            </CCView>
-
-            <CCView>
-            <View style={styles.fieldBox}>
-                <Icon name="gender-male-female" size={18} color="#386CD0" />
-                <Text style={styles.fieldText}>{gender}</Text>
-              </View>
-            </CCView>
+        {/* ── Stats ── */}
+        <View style={styles.statsRow}>
+          <View style={[styles.statBox, { backgroundColor: "#864C2D1F", borderColor: "#864C2D80" }]}>
+            <Text style={[styles.statNum, { color: C.brown }]}>03</Text>
+            <Text style={[styles.statLbl, { color: C.brown }]}>Bookings</Text>
           </View>
-        </CCView>
-
-        {/* Customer Address */}
-        <CCView>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Customer Address</Text>
-
-            {[1, 2].map((item) => (
-              <CCView key={item}>
-                <View style={styles.addressCard}>
-                  <Icon
-                    name="map-marker-outline"
-                    size={20}
-                    color="#386CD0"
-                    style={{ borderWidth: 0, alignSelf: "baseline" }}
-                  />
-                  <View style={{ flex: 1, marginLeft: scale(6) }}>
-                    <Text style={styles.addressText}>
-                      123 Main Street, Apt 4B,
-                      {"\n"}New York, NY
-                      {"\n"}United States
-                    </Text>
-                  </View>
-
-                  <LinearGradient
-                    style={styles.zipBadge}
-                    colors={["#027CC7", "#004DBD"]}
-                  >
-                    <Text style={styles.zipText}>10001</Text>
-                  </LinearGradient>
-                </View>
-              </CCView>
-            ))}
-
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.outlineBtn}
-                onPress={() => setShowAddressModal(true)}
-              >
-                <Text style={styles.outlineText}>Add New Address</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity>
-                <LinearGradient
-                  style={styles.primaryBtn}
-                  colors={["#027CC7", "#004DBD"]}
-                >
-                  <Text style={styles.primaryText}>Edit</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
+          <View style={[styles.statBox, { backgroundColor: "#FEF3C7", borderColor: "#DD851C" }]}>
+            <Text style={[styles.statNum, { color: "#DD851C" }]}>320</Text>
+            <Text style={[styles.statLbl, { color: "#DD851C" }]}>Coins</Text>
           </View>
-        </CCView>
+          <View style={[styles.statBox, { backgroundColor: "#D1FAE5", borderColor: "#1CA177" }]}>
+            <Text style={[styles.statNum, { color: "#1CA177" }]}>4.9 ⭐</Text>
+            <Text style={[styles.statLbl, { color: "#1CA177" }]}>Rating</Text>
+          </View>
+        </View>
 
-        <TouchableOpacity style={styles.closeBtn} onPress={() => logout()}>
-          <Text style={styles.closeText}>Logout</Text>
+        {/* ── Account ── */}
+        <Text style={styles.sectionTitle}>Account</Text>
+        <View style={styles.card}>
+          <MenuItem
+            icon="account-circle-outline"
+            iconBg="#F0E8FF"
+            iconColor="#7B5EA7"
+            title="Edit Profile"
+            subtitle="Name, email, gender"
+            onPress={() => navigation.navigate("EditProfileScreen")}
+          />
+          <MenuItem
+            icon="map-marker-outline"
+            iconBg="#FFF0E8"
+            iconColor={C.brown}
+            title="My Addresses"
+            subtitle="Saved locations"
+            onPress={() => navigation.navigate("MyAddressesScreen")}
+            last
+          />
+        </View>
+
+        {/* ── Support ── */}
+        <Text style={styles.sectionTitle}>Support</Text>
+        <View style={styles.card}>
+          <MenuItem
+            icon="lifebuoy"
+            iconBg="#FFF0E8"
+            iconColor={C.brown}
+            title="Help & Support"
+            subtitle="FAQs & contact"
+            onPress={() => navigation.navigate("HelpAndSupportScreen")}
+          />
+          <MenuItem
+            icon="star-outline"
+            iconBg="#FFF8E7"
+            iconColor="#C9851A"
+            title="Rate Fuvay App"
+            subtitle="Share feedback"
+            onPress={() => {}}
+            last
+          />
+        </View>
+
+        {/* ── Logout ── */}
+        <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.8}>
+          <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
-      <Modal
-        visible={showAddressModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setShowAddressModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <CCView>
-            <View style={styles.modalContainer}>
-              {/* Header */}
-              <View style={styles.modalHeader}>
-                <View style={styles.modalIcon}>
-                  <Icon
-                    name="map-marker-outline"
-                    size={moderateScale(20)}
-                    color="#386CD0"
-                  />
-                </View>
-                <Text style={styles.modalTitle}>Address</Text>
-              </View>
-
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {[
-                  "Street Address",
-                  "Apartment / Suite",
-                  "City",
-                  "State / Province",
-                  "Postal Code / Zip",
-                  "Country",
-                ].map((label, index) => (
-                  <View key={index} style={styles.inputWrapper}>
-                    <Text style={styles.inputLabel}>{label}</Text>
-                    <CCView>
-                      <TextInput
-                        placeholder={`Enter ${label}`}
-                        placeholderTextColor="#9CA3AF"
-                        style={styles.textInput}
-                      />
-                    </CCView>
-                  </View>
-                ))}
-              </ScrollView>
-
-              {/* Close Button */}
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => setShowAddressModal(false)}
-              >
-                <Text style={styles.closeText}>Save Address</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => setShowAddressModal(false)}
-              >
-                <Text style={styles.closeText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </CCView>
-        </View>
-      </Modal>
-   
-      <Modal
-        visible={showEditModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowEditModal(false)}
-      >
-        {loading && (
-          <ActivityIndicator
-            size={42}
-            color={"red"}
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: 0,
-              zIndex: 99999,
-              elevation: 1,
-            }}
-          />
-        )}
-        <View style={styles.modalOverlay}>
-          <CCView>
-            <View style={styles.modalContainer}>
-              <Text style={styles.modalTitle}>
-                Edit Professional Information
-              </Text>
-
-              {/* First Name */}
-              <View style={styles.inputWrapper}>
-                <Text style={styles.inputLabel}>First Name</Text>
-                <CCView>
-                  <TextInput
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    style={styles.textInput}
-                  />
-                </CCView>
-              </View>
-
-              {/* Last Name */}
-              <View style={styles.inputWrapper}>
-                <Text style={styles.inputLabel}>Last Name</Text>
-                <CCView>
-                  <TextInput
-                    value={lastName}
-                    onChangeText={setLastName}
-                    style={styles.textInput}
-                  />
-                </CCView>
-              </View>
-
-              {/* Email */}
-              <View style={styles.inputWrapper}>
-                <Text style={styles.inputLabel}>Email</Text>
-                <CCView>
-                  <TextInput
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    style={styles.textInput}
-                  />
-                </CCView>
-              </View>
-              <View style={styles.inputWrapper}>
-                <Text style={styles.inputLabel}>Gender</Text>
-                <CCView>
-                 <TouchableOpacity onPress={() => setShowGenderModal(true)}>
-                <View style={styles.fieldBox}>
-                  <Icon name="gender-male-female" size={18} color="#386CD0" />
-                  <Text style={styles.fieldText}>{gender}</Text>
-                  <Icon name="chevron-down" size={18} />
-                </View>
-              </TouchableOpacity>
-                </CCView>
-              </View>
-
-              {/* Buttons */}
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => {
-                  // TODO: Connect to backend update API here
-                  // console.log("Updated:", editFirstName, editLastName, editEmail);
-                  handleUpdateProfile();
-                }}
-              >
-                <Text style={styles.closeText}>Save Changes</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => setShowEditModal(false)}
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </CCView>
-        </View>
-      </Modal>
-
-         <Modal
-        visible={showGenderModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowGenderModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <CCView>
-            <View style={styles.genderModalContainer}>
-              <Text style={styles.modalTitle}>Select Gender</Text>
-
-              {["Male", "Female", "Unknown"].map((item) => (
-                <TouchableOpacity
-                  key={item}
-                  style={styles.genderOption}
-                  onPress={async () => {
-                    setGender(item);
-                    setShowGenderModal(false);
-
-                    await saveProfileData({
-                      gender: item,
-                    } as any); // partial update (your merge logic handles rest)
-                  }}
-                >
-                  <Text style={styles.genderOptionText}>{item}</Text>
-                </TouchableOpacity>
-              ))}
-
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={() => setShowGenderModal(false)}
-              >
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </CCView>
-        </View>
-      </Modal>
+      <CustomNavBar isLocal="Profile" />
     </SafeAreaView>
   );
 }
 
-/* ----------------------------- Styles ----------------------------- */
-
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F0EFF8",
-  },
-  container: {
-    paddingHorizontal: scale(9),
-    paddingBottom: verticalScale(140),
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    paddingHorizontal: scale(9),
-    // borderWidth : 1
-  },
-  genderModalContainer: {
-    padding: scale(16),
-    borderRadius: scale(10),
-  },
+  safe: { flex: 1, backgroundColor: C.bg },
+  container: { paddingBottom: verticalScale(40) },
 
-  genderOption: {
-    paddingVertical: verticalScale(12),
-    borderBottomWidth: 0.5,
-    borderColor: "#E5E7EB",
-  },
-
-  genderOptionText: {
-    fontSize: moderateScale(16),
-  },
-
-  cancelBtn: {
-    marginTop: verticalScale(10),
-    paddingVertical: verticalScale(12),
-    alignItems: "center",
-  },
-
-  cancelText: {
-    color: "#004DBD",
-    fontWeight: "600",
-  },
-  modalContainer: {
-    // backgroundColor: "#fff",
-    // borderTopLeftRadius: scale(20),
-    // borderTopRightRadius: scale(20),
-    paddingHorizontal: scale(16),
-    paddingVertical: verticalScale(16),
-    // margin : scale(9),
-    // maxHeight: "85%",
-    borderRadius: scale(8),
-  },
-
-  modalHeader: {
+  /* header */
+  header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: verticalScale(16),
+    justifyContent: "space-between",
+    paddingHorizontal: scale(20),
+    paddingTop: verticalScale(10),
+    paddingBottom: verticalScale(6),
+    // backgroundColor : '#F6EBDE'
   },
+  headerTitle: { fontSize: moderateScale(18), fontWeight: "700", color: C.txt },
 
-  modalIcon: {
-    width: scale(32),
-    height: scale(32),
-    borderRadius: scale(8),
-    backgroundColor: "#E8F0FF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: scale(10),
-    borderWidth: 1,
-    borderColor: "#1553CD",
-  },
-
-  modalTitle: {
-    fontSize: moderateScale(18),
-    fontWeight: "600",
-  },
-
-  inputWrapper: {
-    marginBottom: verticalScale(14),
-  },
-
-  inputLabel: {
-    fontSize: moderateScale(16),
-    fontWeight: "600",
+  /* avatar */
+  avatarSection: { alignItems: "center", paddingVertical: verticalScale(14) , backgroundColor : '#F6EBDE'},
+  avatarWrap: {
+    width: scale(80),
+    height: scale(80),
+    borderRadius: scale(40),
+    borderWidth: 2,
+    borderColor: "#D4A57C",
+    overflow: "hidden",
     marginBottom: verticalScale(8),
   },
-
-  textInput: {
-    paddingHorizontal: scale(12),
-    paddingVertical: verticalScale(10),
-    fontSize: moderateScale(14),
-    // backgroundColor: "#F9FAFB",
-  },
-
-  closeBtn: {
-    backgroundColor: "#004DBD",
-    borderRadius: scale(10),
+  avatar: { width: "100%", height: "100%" },
+  avatarPlaceholder: {
+    backgroundColor: "#C9A87C",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: verticalScale(12),
-    marginTop: verticalScale(10),
   },
+  name: { fontSize: moderateScale(18), fontWeight: "700", color: C.txt, marginBottom: verticalScale(4) },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: scale(5), marginBottom: verticalScale(2) },
+  infoText: { fontSize: moderateScale(13), color: C.txt2 },
 
-  closeText: {
-    color: "#fff",
-    fontSize: moderateScale(15),
-    fontWeight: "600",
-  },
-
-  /* Header */
-  headerRow: {
+  /* stats */
+  statsRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent : 'center',
     alignItems: "center",
-    marginVertical: verticalScale(10),
+    gap: scale(8),
+    paddingHorizontal: scale(16),
+    paddingBottom : verticalScale(31),
+    
+    marginBottom: verticalScale(16),
+    backgroundColor : '#F6EBDE',
+    borderBottomLeftRadius : moderateScale(26),
+    borderBottomRightRadius : moderateScale(26)
   },
-  headerTitle: {
-    fontSize: moderateScale(20),
-    fontWeight: "600",
+  statBox: {
+    // flex: 1,
+    width : '28%',
+    borderRadius: moderateScale(10),
+    borderWidth: 1,
+    paddingVertical: verticalScale(10),
+    alignItems: "center",
   },
+  statNum: { fontSize: moderateScale(20), fontWeight: "700" },
+  statLbl: { fontSize: moderateScale(11), fontWeight: "500", marginTop: verticalScale(2) },
 
-  /* Avatar */
-  avatarSection: {
-    alignItems: "center",
-    marginVertical: verticalScale(10),
-  },
-  avatarWrapper: {
-    width: scale(110),
-    height: scale(110),
-    borderRadius: scale(55),
-    borderWidth: 2,
-    borderColor: "#004DBD",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatar: {
-    width: scale(100),
-    height: scale(100),
-    borderRadius: scale(50),
-  },
-  editAvatarBtn: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: "#004DBD",
-    borderRadius: scale(12),
-    padding: scale(6),
-  },
-  name: {
-    marginTop: verticalScale(10),
-    fontSize: moderateScale(22),
-    fontWeight: "600",
-  },
-  role: {
+  /* section */
+  sectionTitle: {
     fontSize: moderateScale(14),
-    color: "#6B7280",
+    fontWeight: "600",
+    color: C.txt2,
+    marginHorizontal: scale(20),
+    marginBottom: verticalScale(8),
     marginTop: verticalScale(4),
   },
-  topHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginVertical: verticalScale(10),
-  },
 
-  backRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    opacity: 0,
-  },
-
-  backText: {
-    fontSize: moderateScale(14),
-    marginLeft: scale(4),
-  },
-
-  // headerTitle: {
-  //   fontSize: moderateScale(20),
-  //   fontWeight: "600",
-  // },
-
-  // avatarWrapper: {
-  //   width: scale(110),
-  //   height: scale(110),
-  //   borderRadius: scale(55),
-  //   borderWidth: 2,
-  //   borderColor: "#386CD0",
-  //   justifyContent: "center",
-  //   alignItems: "center",
-  // },
-
-  fieldBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderRadius: scale(10),
-    padding: scale(12),
-    // height: verticalScale(49),
-  },
-
-  fieldText: {
-    flex: 1,
-    marginLeft: scale(10),
-    fontSize: moderateScale(16),
-  },
-
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: verticalScale(10),
-  },
-
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: verticalScale(10),
-  },
-
-  outlineBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#027CC7",
-    borderRadius: scale(8),
-    alignItems: "center",
-    justifyContent: "center",
-    width: scale(167),
-    height: verticalScale(31),
-    marginRight: scale(8),
-  },
-
-  outlineText: {
-    color: "#0164C2",
-    fontSize: moderateScale(14),
-  },
-
-  primaryBtn: {
-    borderRadius: scale(8),
-    alignItems: "center",
-    justifyContent: "center",
-    width: scale(167),
-    height: verticalScale(31),
-  },
-
-  primaryText: {
-    color: "#fff",
-    fontSize: moderateScale(14),
-  },
-
-  addressCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: scale(14),
-  },
-
-  zipBadge: {
-    paddingHorizontal: scale(12),
-    paddingVertical: verticalScale(6),
-    borderRadius: scale(8),
-  },
-
-  zipText: {
-    color: "#fff",
-    fontSize: moderateScale(12),
-  },
-
-  /* Card */
+  /* card */
   card: {
-    borderRadius: scale(8),
-    paddingVertical: verticalScale(14),
-    paddingHorizontal: scale(13),
-  },
-  cardTitle: {
-    fontSize: moderateScale(20),
-    fontWeight: "600",
-    marginBottom: verticalScale(6),
-    // borderWidth : 1
-  },
-
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    // backgroundColor: "#F3F4F6",?
-    borderRadius: scale(8),
-    padding: scale(12),
-    // marginBottom: verticalScale(10),
-  },
-  inputText: {
-    flex: 1,
-    marginLeft: scale(10),
-    fontSize: moderateScale(14),
-  },
-  editBtn: {
-    fontSize: moderateScale(13),
-    color: "#000",
-  },
-
-  addressBox: {
-    flexDirection: "row",
-    borderRadius: scale(8),
-    padding: scale(12),
-  },
-  addressText: {
-    marginLeft: scale(4),
-    fontSize: moderateScale(16),
-    color: "#000",
-  },
-
-  addressBtnRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  addBtn: {
-    flex: 1,
+    backgroundColor: C.card,
+    marginHorizontal: scale(16),
+    marginBottom: verticalScale(12),
+    borderRadius: moderateScale(14),
     borderWidth: 1,
-    borderColor: "#004DBD",
-    borderRadius: scale(8),
-    padding: scale(10),
-    alignItems: "center",
-    marginRight: scale(8),
+    borderColor: C.border,
+    overflow: "hidden",
   },
-  addBtnText: {
-    color: "#004DBD",
-    fontSize: moderateScale(14),
-  },
-
-  primaryBtnText: {
-    color: "#fff",
-    fontSize: moderateScale(14),
-  },
-
-  /* Settings */
-  settingRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: verticalScale(15),
-  },
-  settingLeft: {
+  menuItem: {
     flexDirection: "row",
     alignItems: "center",
+    gap: scale(12),
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(14),
   },
-  settingText: {
-    marginLeft: scale(10),
-    fontSize: moderateScale(14),
+  menuItemBorder: { borderBottomWidth: 1, borderBottomColor: C.border },
+  menuIcon: {
+    width: scale(38),
+    height: scale(38),
+    borderRadius: moderateScale(10),
+    alignItems: "center",
+    justifyContent: "center",
   },
+  menuTxt: { flex: 1 },
+  menuTitle: { fontSize: moderateScale(14), fontWeight: "600", color: '#000', marginBottom: verticalScale(2) },
+  menuSub: { fontSize: moderateScale(12), color: C.txt3 },
 
+  /* logout */
   logoutBtn: {
-    marginTop: verticalScale(20),
+    backgroundColor: C.brown,
+    marginHorizontal: scale(16),
+    marginTop: verticalScale(8),
+    borderRadius: moderateScale(12),
+    paddingVertical: verticalScale(14),
     alignItems: "center",
   },
-  logoutText: {
-    color: "red",
-    fontSize: moderateScale(14),
-  },
+  logoutText: { color: "#fff", fontSize: moderateScale(15), fontWeight: "600" },
 });

@@ -551,7 +551,7 @@ export default OrderDetailsScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F0EFF8",
+    backgroundColor: "#FFF5EB",
     padding: scale(16),
   },
   boxRow: {

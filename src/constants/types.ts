@@ -12,6 +12,7 @@ export type Address = {
 };
 
 export type AddressCardType = {
+  id: string;
   label: string;
   address: Address;
   phone: string;

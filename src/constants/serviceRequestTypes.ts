@@ -102,6 +102,7 @@ export interface PriceBreakdown {
 export type ServiceRequestStatus =
   | "pending"
   | "booked"
+  | "confirmed_scheduled"
   | "assigned"
   | "technician_assigned"
   | "in_progress"

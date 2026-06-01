@@ -1,7 +1,7 @@
 // navigation.ts (your constants file)
 
 import { ServiceRequest } from "./serviceRequestTypes";
-import { ServiceData } from "./types";
+import { AddressCardType, ServiceData } from "./types";
 
 export type RootStackParamList = {
   SplashScreen: undefined;
@@ -11,11 +11,14 @@ export type RootStackParamList = {
   ResetPasswordScreen: undefined;
   AuthenticatedTabs: undefined; // tabs entry point
   SelectLocationScreen: undefined;
+  InitialLocationSelector: undefined;
 };
 
 // Stack used inside Tabs for Home
 export type HomeStackParamList = {
   HomeScreen: undefined;
+  CoinScreen: undefined;
+  NotificationScreen: undefined;
   ProfileScreen: undefined;
 
   // NEW Address System Screens
@@ -40,14 +43,17 @@ export type OrderStackParamList = {
 };
 export type ProfileStackParamList = {
   ProfileScreen: undefined;
+  EditProfileScreen: undefined;
+  HelpAndSupportScreen: undefined;
+  MyAddressesScreen: undefined;
   AccountHealthScreen: undefined;
-  
+  SelectDeliveryLocationScreen: { address?: AddressCardType; isEditing?: boolean } | undefined;
 };
 
 // Tabs
 export type HomeTabParamList = {
   HomeStack: undefined;
-  CategoryScreen: undefined;
+  ProfileStack: undefined;
   JobsScreen: undefined;
   OrderStack: undefined;
   CartScreen: undefined;

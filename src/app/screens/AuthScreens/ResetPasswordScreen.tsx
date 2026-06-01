@@ -32,7 +32,7 @@ export default function ResetPasswordScreen() {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-     <View style={{ flex: 1, backgroundColor: "#F0EFF8" }}>
+     <View style={{ flex: 1, backgroundColor: "#FFF5EB" }}>
         {/* ---- BACK ICON ---- */}
         <TouchableOpacity
           onPress={() => navigation.goBack()}

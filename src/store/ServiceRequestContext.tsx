@@ -36,7 +36,7 @@ export const useServiceRequests = () => {
   const context = useContext(ServiceRequestsContext);
   if (!context) {
     throw new Error(
-      "useServiceRequests must be used within ServiceRequestsProvider"
+      "useServiceRequests must be used within ServiceRequestsProvider",
     );
   }
   return context;
@@ -69,9 +69,8 @@ export const ServiceRequestsProvider: React.FC<
         setError(null);
 
         const filters = params || currentFilters;
-        const response: ServiceRequestsResponse = await getServiceRequests(
-          filters
-        );
+        const response: ServiceRequestsResponse =
+          await getServiceRequests(filters);
 
         if (response.success) {
           // If it's the first page, replace the data
@@ -100,7 +99,7 @@ export const ServiceRequestsProvider: React.FC<
         setLoading(false);
       }
     },
-    [currentFilters]
+    [currentFilters],
   );
 
   const refreshServiceRequests = useCallback(async () => {
@@ -115,10 +114,14 @@ export const ServiceRequestsProvider: React.FC<
     // Add additional safety check
     if (serviceRequests.length === 0) return;
 
+    const nextPage = (pagination?.currentPage || 1) + 1;
+
     const nextPageFilters = {
       ...currentFilters,
-      page: (currentFilters.page || 1) + 1,
+      page: nextPage,
     };
+
+    setCurrentFilters(nextPageFilters);
 
     await fetchServiceRequests(nextPageFilters);
   }, [
@@ -132,9 +135,10 @@ export const ServiceRequestsProvider: React.FC<
   const updateFilters = useCallback(
     (filters: ServiceRequestQueryParams) => {
       const newFilters = { ...currentFilters, ...filters, page: 1 };
+      setCurrentFilters(newFilters);
       fetchServiceRequests(newFilters);
     },
-    [currentFilters, fetchServiceRequests]
+    [currentFilters, fetchServiceRequests],
   );
 
   const clearFilters = useCallback(() => {

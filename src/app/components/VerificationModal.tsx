@@ -90,6 +90,7 @@ console.log("selectedJob :", selectedJob);
       closenow();
     } catch (e) {
       console.error(e);
+      //  closenow();
     } finally {
       setLoading(false);
     }
@@ -431,7 +432,7 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    backgroundColor: "#F0EFF8",
+    backgroundColor: "#FFF5EB",
     paddingHorizontal: scale(9),
   },
 

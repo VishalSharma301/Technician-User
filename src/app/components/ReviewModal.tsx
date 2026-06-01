@@ -34,6 +34,12 @@ type ReviewModalProps = {
 function CCView({ children, style }: CCViewProps) {
   return (
     <CustomView
+      gradientColors={["#FFF5EA", "#FBE8D1"]}
+      // isGradient={false}
+      gradientStart={{ x: 0, y: 0 }}
+      gradientEnd={{ x: 0, y: 1 }}
+      borderColor={"#fff"}
+      shadowColor={"#EAC9A3"}
       radius={scale(8)}
       shadowStyle={{
         marginBottom: verticalScale(14),
@@ -64,14 +70,14 @@ const ReviewModal = ({
 
   const ratingValues = Object.values(ratings);
 
-const handleRemindLater = () => {
-  setShowReminder(true);
+  const handleRemindLater = () => {
+    setShowReminder(true);
 
-  // auto hide after 5 sec (same as your web code)
-  setTimeout(() => {
-    setShowReminder(false);
-  }, 5000);
-};
+    // auto hide after 5 sec (same as your web code)
+    setTimeout(() => {
+      setShowReminder(false);
+    }, 5000);
+  };
 
   const publicRating =
     ratingValues.reduce((sum, value) => sum + value, 0) / ratingValues.length;
@@ -141,9 +147,10 @@ const handleRemindLater = () => {
 
       // 🔹 Validate backend success
       if (!response.data?.success) {
+        
         throw new Error(response.data?.message || "Failed to hide review");
       }
-
+      onClose()
       return true; // success
     } catch (error: any) {
       // 🔹 Axios error handling
@@ -176,25 +183,25 @@ const handleRemindLater = () => {
   //   onClose();
   // };
 
-const handleDismiss = async () => {
-  try {
-    await hideReview();
+  const handleDismiss = async () => {
+    try {
+      await hideReview();
 
-    const reminderTime = Date.now() + 60 * 60 * 1000; // +1 hour
+      const reminderTime = Date.now() + 60 * 60 * 1000; // +1 hour
 
-    await AsyncStorage.setItem(
-      "reviewReminder",
-      JSON.stringify({
-        serviceRequestId,
-        time: reminderTime,
-      })
-    );
-  } catch (e) {
-    console.error(e);
-  }
+      await AsyncStorage.setItem(
+        "reviewReminder",
+        JSON.stringify({
+          serviceRequestId,
+          time: reminderTime,
+        }),
+      );
+    } catch (e) {
+      console.error(e);
+    }
 
-  onClose();
-};
+    onClose();
+  };
 
   const handleSubmitReview = async () => {
     try {
@@ -234,6 +241,7 @@ const handleDismiss = async () => {
     } catch (error: any) {
       console.log(error.response?.data || error.message);
       alert(error.response?.data?.message || "Something went wrong");
+      onClose();
     } finally {
       setLoading(false);
     }
@@ -267,8 +275,18 @@ const handleDismiss = async () => {
             contentContainerStyle={{ paddingBottom: verticalScale(200) }}
           >
             {/* PRIVATE RATING */}
-            <CCView>
-              <View style={{ padding: scale(16) }}>
+            <LinearGradient
+              colors={["#F2D7B840", "#E8CDAE"]}
+              style={{ borderRadius: scale(12) }}
+            >
+              <View
+                style={{
+                  padding: scale(16),
+                  borderWidth: 1,
+                  borderColor: "#F2D6B5",
+                  borderRadius: scale(12),
+                }}
+              >
                 <CCView>
                   <View style={styles.card}>
                     <Text style={styles.sectionTitle}>
@@ -292,23 +310,25 @@ const handleDismiss = async () => {
                         const value = i + 1;
                         const isSelected = selectedPrivate === value;
                         return (
-                          <TouchableOpacity
-                            key={value}
-                            onPress={() => setSelectedPrivate(value)}
-                            style={[
-                              styles.gridBox,
-                              isSelected && styles.gridBoxSelected,
-                            ]}
-                          >
-                            <Text
+                          <CCView>
+                            <TouchableOpacity
+                              key={value}
+                              onPress={() => setSelectedPrivate(value)}
                               style={[
-                                styles.gridText,
-                                isSelected && styles.gridTextSelected,
+                                styles.gridBox,
+                                isSelected && styles.gridBoxSelected,
                               ]}
                             >
-                              {value.toString().padStart(2, "0")}
-                            </Text>
-                          </TouchableOpacity>
+                              <Text
+                                style={[
+                                  styles.gridText,
+                                  isSelected && styles.gridTextSelected,
+                                ]}
+                              >
+                                {value.toString().padStart(2, "0")}
+                              </Text>
+                            </TouchableOpacity>
+                          </CCView>
                         );
                       })}
                     </View>
@@ -395,10 +415,22 @@ const handleDismiss = async () => {
                 {/* BUTTONS */}
                 <View style={styles.buttonRow}>
                   <TouchableOpacity
-                    style={styles.cancelBtn}
+                    style={{ width: "49%" }}
                     onPress={handleDismiss}
                   >
-                    <Text style={styles.cancelText}>Remind Later</Text>
+                    <CustomView
+                      radius={moderateScale(8)}
+                      gradientColors={["#D2882C", "#D2882C"]}
+                      shadowColor={"#F6E5D2"}
+                      borderColor={'#AA5F00'}
+                      boxStyle={{
+                        paddingVertical: verticalScale(8),
+                        alignItems: "center",
+                      }}
+                      // shadowStyle={{ marginVertical: verticalScale(10) }}
+                    >
+                      <Text style={styles.submitText}>Remind Later</Text>
+                    </CustomView>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -406,18 +438,22 @@ const handleDismiss = async () => {
                     onPress={handleSubmitReview}
                     disabled={loading}
                   >
-                    <LinearGradient
-                      colors={["#027CC7", "#004DBD"]}
-                      // start={{ x: 0, y: 0 }}
-                      // end={{ x: 1, y: 1 }}
-                      style={styles.submitBtn}
+                    <CustomView
+                      radius={moderateScale(8)}
+                      gradientColors={["#729869", "#729869"]}
+                      shadowColor={"#77966F"}
+                      boxStyle={{
+                        paddingVertical: verticalScale(8),
+                        alignItems: "center",
+                      }}
+                      // shadowStyle={{ marginVertical: verticalScale(10) }}
                     >
                       <Text style={styles.submitText}>Submit</Text>
-                    </LinearGradient>
+                    </CustomView>
                   </TouchableOpacity>
                 </View>
               </View>
-            </CCView>
+            </LinearGradient>
           </ScrollView>
         </View>
       </View>
@@ -435,7 +471,7 @@ const styles = StyleSheet.create({
   },
 
   modalContainer: {
-    backgroundColor: "#F0EFF8",
+    backgroundColor: "#FFF5EB",
     // maxHeight: "90%",
     paddingHorizontal: scale(16),
     paddingTop: verticalScale(50),
@@ -500,13 +536,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   gridBox: {
-    width: "18%",
+    width: scale(54),
     paddingVertical: verticalScale(12),
     borderRadius: scale(8),
-    borderWidth: 1,
-    borderColor: "#DDD",
+    // borderWidth: 1,
+    // borderColor: "#DDD",
     alignItems: "center",
-    marginBottom: verticalScale(10),
+    // marginBottom: verticalScale(10),
   },
   gridBoxSelected: {
     backgroundColor: "#2764E7",

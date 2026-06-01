@@ -11,6 +11,8 @@ interface CustomViewProps {
   height?: number;
   width?: number;
   isGradient?: boolean;
+  shadowColor? : ColorValue;
+  borderColor? : ColorValue;
 
   /** 🔥 NEW */
   gradientColors?: readonly [ColorValue, ColorValue, ...ColorValue[]];
@@ -26,6 +28,8 @@ export default function CustomView({
   height,
   width,
   isGradient = true,
+  shadowColor="#864C2D4A",
+  borderColor="#ffffff",
 
   /** 🔥 NEW */
   gradientColors,
@@ -34,7 +38,7 @@ export default function CustomView({
 }: CustomViewProps) {
   const resolvedColors: readonly [ColorValue, ColorValue, ...ColorValue[]] =
     isGradient
-      ? (gradientColors ?? ["#F7F6FA", "#EDEBF4"])
+      ? (gradientColors ?? ["#FEF2E3", "#FEF2E3"])
       : ["#FFFFFF", "#FFFFFF"];
 
   return (
@@ -42,7 +46,7 @@ export default function CustomView({
     <View
       style={[
         {
-          backgroundColor: "#8092ACA6",
+          backgroundColor: shadowColor,
           borderRadius: radius + scale(0),
           borderBottomRightRadius: radius + scale(1),
           borderTopLeftRadius: radius + scale(1),
@@ -69,7 +73,7 @@ export default function CustomView({
               width,
               borderRadius: radius,
               borderWidth: moderateScale(0.7),
-              borderColor: "#ffffff",
+              borderColor: borderColor,
             },
             boxStyle,
           ]}
